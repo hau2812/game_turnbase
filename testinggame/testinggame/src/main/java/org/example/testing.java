@@ -1,23 +1,29 @@
 package org.example;
 
+import abilities.Ability;
+import characters.Characters;
+import characters.Observer;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 
+import java.util.Random;
+
 import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class testing extends GameApplication {
+
     private Line blueLine;
     private Line redLine;
 
-    private Rectangle blueBox;
-    private Rectangle bluePowerBox;  // 👈 New power box
     private Rectangle redBox;
 
     private Rectangle blueHealthBar;
@@ -33,32 +39,54 @@ public class testing extends GameApplication {
 
     private boolean moving = true;
 
-    private double lineSpeed = 0.5; // base speed
-    private double blueLineSpeed = lineSpeed; // can be boosted
+    private double lineSpeed = 0.5;
+    private double blueLineSpeed = lineSpeed;
 
-    // Independent HP values
-    private double blueMaxHP = 300;
-    private double redMaxHP = 200;
-    private double blueHP = blueMaxHP;
-    private double redHP = redMaxHP;
-
-    // Constant visual width of health bars
     private double healthBarWidth = 200;
     private double healthBarHeight = 20;
 
     private Text blueHPText;
     private Text redHPText;
 
+    // === Both sides ===
+    private Observer.characterSlot heroSlot;
+    private Observer.characterSlot enemySlot;
 
+    // Hero Skill buttons
+    private Rectangle skill1Box;
+    private Rectangle skill2Box;
+    private Rectangle skill3Box;
+    //Turn
+    private Line turnOf = null;
+
+    //AI?
+    private boolean autoEnemy=true;
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setWidth(800);
         settings.setHeight(600);
-        settings.setTitle("Line Stop & Power Box");
+        settings.setTitle("Hero vs Enemy");
     }
 
     @Override
     protected void initGame() {
+        // Init registry
+        Observer.CharacterSlotRegistry.init();
+
+        // Hero slot
+        heroSlot = Observer.CharacterSlotRegistry.getByName("Hero");
+
+        // Enemy slot (for now, clone hero for testing)
+        enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");
+
+
+        // --- Health values ---
+        double blueHP = heroSlot.getCurrentHp();
+        double blueMaxHP = heroSlot.getCharacter().getHp();
+
+        double redHP = enemySlot.getCurrentHp();
+        double redMaxHP = enemySlot.getCharacter().getHp();
+
         // Background black bar
         Rectangle blackBar = new Rectangle(barWidth, barHeight, Color.BLACK);
         blackBar.setTranslateX(barX);
@@ -69,8 +97,8 @@ public class testing extends GameApplication {
         blueLine = new Line();
         blueLine.setStroke(Color.BLUE);
         blueLine.setStrokeWidth(3);
-        blueLine.setStartX(barX + barWidth / 3);
-        blueLine.setEndX(barX + barWidth / 3);
+        blueLine.setStartX(barX + barWidth / 1.75);
+        blueLine.setEndX(barX + barWidth / 1.75);
         blueLine.setStartY(barY);
         blueLine.setEndY(barY + barHeight);
 
@@ -86,33 +114,22 @@ public class testing extends GameApplication {
         getGameScene().addUINode(blueLine);
         getGameScene().addUINode(redLine);
 
-        // Normal blue box
-        blueBox = new Rectangle(30, 30, Color.BLUE);
-        blueBox.setTranslateX(50);
-        blueBox.setTranslateY(500);
-
-        // Blue power box
-        bluePowerBox = new Rectangle(30, 30, Color.DARKBLUE);
-        bluePowerBox.setTranslateX(100);
-        bluePowerBox.setTranslateY(500);
-
-        // Red box
-        redBox = new Rectangle(30, 30, Color.RED);
-        redBox.setTranslateX(500);
-        redBox.setTranslateY(500);
-
-        getGameScene().addUINode(blueBox);
-        getGameScene().addUINode(bluePowerBox);
-        getGameScene().addUINode(redBox);
+        heroSlot.setLine(blueLine);
+        enemySlot.setLine(redLine);
+        // Enemy red box
+//        redBox = new Rectangle(30, 30, Color.RED);
+//        redBox.setTranslateX(500);
+//        redBox.setTranslateY(500);
+//        getGameScene().addUINode(redBox);
 
         // Health bar positions
-        double blueHealthX = blueBox.getTranslateX();
-        double blueHealthY = blueBox.getTranslateY() - 200;
+        double blueHealthX = 50;
+        double blueHealthY = 300;
 
-        double redHealthX = redBox.getTranslateX();
-        double redHealthY = redBox.getTranslateY() - 200;
+        double redHealthX = 550;
+        double redHealthY = 300;
 
-        // Health bar borders
+        // Borders
         blueHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
         blueHealthBorder.setStroke(Color.BLACK);
         blueHealthBorder.setStrokeWidth(2);
@@ -125,7 +142,7 @@ public class testing extends GameApplication {
         redHealthBorder.setTranslateX(redHealthX);
         redHealthBorder.setTranslateY(redHealthY);
 
-        // Actual health bars
+        // Health bars
         blueHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.BLUE);
         blueHealthBar.setTranslateX(blueHealthX);
         blueHealthBar.setTranslateY(blueHealthY);
@@ -134,22 +151,18 @@ public class testing extends GameApplication {
         redHealthBar.setTranslateX(redHealthX);
         redHealthBar.setTranslateY(redHealthY);
 
-        // Blue HP text
+        // HP text
         blueHPText = new Text("HP: " + (int) blueHP + " / " + (int) blueMaxHP);
         blueHPText.setFont(new Font(16));
         blueHPText.setFill(Color.BLUE);
         blueHPText.setTranslateX(blueHealthBorder.getTranslateX());
         blueHPText.setTranslateY(blueHealthBorder.getTranslateY() - 5);
 
-        // Red HP text
         redHPText = new Text("HP: " + (int) redHP + " / " + (int) redMaxHP);
         redHPText.setFont(new Font(16));
         redHPText.setFill(Color.RED);
         redHPText.setTranslateX(redHealthBorder.getTranslateX());
         redHPText.setTranslateY(redHealthBorder.getTranslateY() - 5);
-
-
-
 
         // Add UI
         getGameScene().addUINode(blueHealthBorder);
@@ -159,58 +172,119 @@ public class testing extends GameApplication {
         getGameScene().addUINode(blueHPText);
         getGameScene().addUINode(redHPText);
 
-        // Normal blue box click
-        blueBox.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
-                if (blueBox.getFill() == Color.GREEN) {
-                    damageRed(20); // normal hit
-                }
-                resetLine(blueLine, Color.BLUE, blueBox, false);
-            }
-        });
+        // --- Hero Skills ---
+        skill1Box = createSkillBox(heroSlot, heroSlot.getSkills().get(0), 50, 500, Color.LIGHTBLUE, enemySlot);
+        skill2Box = createSkillBox(heroSlot, heroSlot.getSkills().get(1), 100, 500, Color.CYAN, enemySlot);
+        skill3Box = createSkillBox(heroSlot, heroSlot.getSkills().get(2), 150, 500, Color.DARKBLUE, heroSlot);
 
-        // Power blue box click
-        bluePowerBox.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
-                if (bluePowerBox.getFill() == Color.GREEN) {
-                    damageRed(30); // 1.5× damage
-                }
-                resetLine(blueLine, Color.DARKBLUE, bluePowerBox, true);
-            }
-        });
-
-        // Red box click
-        redBox.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
-                if (redBox.getFill() == Color.GREEN) {
-                    damageBlue(20);
-                }
-                resetLine(redLine, Color.RED, redBox, false);
-            }
-        });
+        // --- Enemy Skills (optional: also add clickable boxes for testing) ---
+        Rectangle enemySkill1 = createSkillBox(enemySlot, enemySlot.getSkills().get(0), 550, 500, Color.PINK, heroSlot);
+        Rectangle enemySkill2 = createSkillBox(enemySlot, enemySlot.getSkills().get(1), 600, 500, Color.PINK, heroSlot);
+        Rectangle enemySkill3 = createSkillBox(enemySlot, enemySlot.getSkills().get(2), 650, 500, Color.PINK, enemySlot);
 
         // Move lines every frame
         run(() -> updateLines(), Duration.millis(5));
     }
 
-    private void updateLines() {
-        if (!moving) return;
+    private Rectangle createSkillBox(Observer.characterSlot attacker, Ability.skill skill,
+                                     double x, double y, Color color,
+                                     Observer.characterSlot target) {
+        Rectangle box = new Rectangle(30, 30, color);
+        box.setTranslateX(x);
+        box.setTranslateY(y);
 
-        moveLine(blueLine, blueLineSpeed, blueBox);
-        //moveLine(blueLine, blueLineSpeed, bluePowerBox); // check both blue boxes
+        Text skillDetail = new Text(
+                skill.getName() + "\n" +
+                        "Damage: " + (int)(attacker.getCharacter().getAtk() * skill.getAtkScale()) + "\n" +
+                        "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())
+        );
+        skillDetail.setFont(new Font(14));
+        skillDetail.setFill(Color.WHITE);
+        skillDetail.setVisible(false);
+        skillDetail.setTranslateX(x + 40); // offset to the right
+        skillDetail.setTranslateY(y);
+
+        getGameScene().addUINode(skillDetail);
+
+        // Show / hide when hovering
+        box.setOnMouseEntered(e -> skillDetail.setVisible(true));
+        box.setOnMouseExited(e -> skillDetail.setVisible(false));
+
+        // On click -> use skill
+        box.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY && !moving) {
+                useSkill(attacker, target, skill);
+                moving = true;
+            }
+        });
+
+        getGameScene().addUINode(box);
+        return box;
+    }
+
+
+    private void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
+        if(attacker.getLine()!=turnOf) {
+            return;
+        }
+        // Damage target
+        double dmg = attacker.getCharacter().getAtk() * skill.getAtkScale();
+        applyDamage(target, dmg);
+
+        // Push line back (if attacker is hero)
+        if (attacker == heroSlot) {
+            double push = attacker.getCharacter().getAV() * skill.getAVScale();
+            double newX = Math.min(barX + barWidth, blueLine.getStartX() + push);
+            blueLine.setStartX(newX);
+            blueLine.setEndX(newX);
+        }else if (attacker == enemySlot) {
+            // Enemy pushes red line
+            double push = attacker.getCharacter().getAV() * skill.getAVScale();
+            double newX = Math.min(barX + barWidth, redLine.getStartX() + push);
+            redLine.setStartX(newX);
+            redLine.setEndX(newX);
+        }
+    }
+    //Enemy random atk
+    private void enemyTurn() {
+        Random random = new Random();
+
+        // Pick a random skill
+        Ability.skill chosenSkill = enemySlot.getSkills()
+                .get(random.nextInt(enemySlot.getSkills().size()));
+
+        // Enemy uses skill on hero
+        if(chosenSkill.getAtkScale()<0){
+            useSkill(enemySlot, enemySlot, chosenSkill);
+        }else {
+            useSkill(enemySlot, heroSlot, chosenSkill);
+        }
+        // Resume line movement
+        moving = true;
+    }
+
+
+    private void updateLines() {
+        if (!moving) {
+            return;
+        }
+
+        moveLine(blueLine, blueLineSpeed, null);
         moveLine(redLine, lineSpeed, redBox);
     }
 
     private void moveLine(Line line, double speed, Rectangle box) {
-        if (box.getFill() == Color.GREEN) return; // skip if already green
-
         double newX = line.getStartX() - speed;
 
         if (newX <= barX) {
+            turnOf = line;
             moving = false;
-            box.setFill(Color.GREEN);
-            if(box.equals(blueBox)) {
-                bluePowerBox.setFill(Color.GREEN);
+            if(autoEnemy) {
+                // === Enemy turn check ===
+                if (box != null) box.setFill(Color.GREEN);
+                if (line == redLine) {
+                    runOnce(() -> enemyTurn(), Duration.seconds(0.25)); // small delay for effect
+                }
             }
             return;
         }
@@ -219,42 +293,20 @@ public class testing extends GameApplication {
         line.setEndX(newX);
     }
 
-    private void resetLine(Line line, Color lineColor, Rectangle box, boolean isPower) {
-        if (!moving && box.getFill() == Color.GREEN) {
-            if(box.equals(bluePowerBox)) {
-                line.setStartX(barX + barWidth / 1.0);
-                line.setEndX(barX + barWidth / 1.0);
-            }else {
-                line.setStartX(barX + barWidth / 2.0);
-                line.setEndX(barX + barWidth / 2.0);
-            }
-            box.setFill(lineColor);
-            if(box.equals(blueBox)||box.equals(bluePowerBox)) {
-                bluePowerBox.setFill(lineColor);
-                blueBox.setFill(lineColor);
-            }
-
-            if (!(blueBox.getFill() == Color.GREEN ||
-                    bluePowerBox.getFill() == Color.GREEN ||
-                    redBox.getFill() == Color.GREEN)) {
-                moving = true;
-
-            }
+    private void applyDamage(Observer.characterSlot slot, double amount) {
+        slot.setCurrentHp((float)Math.max(0, slot.getCurrentHp() - amount));
+        if(slot.getCurrentHp()>slot.getCharacter().getHp()) {
+            slot.setCurrentHp(slot.getCharacter().getHp());
         }
-    }
+        double ratio = slot.getCurrentHp() / slot.getCharacter().getHp();
 
-    private void damageBlue(double amount) {
-        blueHP = Math.max(0, blueHP - amount);
-        double ratio = blueHP / blueMaxHP;
-        blueHealthBar.setWidth(healthBarWidth * ratio);
-        blueHPText.setText("HP: " + (int) blueHP + " / " + (int) blueMaxHP);
-    }
-
-    private void damageRed(double amount) {
-        redHP = Math.max(0, redHP - amount);
-        double ratio = redHP / redMaxHP;
-        redHealthBar.setWidth(healthBarWidth * ratio);
-        redHPText.setText("HP: " + (int) redHP + " / " + (int) redMaxHP);
+        if (slot == heroSlot) {
+            blueHealthBar.setWidth(healthBarWidth * ratio);
+            blueHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        } else if (slot == enemySlot) {
+            redHealthBar.setWidth(healthBarWidth * ratio);
+            redHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        }
     }
 
     public static void main(String[] args) {

@@ -52,8 +52,8 @@ public class testing extends GameApplication {
         blueLine = new Line();
         blueLine.setStroke(Color.BLUE);
         blueLine.setStrokeWidth(3);
-        blueLine.setStartX(barX + barWidth);
-        blueLine.setEndX(barX + barWidth);
+        blueLine.setStartX(barX + barWidth/3);
+        blueLine.setEndX(barX + barWidth/3);
         blueLine.setStartY(barY);
         blueLine.setEndY(barY + barHeight);
 
@@ -75,7 +75,7 @@ public class testing extends GameApplication {
 
     private void updateLines() {
         moveLine(blueLine, 0.5);
-        moveLine(redLine, 0.3);
+        moveLine(redLine, 0.5);
     }
 
     private void moveLine(Line line, double speed) {
