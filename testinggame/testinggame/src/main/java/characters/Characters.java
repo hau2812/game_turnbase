@@ -101,17 +101,29 @@ public interface Characters {
             Characters.character hero = new Characters.character(
                     1,
                     "Hero",
-                    50,  // atk
+                    500,  // atk
                     30,  // matk
                     20,  // def
                     10,  // res
                     15,  // spd
-                    200, // hp
-                    50,  // mp
+                    2000, // hp
+                    500,  // mp
+                    new ArrayList<>()
+            );
+            Characters.character hero2 = new Characters.character(
+                    4,
+                    "Hero2",
+                    480,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    14,   // spd
+                    1800, // hp
+                    150,   // mp
                     new ArrayList<>()
             );
             Characters.character enemy = new Characters.character(
-                    1,
+                    2,
                     "Enemy",
                     50,  // atk
                     30,  // matk
@@ -123,11 +135,26 @@ public interface Characters {
                     new ArrayList<>()
             );
 
+            Characters.character enemy2 = new Characters.character(
+                    3,
+                    "Enemy2",
+                    50,  // atk
+                    30,  // matk
+                    20,  // def
+                    10,  // res
+                    15,  // spd
+                    2000, // hp
+                    50,  // mp
+                    new ArrayList<>()
+            );
+            
 
 
             // Register the character
             registry.put(hero.getName(), hero);
+            registry.put(hero2.getName(), hero2);
             registry.put(enemy.getName(), enemy);
+            registry.put(enemy2.getName(), enemy2);
         }
     }
 }

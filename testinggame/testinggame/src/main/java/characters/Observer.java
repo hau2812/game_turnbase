@@ -72,7 +72,7 @@ public interface Observer {
             Ability.SkillRegistry.init();
             Characters.CharacterRegistry.init();
 
-            //Hero
+            //Hero 1
             // Get the Hero character
             Characters.character hero = Characters.CharacterRegistry.getByName("Hero");
 
@@ -90,6 +90,22 @@ public interface Observer {
                     heroSkills,
                     hero.getHp(),       // start with full HP
                     hero.getMp()        // start with full MP
+            );
+
+            //Hero 2
+            Characters.character hero2 = Characters.CharacterRegistry.getByName("Hero2");
+            ArrayList<Ability.skill> hero2Skills = new ArrayList<>();
+            hero2Skills.add(Ability.SkillRegistry.getByName("Slash"));
+            hero2Skills.add(Ability.SkillRegistry.getByName("Fireball"));
+            hero2Skills.add(Ability.SkillRegistry.getByName("heavy attack"));
+
+            characterSlot hero2Slot = new characterSlot(
+                    4,
+                    hero2,
+                    hero2,
+                    hero2Skills,
+                    hero2.getHp(),
+                    hero2.getMp()
             );
 
             //Enemy
@@ -114,7 +130,36 @@ public interface Observer {
 
             // Register the slot
             registry.put(hero.getName(), heroSlot);
+            registry.put(hero2.getName(), hero2Slot);
             registry.put(enemy.getName(), enemySlot);
+
+
+
+             //Enemy
+            // Get the Enemy character
+            Characters.character enemy2 = Characters.CharacterRegistry.getByName("Enemy2");
+            // Create empty skills list
+            ArrayList<Ability.skill> enemySkills2 = new ArrayList<>();
+            enemySkills2.add(Ability.SkillRegistry.getByName("Slash"));
+            enemySkills2.add(Ability.SkillRegistry.getByName("Fireball"));
+            enemySkills2.add(Ability.SkillRegistry.getByName("Heal"));
+
+            // Create a slot for Hero
+            characterSlot enemySlot2 = new characterSlot(
+                    3,
+                    enemy2,
+                    enemy2,               // no transformed version yet
+                    enemySkills2,
+                    enemy2.getHp(),       // start with full HP
+                    enemy2.getMp()        // start with full MP
+            );
+
+
+            // Register the slot
+            registry.put(hero.getName(), heroSlot);
+            registry.put(hero2.getName(), hero2Slot);
+            registry.put(enemy.getName(), enemySlot);
+            registry.put(enemy2.getName(), enemySlot2);
 
         }
     }

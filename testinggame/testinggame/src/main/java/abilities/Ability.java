@@ -138,7 +138,10 @@ public interface Ability {
                     "Physical",
                     "Single Enemy",
                     1.0f,
-                    1.0f
+                    1.0f,
+                    -50,
+                    0
+
             ));
 
             register(new Ability.skill(
@@ -159,6 +162,17 @@ public interface Ability {
                     "Ally",
                     -1.5f,
                     1.0f
+            ));
+            register(new Ability.skill(
+                    4,
+                    "heavy attack",
+                    "a heavy attack that deals a lot of damage.",
+                    "Physical",
+                    "Single Enemy",
+                    2.0f,
+                    1.0f,
+                    100,
+                    0
             ));
         }
     }
