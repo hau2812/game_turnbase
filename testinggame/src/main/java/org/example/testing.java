@@ -25,6 +25,10 @@ import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class testing extends GameApplication {
 
+    // Configuration for which characters to include
+    private static final boolean INCLUDE_HERO2 = false;  // Set to false for 1 hero
+    private static final boolean INCLUDE_ENEMY2 = false; // Set to false for 1 enemy
+
     private Line blueLine;
     private Line greenLine;
 	private Line redLine;
@@ -104,9 +108,11 @@ public class testing extends GameApplication {
         if (hero == heroSlot) {
             blueMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
             blueMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
-        } else if (hero == heroSlot2) {
-            greenMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
-            greenMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
+        } else if (hero == heroSlot2 && heroSlot2 != null) {
+            if (greenMpBar != null && greenMPText != null) {
+                greenMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
+                greenMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
+            }
         }
     }
 
@@ -160,6 +166,11 @@ public class testing extends GameApplication {
     @Override
     protected void initGame() {
         getGameScene().setBackgroundColor(Color.LIGHTGRAY);
+        
+        // Configure which characters to create
+        //Observer.CharacterSlotRegistry.createHero2 = INCLUDE_HERO2;
+        //Observer.CharacterSlotRegistry.createEnemy2 = INCLUDE_ENEMY2;
+        
         // Init registry
         Observer.CharacterSlotRegistry.init();
 
@@ -176,13 +187,13 @@ public class testing extends GameApplication {
         // --- Health values ---
         double blueHP = heroSlot.getCurrentHp();
         double blueMaxHP = heroSlot.getCharacter().getHp();
-        double greenHP = heroSlot2.getCurrentHp();
-        double greenMaxHP = heroSlot2.getCharacter().getHp();
+        double greenHP = heroSlot2 != null ? heroSlot2.getCurrentHp() : 0;
+        double greenMaxHP = heroSlot2 != null ? heroSlot2.getCharacter().getHp() : 0;
 
 		double redHP = enemySlot.getCurrentHp();
 		double redMaxHP = enemySlot.getCharacter().getHp();
-		double red2HP = enemySlot2.getCurrentHp();
-		double red2MaxHP = enemySlot2.getCharacter().getHp();
+		double red2HP = enemySlot2 != null ? enemySlot2.getCurrentHp() : 0;
+		double red2MaxHP = enemySlot2 != null ? enemySlot2.getCharacter().getHp() : 0;
 
         // Background black bar
         Rectangle blackBar = new Rectangle(barWidth, barHeight, Color.BLACK);
@@ -199,14 +210,16 @@ public class testing extends GameApplication {
         blueLine.setStartY(barY);
         blueLine.setEndY(barY + barHeight);
 
-        // Green line (Hero 2)
-        greenLine = new Line();
-        greenLine.setStroke(Color.LIMEGREEN);
-        greenLine.setStrokeWidth(3);
-        greenLine.setStartX(barX + barWidth / 1.9);
-        greenLine.setEndX(barX + barWidth / 1.9);
-        greenLine.setStartY(barY);
-        greenLine.setEndY(barY + barHeight);
+        // Green line (Hero 2) - conditional
+        if (heroSlot2 != null) {
+            greenLine = new Line();
+            greenLine.setStroke(Color.LIMEGREEN);
+            greenLine.setStrokeWidth(3);
+            greenLine.setStartX(barX + barWidth / 1.9);
+            greenLine.setEndX(barX + barWidth / 1.9);
+            greenLine.setStartY(barY);
+            greenLine.setEndY(barY + barHeight);
+        }
 
 		// Red line (Enemy 1)
         redLine = new Line();
@@ -217,24 +230,34 @@ public class testing extends GameApplication {
         redLine.setStartY(barY);
         redLine.setEndY(barY + barHeight);
 
-		// Yellow line (Enemy 2)
-		yellowLine = new Line();
-		yellowLine.setStroke(Color.YELLOW);
-		yellowLine.setStrokeWidth(3);
-		yellowLine.setStartX(barX + barWidth/1.33);
-		yellowLine.setEndX(barX + barWidth/1.33);
-		yellowLine.setStartY(barY);
-		yellowLine.setEndY(barY + barHeight);
+		// Yellow line (Enemy 2) - conditional
+		if (enemySlot2 != null) {
+			yellowLine = new Line();
+			yellowLine.setStroke(Color.YELLOW);
+			yellowLine.setStrokeWidth(3);
+			yellowLine.setStartX(barX + barWidth/1.33);
+			yellowLine.setEndX(barX + barWidth/1.33);
+			yellowLine.setStartY(barY);
+			yellowLine.setEndY(barY + barHeight);
+		}
 
         getGameScene().addUINode(blueLine);
-        getGameScene().addUINode(greenLine);
+        if (greenLine != null) {
+            getGameScene().addUINode(greenLine);
+        }
 		getGameScene().addUINode(redLine);
-		getGameScene().addUINode(yellowLine);
+		if (yellowLine != null) {
+			getGameScene().addUINode(yellowLine);
+		}
 
         heroSlot.setLine(blueLine);
-        heroSlot2.setLine(greenLine);
+        if (heroSlot2 != null) {
+            heroSlot2.setLine(greenLine);
+        }
 		enemySlot.setLine(redLine);
-		enemySlot2.setLine(yellowLine);
+		if (enemySlot2 != null) {
+			enemySlot2.setLine(yellowLine);
+		}
         // Enemy red box
 //        redBox = new Rectangle(30, 30, Color.RED);
 //        redBox.setTranslateX(500);
@@ -263,11 +286,13 @@ public class testing extends GameApplication {
         blueHealthBorder.setTranslateX(blueHealthX);
         blueHealthBorder.setTranslateY(blueHealthY);
 
-        greenHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-        greenHealthBorder.setStroke(Color.BLACK);
-        greenHealthBorder.setStrokeWidth(2);
-        greenHealthBorder.setTranslateX(greenHealthX);
-        greenHealthBorder.setTranslateY(greenHealthY);
+        if (heroSlot2 != null) {
+            greenHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
+            greenHealthBorder.setStroke(Color.BLACK);
+            greenHealthBorder.setStrokeWidth(2);
+            greenHealthBorder.setTranslateX(greenHealthX);
+            greenHealthBorder.setTranslateY(greenHealthY);
+        }
 
         blueMpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
         blueMpBorder.setStroke(Color.BLACK);
@@ -275,11 +300,13 @@ public class testing extends GameApplication {
         blueMpBorder.setTranslateX(blueMpX);
         blueMpBorder.setTranslateY(blueMpY);
 
-        greenMpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
-        greenMpBorder.setStroke(Color.BLACK);
-        greenMpBorder.setStrokeWidth(1);
-        greenMpBorder.setTranslateX(greenMpX);
-        greenMpBorder.setTranslateY(greenMpY);
+        if (heroSlot2 != null) {
+            greenMpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
+            greenMpBorder.setStroke(Color.BLACK);
+            greenMpBorder.setStrokeWidth(1);
+            greenMpBorder.setTranslateX(greenMpX);
+            greenMpBorder.setTranslateY(greenMpY);
+        }
 
 		redHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
         redHealthBorder.setStroke(Color.BLACK);
@@ -287,36 +314,44 @@ public class testing extends GameApplication {
         redHealthBorder.setTranslateX(redHealthX);
         redHealthBorder.setTranslateY(redHealthY);
 
-		red2HealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-		red2HealthBorder.setStroke(Color.BLACK);
-		red2HealthBorder.setStrokeWidth(2);
-		red2HealthBorder.setTranslateX(red2HealthX);
-		red2HealthBorder.setTranslateY(red2HealthY);
+		if (enemySlot2 != null) {
+			red2HealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
+			red2HealthBorder.setStroke(Color.BLACK);
+			red2HealthBorder.setStrokeWidth(2);
+			red2HealthBorder.setTranslateX(red2HealthX);
+			red2HealthBorder.setTranslateY(red2HealthY);
+		}
 
         // Health bars
         blueHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.BLUE);
         blueHealthBar.setTranslateX(blueHealthX);
         blueHealthBar.setTranslateY(blueHealthY);
 
-        greenHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.LIMEGREEN);
-        greenHealthBar.setTranslateX(greenHealthX);
-        greenHealthBar.setTranslateY(greenHealthY);
+        if (heroSlot2 != null) {
+            greenHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.LIMEGREEN);
+            greenHealthBar.setTranslateX(greenHealthX);
+            greenHealthBar.setTranslateY(greenHealthY);
+        }
 
         blueMpBar = new Rectangle(healthBarWidth, 10, Color.DODGERBLUE);
         blueMpBar.setTranslateX(blueMpX);
         blueMpBar.setTranslateY(blueMpY);
 
-        greenMpBar = new Rectangle(healthBarWidth, 10, Color.MEDIUMSEAGREEN);
-        greenMpBar.setTranslateX(greenMpX);
-        greenMpBar.setTranslateY(greenMpY);
+        if (heroSlot2 != null) {
+            greenMpBar = new Rectangle(healthBarWidth, 10, Color.MEDIUMSEAGREEN);
+            greenMpBar.setTranslateX(greenMpX);
+            greenMpBar.setTranslateY(greenMpY);
+        }
 
 		redHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.RED);
         redHealthBar.setTranslateX(redHealthX);
         redHealthBar.setTranslateY(redHealthY);
 
-		red2HealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.CRIMSON);
-		red2HealthBar.setTranslateX(red2HealthX);
-		red2HealthBar.setTranslateY(red2HealthY);
+		if (enemySlot2 != null) {
+			red2HealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.CRIMSON);
+			red2HealthBar.setTranslateX(red2HealthX);
+			red2HealthBar.setTranslateY(red2HealthY);
+		}
 
         // HP text
         blueHPText = new Text("HP: " + (int) blueHP + " / " + (int) blueMaxHP);
@@ -325,11 +360,13 @@ public class testing extends GameApplication {
         blueHPText.setTranslateX(blueHealthBorder.getTranslateX() + 4);
         blueHPText.setTranslateY(blueHealthBorder.getTranslateY() + healthBarHeight - 5);
 
-        greenHPText = new Text("HP: " + (int) greenHP + " / " + (int) greenMaxHP);
-        greenHPText.setFont(new Font(16));
-        greenHPText.setFill(Color.WHITE);
-        greenHPText.setTranslateX(greenHealthBorder.getTranslateX() + 4);
-        greenHPText.setTranslateY(greenHealthBorder.getTranslateY() + healthBarHeight - 5);
+        if (heroSlot2 != null) {
+            greenHPText = new Text("HP: " + (int) greenHP + " / " + (int) greenMaxHP);
+            greenHPText.setFont(new Font(16));
+            greenHPText.setFill(Color.WHITE);
+            greenHPText.setTranslateX(greenHealthBorder.getTranslateX() + 4);
+            greenHPText.setTranslateY(greenHealthBorder.getTranslateY() + healthBarHeight - 5);
+        }
 
         blueMPText = new Text("MP: " + (int) heroSlot.getCurrentMp() + " / " + (int) heroSlot.getCharacter().getMp());
         blueMPText.setFont(new Font(12));
@@ -337,11 +374,13 @@ public class testing extends GameApplication {
         blueMPText.setTranslateX(blueMpBorder.getTranslateX() + 4);
         blueMPText.setTranslateY(blueMpBorder.getTranslateY() + 8);
 
-        greenMPText = new Text("MP: " + (int) heroSlot2.getCurrentMp() + " / " + (int) heroSlot2.getCharacter().getMp());
-        greenMPText.setFont(new Font(12));
-        greenMPText.setFill(Color.WHITE);
-        greenMPText.setTranslateX(greenMpBorder.getTranslateX() + 4);
-        greenMPText.setTranslateY(greenMpBorder.getTranslateY() + 8);
+        if (heroSlot2 != null) {
+            greenMPText = new Text("MP: " + (int) heroSlot2.getCurrentMp() + " / " + (int) heroSlot2.getCharacter().getMp());
+            greenMPText.setFont(new Font(12));
+            greenMPText.setFill(Color.WHITE);
+            greenMPText.setTranslateX(greenMpBorder.getTranslateX() + 4);
+            greenMPText.setTranslateY(greenMpBorder.getTranslateY() + 8);
+        }
 
         redHPText = new Text("HP: " + (int) redHP + " / " + (int) redMaxHP);
         redHPText.setFont(new Font(16));
@@ -349,45 +388,73 @@ public class testing extends GameApplication {
         redHPText.setTranslateX(redHealthBorder.getTranslateX() + 4);
         redHPText.setTranslateY(redHealthBorder.getTranslateY() + healthBarHeight - 5);
 
-        red2HPText = new Text("HP: " + (int) red2HP + " / " + (int) red2MaxHP);
-        red2HPText.setFont(new Font(16));
-        red2HPText.setFill(Color.BLACK);
-        red2HPText.setTranslateX(red2HealthBorder.getTranslateX() + 4);
-        red2HPText.setTranslateY(red2HealthBorder.getTranslateY() + healthBarHeight - 5);
+        if (enemySlot2 != null) {
+            red2HPText = new Text("HP: " + (int) red2HP + " / " + (int) red2MaxHP);
+            red2HPText.setFont(new Font(16));
+            red2HPText.setFill(Color.BLACK);
+            red2HPText.setTranslateX(red2HealthBorder.getTranslateX() + 4);
+            red2HPText.setTranslateY(red2HealthBorder.getTranslateY() + healthBarHeight - 5);
+        }
 
         // Add UI
         getGameScene().addUINode(blueHealthBorder);
         getGameScene().addUINode(blueHealthBar);
-        getGameScene().addUINode(greenHealthBorder);
-        getGameScene().addUINode(greenHealthBar);
+        if (greenHealthBorder != null) {
+            getGameScene().addUINode(greenHealthBorder);
+        }
+        if (greenHealthBar != null) {
+            getGameScene().addUINode(greenHealthBar);
+        }
         getGameScene().addUINode(blueMpBorder);
         getGameScene().addUINode(blueMpBar);
-        getGameScene().addUINode(greenMpBorder);
-        getGameScene().addUINode(greenMpBar);
+        if (greenMpBorder != null) {
+            getGameScene().addUINode(greenMpBorder);
+        }
+        if (greenMpBar != null) {
+            getGameScene().addUINode(greenMpBar);
+        }
 		getGameScene().addUINode(redHealthBorder);
 		getGameScene().addUINode(redHealthBar);
-		getGameScene().addUINode(red2HealthBorder);
-		getGameScene().addUINode(red2HealthBar);
+		if (red2HealthBorder != null) {
+			getGameScene().addUINode(red2HealthBorder);
+		}
+		if (red2HealthBar != null) {
+			getGameScene().addUINode(red2HealthBar);
+		}
         getGameScene().addUINode(blueHPText);
-        getGameScene().addUINode(greenHPText);
+        if (greenHPText != null) {
+            getGameScene().addUINode(greenHPText);
+        }
         getGameScene().addUINode(blueMPText);
-        getGameScene().addUINode(greenMPText);
+        if (greenMPText != null) {
+            getGameScene().addUINode(greenMPText);
+        }
 		getGameScene().addUINode(redHPText);
-		getGameScene().addUINode(red2HPText);
+		if (red2HPText != null) {
+			getGameScene().addUINode(red2HPText);
+		}
 
 		// Target selection on click
 		Runnable highlightSelection = () -> {
 			redHealthBorder.setStroke(selectedTarget == enemySlot ? Color.GOLD : Color.BLACK);
 			redHealthBorder.setStrokeWidth(selectedTarget == enemySlot ? 3 : 2);
-			red2HealthBorder.setStroke(selectedTarget == enemySlot2 ? Color.GOLD : Color.BLACK);
-			red2HealthBorder.setStrokeWidth(selectedTarget == enemySlot2 ? 3 : 2);
+			if (red2HealthBorder != null) {
+				red2HealthBorder.setStroke(selectedTarget == enemySlot2 ? Color.GOLD : Color.BLACK);
+				red2HealthBorder.setStrokeWidth(selectedTarget == enemySlot2 ? 3 : 2);
+			}
 		};
 		redHealthBar.setOnMouseClicked(e -> { selectedTarget = enemySlot; highlightSelection.run(); });
 		redHealthBorder.setOnMouseClicked(e -> { selectedTarget = enemySlot; highlightSelection.run(); });
 		redHPText.setOnMouseClicked(e -> { selectedTarget = enemySlot; highlightSelection.run(); });
-		red2HealthBar.setOnMouseClicked(e -> { selectedTarget = enemySlot2; highlightSelection.run(); });
-		red2HealthBorder.setOnMouseClicked(e -> { selectedTarget = enemySlot2; highlightSelection.run(); });
-		red2HPText.setOnMouseClicked(e -> { selectedTarget = enemySlot2; highlightSelection.run(); });
+		if (red2HealthBar != null) {
+			red2HealthBar.setOnMouseClicked(e -> { selectedTarget = enemySlot2; highlightSelection.run(); });
+		}
+		if (red2HealthBorder != null) {
+			red2HealthBorder.setOnMouseClicked(e -> { selectedTarget = enemySlot2; highlightSelection.run(); });
+		}
+		if (red2HPText != null) {
+			red2HPText.setOnMouseClicked(e -> { selectedTarget = enemySlot2; highlightSelection.run(); });
+		}
 		highlightSelection.run();
 
         // --- Hero Skills (initially for Hero 1) ---
@@ -655,14 +722,17 @@ public class testing extends GameApplication {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
         } else {
             boolean hero1Alive = heroSlot.getCurrentHp() > 0;
-            boolean hero2Alive = heroSlot2.getCurrentHp() > 0;
+            boolean hero2Alive = heroSlot2 != null && heroSlot2.getCurrentHp() > 0;
             Observer.characterSlot targetHero;
             if (hero1Alive && hero2Alive) {
                 targetHero = random.nextBoolean() ? heroSlot : heroSlot2;
             } else if (hero1Alive) {
                 targetHero = heroSlot;
-            } else {
+            } else if (hero2Alive) {
                 targetHero = heroSlot2;
+            } else {
+                // No heroes alive, shouldn't happen but handle gracefully
+                return;
             }
             useSkill(actingEnemy, targetHero, chosenSkill);
         }
@@ -679,10 +749,12 @@ public class testing extends GameApplication {
         if (redLine != null && enemySlot.getCurrentHp() > 0) {
             moveLine(redLine, redLineSpeed, null);
         }
-        if (yellowLine != null && enemySlot2.getCurrentHp() > 0) {
+        if (yellowLine != null && enemySlot2 != null && enemySlot2.getCurrentHp() > 0) {
             moveLine(yellowLine, yellowLineSpeed, null);
         }
-        moveLine(greenLine, greenLineSpeed, null);
+        if (greenLine != null && heroSlot2 != null) {
+            moveLine(greenLine, greenLineSpeed, null);
+        }
     }
 
 	private void moveLine(Line line, double speed, Rectangle box) {
@@ -699,10 +771,12 @@ public class testing extends GameApplication {
 				// Enemy 2 turn
                 else if (line == yellowLine && enemySlot2.getCurrentHp() > 0) {
 					runOnce(() -> enemyTurn(enemySlot2), Duration.seconds(0.25));
-                } else if (line == blueLine || line == greenLine) {
+                } else if (line == blueLine || (line == greenLine && heroSlot2 != null)) {
                     // When a hero's line reaches, render that hero's skills
                     currentActingHero = (line == blueLine) ? heroSlot : heroSlot2;
-                    renderHeroSkillsFor(currentActingHero);
+                    if (currentActingHero != null) {
+                        renderHeroSkillsFor(currentActingHero);
+                    }
 				}
 			}
             return;
@@ -722,9 +796,11 @@ public class testing extends GameApplication {
         if (slot == heroSlot) {
             blueHealthBar.setWidth(healthBarWidth * ratio);
             blueHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
-        } else if (slot == heroSlot2) {
-            greenHealthBar.setWidth(healthBarWidth * ratio);
-            greenHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        } else if (slot == heroSlot2 && heroSlot2 != null) {
+            if (greenHealthBar != null && greenHPText != null) {
+                greenHealthBar.setWidth(healthBarWidth * ratio);
+                greenHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+            }
         } else if (slot == enemySlot) {
             redHealthBar.setWidth(healthBarWidth * ratio);
             redHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
@@ -732,9 +808,11 @@ public class testing extends GameApplication {
                 getGameScene().removeUINode(redLine);
                 redLine = null;
             }
-		} else if (slot == enemySlot2) {
-			red2HealthBar.setWidth(healthBarWidth * ratio);
-			red2HPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+		} else if (slot == enemySlot2 && enemySlot2 != null) {
+			if (red2HealthBar != null && red2HPText != null) {
+				red2HealthBar.setWidth(healthBarWidth * ratio);
+				red2HPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+			}
             if (slot.getCurrentHp() <= 0 && yellowLine != null) {
                 getGameScene().removeUINode(yellowLine);
                 yellowLine = null;
