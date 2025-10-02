@@ -6,6 +6,7 @@ import characters.Observer;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -15,6 +16,8 @@ import javafx.util.Duration;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import map.GameMap;
+import map.MapUI;
 
 import java.util.Random;
 
@@ -83,6 +86,11 @@ public class testing extends GameApplication {
 
     //AI?
     private boolean autoEnemy=true;
+    
+    // Map system
+    private GameMap gameMap;
+    private MapUI mapUI;
+    private boolean inMapMode = false;
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setWidth(800);
@@ -391,8 +399,139 @@ public class testing extends GameApplication {
 //        Rectangle enemySkill2 = createSkillBox(enemySlot, enemySlot.getSkills().get(1), 600, 500, Color.PINK, heroSlot);
 //        Rectangle enemySkill3 = createSkillBox(enemySlot, enemySlot.getSkills().get(2), 650, 500, Color.PINK, enemySlot);
 
+        // Initialize Map System
+        gameMap = new GameMap();
+        mapUI = new MapUI(gameMap);
+
+        // Add instruction text
+        Text instructionText = new Text("Nhấn M để mở Map - Chọn đường đi của bạn!");
+        instructionText.setFont(new Font(14));
+        instructionText.setFill(Color.DARKBLUE);
+        instructionText.setTranslateX(250);
+        instructionText.setTranslateY(580);
+        getGameScene().addUINode(instructionText);
+
         // Move lines every frame
 		run(() -> updateLines(), Duration.millis(5));
+    }
+
+    @Override
+    protected void initInput() {
+        // Toggle between combat and map mode with M key
+        onKeyDown(KeyCode.M, () -> {
+            toggleMapMode();
+
+        });
+        
+        // ESC to exit map mode
+        onKeyDown(KeyCode.N, () -> {
+            if (inMapMode||true) {
+                exitMapMode();
+            }
+        });
+    }
+
+    private void toggleMapMode() {
+        if (inMapMode) {
+            exitMapMode();
+        } else {
+            enterMapMode();
+        }
+    }
+
+    private void enterMapMode() {
+        inMapMode = true;
+        moving = false; // Pause combat
+        
+        // Hide combat UI elements temporarily
+        hideAllCombatUI();
+        
+        // Show map UI
+        mapUI.showPathSelection();
+    }
+
+    private void exitMapMode() {
+        inMapMode = false;
+        
+        // Hide map UI
+        mapUI.hide();
+        
+        // Show combat UI elements again
+        showAllCombatUI();
+        
+        moving = true; // Resume combat
+    }
+
+    private void hideAllCombatUI() {
+        // Hide health bars and related UI
+        if (blueHealthBorder != null) blueHealthBorder.setVisible(false);
+        if (blueHealthBar != null) blueHealthBar.setVisible(false);
+        if (greenHealthBorder != null) greenHealthBorder.setVisible(false);
+        if (greenHealthBar != null) greenHealthBar.setVisible(false);
+        if (redHealthBorder != null) redHealthBorder.setVisible(false);
+        if (redHealthBar != null) redHealthBar.setVisible(false);
+        if (red2HealthBorder != null) red2HealthBorder.setVisible(false);
+        if (red2HealthBar != null) red2HealthBar.setVisible(false);
+        
+        if (blueMpBorder != null) blueMpBorder.setVisible(false);
+        if (blueMpBar != null) blueMpBar.setVisible(false);
+        if (greenMpBorder != null) greenMpBorder.setVisible(false);
+        if (greenMpBar != null) greenMpBar.setVisible(false);
+        
+        // Hide text
+        if (blueHPText != null) blueHPText.setVisible(false);
+        if (greenHPText != null) greenHPText.setVisible(false);
+        if (redHPText != null) redHPText.setVisible(false);
+        if (red2HPText != null) red2HPText.setVisible(false);
+        if (blueMPText != null) blueMPText.setVisible(false);
+        if (greenMPText != null) greenMPText.setVisible(false);
+        
+        // Hide lines
+        if (blueLine != null) blueLine.setVisible(false);
+        if (greenLine != null) greenLine.setVisible(false);
+        if (redLine != null) redLine.setVisible(false);
+        if (yellowLine != null) yellowLine.setVisible(false);
+        
+        // Hide skill boxes
+        if (skill1Box != null) skill1Box.setVisible(false);
+        if (skill2Box != null) skill2Box.setVisible(false);
+        if (skill3Box != null) skill3Box.setVisible(false);
+    }
+
+    private void showAllCombatUI() {
+        // Show health bars and related UI
+        if (blueHealthBorder != null) blueHealthBorder.setVisible(true);
+        if (blueHealthBar != null) blueHealthBar.setVisible(true);
+        if (greenHealthBorder != null) greenHealthBorder.setVisible(true);
+        if (greenHealthBar != null) greenHealthBar.setVisible(true);
+        if (redHealthBorder != null) redHealthBorder.setVisible(true);
+        if (redHealthBar != null) redHealthBar.setVisible(true);
+        if (red2HealthBorder != null) red2HealthBorder.setVisible(true);
+        if (red2HealthBar != null) red2HealthBar.setVisible(true);
+        
+        if (blueMpBorder != null) blueMpBorder.setVisible(true);
+        if (blueMpBar != null) blueMpBar.setVisible(true);
+        if (greenMpBorder != null) greenMpBorder.setVisible(true);
+        if (greenMpBar != null) greenMpBar.setVisible(true);
+        
+        // Show text
+        if (blueHPText != null) blueHPText.setVisible(true);
+        if (greenHPText != null) greenHPText.setVisible(true);
+        if (redHPText != null) redHPText.setVisible(true);
+        if (red2HPText != null) red2HPText.setVisible(true);
+        if (blueMPText != null) blueMPText.setVisible(true);
+        if (greenMPText != null) greenMPText.setVisible(true);
+        
+        // Show lines
+        if (blueLine != null) blueLine.setVisible(true);
+        if (greenLine != null) greenLine.setVisible(true);
+        if (redLine != null) redLine.setVisible(true);
+        if (yellowLine != null) yellowLine.setVisible(true);
+        
+        // Show skill boxes
+        if (skill1Box != null) skill1Box.setVisible(true);
+        if (skill2Box != null) skill2Box.setVisible(true);
+        if (skill3Box != null) skill3Box.setVisible(true);
     }
 
 	private Rectangle createSkillBox(Observer.characterSlot attacker, Ability.skill skill,

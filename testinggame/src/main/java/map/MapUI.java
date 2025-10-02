@@ -1,0 +1,432 @@
+package map;
+
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import com.almasb.fxgl.dsl.FXGL;
+import characters.Observer;
+import event.MapEvent;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MapUI {
+    private GameMap gameMap;
+    private List<Rectangle> pathButtons;
+    private List<Text> pathTexts;
+    private List<Circle> nodeCircles;
+    private List<Line> pathLines;
+    private boolean pathSelected;
+    private Rectangle mapBackground;
+    private List<Text> nodeLabels;
+
+
+    public MapUI(GameMap gameMap) {
+        this.gameMap = gameMap;
+        this.pathButtons = new ArrayList<>();
+        this.pathTexts = new ArrayList<>();
+        this.nodeCircles = new ArrayList<>();
+        this.pathLines = new ArrayList<>();
+        this.nodeLabels = new ArrayList<>();
+        this.pathSelected = false;
+
+    }
+
+    public void showPathSelection() {
+        clearUI();
+        createPathSelectionUI();
+    }
+
+    public void showSelectedPath() {
+        if (gameMap.getSelectedPath() != null) {
+            clearUI();
+            createPathUI();
+            pathSelected = true;
+        }
+    }
+    private Text title2;
+
+    private void createPathSelectionUI() {
+        // Background
+        mapBackground = new Rectangle(800, 600, Color.LIGHTBLUE);
+        mapBackground.setTranslateX(0);
+        mapBackground.setTranslateY(0);
+        FXGL.getGameScene().addUINode(mapBackground);
+
+        // Title
+        title2 = new Text("Chọn đường đi của bạn");
+        title2.setFont(new Font(24));
+        title2.setFill(Color.DARKBLUE);
+        title2.setTranslateX(300);
+        title2.setTranslateY(50);
+        FXGL.getGameScene().addUINode(title2);
+
+
+        // Path selection buttons
+        List<MapPath> paths = gameMap.getPaths();
+        for (int i = 0; i < paths.size(); i++) {
+            MapPath path = paths.get(i);
+            createPathButton(path, i);
+        }
+
+    }
+
+    private void createPathButton(MapPath path, int index) {
+        double buttonWidth = 200;
+        double buttonHeight = 100;
+        double startX = 100 + index * 220;
+        double startY = 200;
+
+        // Button background
+        Rectangle button = new Rectangle(buttonWidth, buttonHeight);
+        button.setTranslateX(startX);
+        button.setTranslateY(startY);
+        
+        // Set color based on path type
+        switch (path.getPathType()) {
+            case FOREST:
+                button.setFill(Color.DARKGREEN);
+                break;
+            case MOUNTAIN:
+                button.setFill(Color.GRAY);
+                break;
+            case VILLAGE:
+                button.setFill(Color.SANDYBROWN);
+                break;
+        }
+        
+        button.setStroke(Color.BLACK);
+        button.setStrokeWidth(2);
+
+        // Button text
+        Text buttonText = new Text(path.getPathType().getDisplayName());
+        buttonText.setFont(new Font(16));
+        buttonText.setFill(Color.WHITE);
+        buttonText.setTextAlignment(TextAlignment.CENTER);
+        buttonText.setTranslateX(startX + buttonWidth/2 - buttonText.getBoundsInLocal().getWidth()/2);
+        buttonText.setTranslateY(startY + buttonHeight/2);
+
+        // Description text
+        Text descText = new Text(path.getPathType().getDescription());
+        descText.setFont(new Font(12));
+        descText.setFill(Color.BLACK);
+        descText.setWrappingWidth(buttonWidth - 10);
+        descText.setTextAlignment(TextAlignment.CENTER);
+        descText.setTranslateX(startX + 5);
+        descText.setTranslateY(startY + buttonHeight + 20);
+
+        // Click handler
+        button.setOnMouseClicked(e -> {
+            gameMap.setSelectedPath(path);
+            showSelectedPath();
+        });
+
+        // Hover effects
+        button.setOnMouseEntered(e -> {
+            button.setStrokeWidth(4);
+            button.setStroke(Color.YELLOW);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setStrokeWidth(2);
+            button.setStroke(Color.BLACK);
+        });
+
+        pathButtons.add(button);
+        pathTexts.add(buttonText);
+        pathTexts.add(descText);
+
+        FXGL.getGameScene().addUINode(button);
+        FXGL.getGameScene().addUINode(buttonText);
+        FXGL.getGameScene().addUINode(descText);
+    }
+    private Text title ;
+    private Text progress ;
+    private void createPathUI() {
+        // Background
+        mapBackground = new Rectangle(800, 600, Color.LIGHTCYAN);
+        mapBackground.setTranslateX(0);
+        mapBackground.setTranslateY(0);
+        FXGL.getGameScene().addUINode(mapBackground);
+
+        MapPath selectedPath = gameMap.getSelectedPath();
+        if (selectedPath == null) return;
+
+        // Title
+        title = new Text(selectedPath.getPathType().getDisplayName());
+        title.setFont(new Font(20));
+        title.setFill(Color.DARKBLUE);
+        title.setTranslateX(50);
+        title.setTranslateY(30);
+        FXGL.getGameScene().addUINode(title);
+
+        // Progress indicator
+        progress = new Text("Tiến độ: " + selectedPath.getProgress() + "/" + selectedPath.getTotalNodes());
+        progress.setFont(new Font(14));
+        progress.setFill(Color.BLACK);
+        progress.setTranslateX(50);
+        progress.setTranslateY(50);
+        FXGL.getGameScene().addUINode(progress);
+
+        // Draw path nodes
+        List<MapNode> nodes = selectedPath.getNodes();
+        for (int i = 0; i < nodes.size(); i++) {
+            MapNode node = nodes.get(i);
+            createNodeUI(node, i, selectedPath.getCurrentNodeIndex());
+            
+            // Draw line to next node
+            if (i < nodes.size() - 1) {
+                MapNode nextNode = nodes.get(i + 1);
+                createPathLine(node, nextNode);
+            }
+        }
+
+        // Draw line to boss if path is completed
+        if (selectedPath.isCompleted()) {
+            MapNode lastNode = nodes.get(nodes.size() - 1);
+            createPathLine(lastNode, gameMap.getBossNode());
+            createNodeUI(gameMap.getBossNode(), -1, selectedPath.getCurrentNodeIndex());
+        }
+
+        // Back button
+        createBackButton();
+    }
+
+    private void createNodeUI(MapNode node, int nodeIndex, int currentIndex) {
+        double x = node.getPositionX();
+        double y = node.getPositionY();
+
+        // Node circle
+        Circle nodeCircle = new Circle(15);
+        nodeCircle.setTranslateX(x);
+        nodeCircle.setTranslateY(y);
+
+        // Color based on status and type
+        if (nodeIndex < currentIndex || node.isCompleted()) {
+            nodeCircle.setFill(Color.GREEN); // Completed
+        } else if (nodeIndex == currentIndex) {
+            nodeCircle.setFill(Color.YELLOW); // Current
+        } else {
+            nodeCircle.setFill(Color.LIGHTGRAY); // Not reached
+        }
+
+        // Border color based on node type
+        switch (node.getType()) {
+            case START:
+                nodeCircle.setStroke(Color.BLUE);
+                break;
+            case BATTLE:
+                nodeCircle.setStroke(Color.RED);
+                break;
+            case EVENT:
+                nodeCircle.setStroke(Color.PURPLE);
+                break;
+            case SHOP:
+                nodeCircle.setStroke(Color.GOLD);
+                break;
+            case REST:
+                nodeCircle.setStroke(Color.CYAN);
+                break;
+            case BOSS:
+                nodeCircle.setStroke(Color.DARKRED);
+                nodeCircle.setRadius(20);
+                break;
+        }
+        nodeCircle.setStrokeWidth(3);
+
+        // Node label
+        Text nodeLabel = new Text(node.getName());
+        nodeLabel.setFont(new Font(10));
+        nodeLabel.setFill(Color.BLACK);
+        nodeLabel.setTranslateX(x - nodeLabel.getBoundsInLocal().getWidth()/2);
+        nodeLabel.setTranslateY(y + 25);
+
+        // Click handler for current node
+        if (nodeIndex == currentIndex && !node.isCompleted()) {
+            nodeCircle.setOnMouseClicked(e -> {
+                activateNode(node);
+            });
+            
+            // Hover effect
+            nodeCircle.setOnMouseEntered(e -> {
+                nodeCircle.setStrokeWidth(5);
+            });
+            
+            nodeCircle.setOnMouseExited(e -> {
+                nodeCircle.setStrokeWidth(3);
+            });
+        }
+
+        nodeCircles.add(nodeCircle);
+        nodeLabels.add(nodeLabel);
+        FXGL.getGameScene().addUINode(nodeCircle);
+        FXGL.getGameScene().addUINode(nodeLabel);
+    }
+
+    private void createPathLine(MapNode from, MapNode to) {
+        Line line = new Line();
+        line.setStartX(from.getPositionX());
+        line.setStartY(from.getPositionY());
+        line.setEndX(to.getPositionX());
+        line.setEndY(to.getPositionY());
+        line.setStroke(Color.BROWN);
+        line.setStrokeWidth(3);
+
+        pathLines.add(line);
+        FXGL.getGameScene().addUINode(line);
+    }
+    private Text backText;
+    private  Rectangle backButton;
+    private void createBackButton() {
+        backButton = new Rectangle(100, 40, Color.LIGHTGRAY);
+        backButton.setTranslateX(50);
+        backButton.setTranslateY(550);
+        backButton.setStroke(Color.BLACK);
+        backButton.setStrokeWidth(2);
+
+        backText = new Text("Quay lại");
+        backText.setFont(new Font(14));
+        backText.setFill(Color.BLACK);
+        backText.setTranslateX(70);
+        backText.setTranslateY(575);
+        backText.setMouseTransparent(true);
+
+
+        backButton.setOnMouseClicked(e -> {
+            gameMap.setSelectedPath(null);
+            showPathSelection();
+        });
+        FXGL.getGameScene().addUINode(backButton);
+        FXGL.getGameScene().addUINode(backText);
+
+
+    }
+
+    private void activateNode(MapNode node) {
+        // Handle different node types
+        switch (node.getType()) {
+            case START:
+                System.out.println("Starting at: " + node.getName());
+                break;
+            case EVENT:
+                if (node.getEvent() instanceof MapEvent) {
+                    MapEvent mapEvent = (MapEvent) node.getEvent();
+                    mapEvent.trigger();
+                    // Apply event effects to heroes (you'll need to pass hero references)
+                    Observer.characterSlot hero1 = Observer.CharacterSlotRegistry.getByName("Hero");
+                    Observer.characterSlot hero2 = Observer.CharacterSlotRegistry.getByName("Hero2");
+                    mapEvent.applyEffect(hero1, hero2);
+                }
+                break;
+            case BATTLE:
+                // Start battle with enemies in this node
+                System.out.println("Starting battle at: " + node.getName());
+                // You can trigger combat mode here
+                break;
+            case SHOP:
+                System.out.println("Opened shop at: " + node.getName());
+                // Apply shop benefits
+                Observer.characterSlot hero1 = Observer.CharacterSlotRegistry.getByName("Hero");
+                Observer.characterSlot hero2 = Observer.CharacterSlotRegistry.getByName("Hero2");
+                if (hero1 != null) {
+                    hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + 250));
+                    hero1.setCurrentMp(Math.min(hero1.getCharacter().getMp(), hero1.getCurrentMp() + 150));
+                }
+                if (hero2 != null) {
+                    hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + 250));
+                    hero2.setCurrentMp(Math.min(hero2.getCharacter().getMp(), hero2.getCurrentMp() + 150));
+                }
+                System.out.println("Bought healing items! +250 HP and +150 MP!");
+                break;
+            case REST:
+                System.out.println("Resting at: " + node.getName());
+                // Full heal
+                Observer.characterSlot h1 = Observer.CharacterSlotRegistry.getByName("Hero");
+                Observer.characterSlot h2 = Observer.CharacterSlotRegistry.getByName("Hero2");
+                if (h1 != null) {
+                    h1.setCurrentHp(h1.getCharacter().getHp());
+                    h1.setCurrentMp(h1.getCharacter().getMp());
+                }
+                if (h2 != null) {
+                    h2.setCurrentHp(h2.getCharacter().getHp());
+                    h2.setCurrentMp(h2.getCharacter().getMp());
+                }
+                System.out.println("Fully rested! HP and MP restored!");
+                break;
+            case BOSS:
+                System.out.println("Boss battle begins!");
+                // Start boss battle
+                break;
+        }
+        
+        node.activate();
+        
+        // Move to next node if current is completed
+        if (node.isCompleted()) {
+            gameMap.getSelectedPath().moveToNextNode();
+        }
+        
+        // Refresh the UI to show updated status
+        showSelectedPath();
+    }
+
+    private void clearUI() {
+        // Remove all UI elements
+        if (mapBackground != null) {
+            FXGL.getGameScene().removeUINode(mapBackground);
+        }
+        
+        for (Rectangle button : pathButtons) {
+            FXGL.getGameScene().removeUINode(button);
+        }
+        
+        for (Text text : pathTexts) {
+            FXGL.getGameScene().removeUINode(text);
+        }
+        
+        for (Circle circle : nodeCircles) {
+            FXGL.getGameScene().removeUINode(circle);
+        }
+        
+        for (Line line : pathLines) {
+            FXGL.getGameScene().removeUINode(line);
+        }
+        for (Text text : nodeLabels) {
+            FXGL.getGameScene().removeUINode(text);
+        }
+        if(title!=null) {
+            FXGL.getGameScene().removeUINode(title);
+//        }
+//        if(progress!=null) {
+            FXGL.getGameScene().removeUINode(progress);
+        //}
+//        if(title!=null) {
+            FXGL.getGameScene().removeUINode(title2);
+        //}
+        //if(progress!=null) {
+            FXGL.getGameScene().removeUINode(backText);
+        //}
+        //if(backButton!=null) {
+            FXGL.getGameScene().removeUINode(backButton);
+
+        }
+
+        pathButtons.clear();
+        pathTexts.clear();
+        nodeCircles.clear();
+        pathLines.clear();
+    }
+
+    public boolean isPathSelected() {
+        return pathSelected;
+    }
+
+    public void hide() {
+        clearUI();
+        pathSelected = false;
+    }
+}
