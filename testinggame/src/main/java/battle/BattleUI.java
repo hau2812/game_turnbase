@@ -72,6 +72,27 @@ public class  BattleUI {
         createHealthText();
         addUIElements();
         setupTargetSelection();
+        
+        // Update health and MP bars with current values for all characters
+        updateAllHealthAndMpBars();
+    }
+    
+    private void updateAllHealthAndMpBars() {
+        // Update health bars for all characters
+        if (battleSystem.getHeroSlot() != null) {
+            updateHealthUI(battleSystem.getHeroSlot());
+            updateMpUI(battleSystem.getHeroSlot());
+        }
+        if (battleSystem.getHeroSlot2() != null) {
+            updateHealthUI(battleSystem.getHeroSlot2());
+            updateMpUI(battleSystem.getHeroSlot2());
+        }
+        if (battleSystem.getEnemySlot() != null) {
+            updateHealthUI(battleSystem.getEnemySlot());
+        }
+        if (battleSystem.getEnemySlot2() != null) {
+            updateHealthUI(battleSystem.getEnemySlot2());
+        }
     }
     
     private void createTimingBar() {

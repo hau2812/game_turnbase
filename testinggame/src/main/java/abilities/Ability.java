@@ -151,7 +151,9 @@ public interface Ability {
                     "Magic",
                     "Single Enemy",
                     1.5f,
-                    1.5f
+                    1.5f,
+                    50,
+                    0
             ));
 
             register(new Ability.skill(
