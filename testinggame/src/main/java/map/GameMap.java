@@ -54,13 +54,13 @@ public class GameMap {
         // Battle nodes
         MapNode battle1 = new MapNode("forest_battle1", "Wolf Pack", "Đàn sói hoang dã", 
                                      MapNode.NodeType.BATTLE, 150, 280);
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 150)));
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 150)));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
         path.addNode(battle1);
 
         MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
                                      MapNode.NodeType.BATTLE, 200, 260);
-        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 300)));
+        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 100)));
         path.addNode(battle2);
 
         // Event node
@@ -90,7 +90,12 @@ public class GameMap {
         // Final battle before boss
         MapNode finalBattle = new MapNode("forest_final", "Forest Guardian", "Thủ hộ rừng", 
                                          MapNode.NodeType.BATTLE, 300, 220);
-        finalBattle.addEnemy(createEnemySlotWithSkills(createForestEnemy("Forest Guardian", 800, 400)));
+
+        // Create Forest Guardian with custom speed of 5
+        Characters.character forestGuardian = new Characters.character(
+            (int)(Math.random() * 1000), "Forest Guardian", 100, 30, 20, 10, 5, 800, 50, new ArrayList<>()
+        );
+        finalBattle.addEnemy(createEnemySlotWithSkills(forestGuardian));
         path.addNode(finalBattle);
     }
 

@@ -83,17 +83,19 @@ public class  BattleUI {
     }
     
     private void createLines() {
-        // Blue line (Hero 1)
-        blueLine = new Line();
-        blueLine.setStroke(Color.BLUE);
-        blueLine.setStrokeWidth(3);
-        blueLine.setStartX(barX + barWidth / 1.75);
-        blueLine.setEndX(barX + barWidth / 1.75);
-        blueLine.setStartY(barY);
-        blueLine.setEndY(barY + barHeight);
+        // Blue line (Hero 1) - only if hero exists and has HP > 0
+        if (battleSystem.getHeroSlot() != null && battleSystem.getHeroSlot().getCurrentHp() > 0) {
+            blueLine = new Line();
+            blueLine.setStroke(Color.BLUE);
+            blueLine.setStrokeWidth(3);
+            blueLine.setStartX(barX + barWidth / 1.75);
+            blueLine.setEndX(barX + barWidth / 1.75);
+            blueLine.setStartY(barY);
+            blueLine.setEndY(barY + barHeight);
+        }
 
-        // Green line (Hero 2) - conditional
-        if (battleSystem.getHeroSlot2() != null) {
+        // Green line (Hero 2) - only if hero exists and has HP > 0
+        if (battleSystem.getHeroSlot2() != null && battleSystem.getHeroSlot2().getCurrentHp() > 0) {
             greenLine = new Line();
             greenLine.setStroke(Color.LIMEGREEN);
             greenLine.setStrokeWidth(3);
@@ -103,17 +105,19 @@ public class  BattleUI {
             greenLine.setEndY(barY + barHeight);
         }
 
-        // Red line (Enemy 1)
-        redLine = new Line();
-        redLine.setStroke(Color.RED);
-        redLine.setStrokeWidth(3);
-        redLine.setStartX(barX + barWidth/1.5);
-        redLine.setEndX(barX + barWidth/1.5);
-        redLine.setStartY(barY);
-        redLine.setEndY(barY + barHeight);
+        // Red line (Enemy 1) - only if enemy exists and has HP > 0
+        if (battleSystem.getEnemySlot() != null && battleSystem.getEnemySlot().getCurrentHp() > 0) {
+            redLine = new Line();
+            redLine.setStroke(Color.RED);
+            redLine.setStrokeWidth(3);
+            redLine.setStartX(barX + barWidth/1.5);
+            redLine.setEndX(barX + barWidth/1.5);
+            redLine.setStartY(barY);
+            redLine.setEndY(barY + barHeight);
+        }
 
-        // Yellow line (Enemy 2) - conditional
-        if (battleSystem.getEnemySlot2() != null) {
+        // Yellow line (Enemy 2) - only if enemy exists and has HP > 0
+        if (battleSystem.getEnemySlot2() != null && battleSystem.getEnemySlot2().getCurrentHp() > 0) {
             yellowLine = new Line();
             yellowLine.setStroke(Color.YELLOW);
             yellowLine.setStrokeWidth(3);
@@ -123,23 +127,31 @@ public class  BattleUI {
             yellowLine.setEndY(barY + barHeight);
         }
 
-        // Add lines to scene
-        getGameScene().addUINode(blueLine);
+        // Add lines to scene - only if they were created
+        if (blueLine != null) {
+            getGameScene().addUINode(blueLine);
+        }
         if (greenLine != null) {
             getGameScene().addUINode(greenLine);
         }
-        getGameScene().addUINode(redLine);
+        if (redLine != null) {
+            getGameScene().addUINode(redLine);
+        }
         if (yellowLine != null) {
             getGameScene().addUINode(yellowLine);
         }
 
-        // Set lines to character slots
-        battleSystem.getHeroSlot().setLine(blueLine);
-        if (battleSystem.getHeroSlot2() != null) {
+        // Set lines to character slots - only if characters exist and have HP > 0
+        if (battleSystem.getHeroSlot() != null && battleSystem.getHeroSlot().getCurrentHp() > 0) {
+            battleSystem.getHeroSlot().setLine(blueLine);
+        }
+        if (battleSystem.getHeroSlot2() != null && battleSystem.getHeroSlot2().getCurrentHp() > 0) {
             battleSystem.getHeroSlot2().setLine(greenLine);
         }
-        battleSystem.getEnemySlot().setLine(redLine);
-        if (battleSystem.getEnemySlot2() != null) {
+        if (battleSystem.getEnemySlot() != null && battleSystem.getEnemySlot().getCurrentHp() > 0) {
+            battleSystem.getEnemySlot().setLine(redLine);
+        }
+        if (battleSystem.getEnemySlot2() != null && battleSystem.getEnemySlot2().getCurrentHp() > 0) {
             battleSystem.getEnemySlot2().setLine(yellowLine);
         }
     }
@@ -189,11 +201,14 @@ public class  BattleUI {
             greenMpBorder.setTranslateY(greenMpY);
         }
 
-        redHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-        redHealthBorder.setStroke(Color.BLACK);
-        redHealthBorder.setStrokeWidth(2);
-        redHealthBorder.setTranslateX(redHealthX);
-        redHealthBorder.setTranslateY(redHealthY);
+        // Create health bar borders - only if enemies exist
+        if (battleSystem.getEnemySlot() != null) {
+            redHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
+            redHealthBorder.setStroke(Color.BLACK);
+            redHealthBorder.setStrokeWidth(2);
+            redHealthBorder.setTranslateX(redHealthX);
+            redHealthBorder.setTranslateY(redHealthY);
+        }
 
         if (battleSystem.getEnemySlot2() != null) {
             red2HealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
@@ -203,10 +218,12 @@ public class  BattleUI {
             red2HealthBorder.setTranslateY(red2HealthY);
         }
 
-        // Create health bars
-        blueHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.BLUE);
-        blueHealthBar.setTranslateX(blueHealthX);
-        blueHealthBar.setTranslateY(blueHealthY);
+        // Create health bars - only if characters exist
+        if (battleSystem.getHeroSlot() != null) {
+            blueHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.BLUE);
+            blueHealthBar.setTranslateX(blueHealthX);
+            blueHealthBar.setTranslateY(blueHealthY);
+        }
 
         if (battleSystem.getHeroSlot2() != null) {
             greenHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.LIMEGREEN);
@@ -214,9 +231,11 @@ public class  BattleUI {
             greenHealthBar.setTranslateY(greenHealthY);
         }
 
-        blueMpBar = new Rectangle(healthBarWidth, 10, Color.DODGERBLUE);
-        blueMpBar.setTranslateX(blueMpX);
-        blueMpBar.setTranslateY(blueMpY);
+        if (battleSystem.getHeroSlot() != null) {
+            blueMpBar = new Rectangle(healthBarWidth, 10, Color.DODGERBLUE);
+            blueMpBar.setTranslateX(blueMpX);
+            blueMpBar.setTranslateY(blueMpY);
+        }
 
         if (battleSystem.getHeroSlot2() != null) {
             greenMpBar = new Rectangle(healthBarWidth, 10, Color.MEDIUMSEAGREEN);
@@ -224,9 +243,11 @@ public class  BattleUI {
             greenMpBar.setTranslateY(greenMpY);
         }
 
-        redHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.RED);
-        redHealthBar.setTranslateX(redHealthX);
-        redHealthBar.setTranslateY(redHealthY);
+        if (battleSystem.getEnemySlot() != null) {
+            redHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.RED);
+            redHealthBar.setTranslateX(redHealthX);
+            redHealthBar.setTranslateY(redHealthY);
+        }
 
         if (battleSystem.getEnemySlot2() != null) {
             red2HealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.CRIMSON);
@@ -241,12 +262,14 @@ public class  BattleUI {
         Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
         Observer.characterSlot enemySlot2 = battleSystem.getEnemySlot2();
         
-        // HP text
-        blueHPText = new Text("HP: " + (int) heroSlot.getCurrentHp() + " / " + (int) heroSlot.getCharacter().getHp());
-        blueHPText.setFont(new Font(16));
-        blueHPText.setFill(Color.WHITE);
-        blueHPText.setTranslateX(blueHealthBorder.getTranslateX() + 4);
-        blueHPText.setTranslateY(blueHealthBorder.getTranslateY() + healthBarHeight - 5);
+        // HP text - only create if characters exist
+        if (heroSlot != null) {
+            blueHPText = new Text("HP: " + (int) heroSlot.getCurrentHp() + " / " + (int) heroSlot.getCharacter().getHp());
+            blueHPText.setFont(new Font(16));
+            blueHPText.setFill(Color.WHITE);
+            blueHPText.setTranslateX(blueHealthBorder.getTranslateX() + 4);
+            blueHPText.setTranslateY(blueHealthBorder.getTranslateY() + healthBarHeight - 5);
+        }
 
         if (heroSlot2 != null) {
             greenHPText = new Text("HP: " + (int) heroSlot2.getCurrentHp() + " / " + (int) heroSlot2.getCharacter().getHp());
@@ -256,11 +279,13 @@ public class  BattleUI {
             greenHPText.setTranslateY(greenHealthBorder.getTranslateY() + healthBarHeight - 5);
         }
 
-        blueMPText = new Text("MP: " + (int) heroSlot.getCurrentMp() + " / " + (int) heroSlot.getCharacter().getMp());
-        blueMPText.setFont(new Font(12));
-        blueMPText.setFill(Color.WHITE);
-        blueMPText.setTranslateX(blueMpBorder.getTranslateX() + 4);
-        blueMPText.setTranslateY(blueMpBorder.getTranslateY() + 8);
+        if (heroSlot != null) {
+            blueMPText = new Text("MP: " + (int) heroSlot.getCurrentMp() + " / " + (int) heroSlot.getCharacter().getMp());
+            blueMPText.setFont(new Font(12));
+            blueMPText.setFill(Color.WHITE);
+            blueMPText.setTranslateX(blueMpBorder.getTranslateX() + 4);
+            blueMPText.setTranslateY(blueMpBorder.getTranslateY() + 8);
+        }
 
         if (heroSlot2 != null) {
             greenMPText = new Text("MP: " + (int) heroSlot2.getCurrentMp() + " / " + (int) heroSlot2.getCharacter().getMp());
@@ -270,11 +295,13 @@ public class  BattleUI {
             greenMPText.setTranslateY(greenMpBorder.getTranslateY() + 8);
         }
 
-        redHPText = new Text("HP: " + (int) enemySlot.getCurrentHp() + " / " + (int) enemySlot.getCharacter().getHp());
-        redHPText.setFont(new Font(16));
-        redHPText.setFill(Color.BLACK);
-        redHPText.setTranslateX(redHealthBorder.getTranslateX() + 4);
-        redHPText.setTranslateY(redHealthBorder.getTranslateY() + healthBarHeight - 5);
+        if (enemySlot != null) {
+            redHPText = new Text("HP: " + (int) enemySlot.getCurrentHp() + " / " + (int) enemySlot.getCharacter().getHp());
+            redHPText.setFont(new Font(16));
+            redHPText.setFill(Color.BLACK);
+            redHPText.setTranslateX(redHealthBorder.getTranslateX() + 4);
+            redHPText.setTranslateY(redHealthBorder.getTranslateY() + healthBarHeight - 5);
+        }
 
         if (enemySlot2 != null) {
             red2HPText = new Text("HP: " + (int) enemySlot2.getCurrentHp() + " / " + (int) enemySlot2.getCharacter().getHp());
@@ -287,39 +314,57 @@ public class  BattleUI {
     
     private void addUIElements() {
         // Add UI elements to scene
-        getGameScene().addUINode(blueHealthBorder);
-        getGameScene().addUINode(blueHealthBar);
+        if (blueHealthBorder != null) {
+            getGameScene().addUINode(blueHealthBorder);
+        }
+        if (blueHealthBar != null) {
+            getGameScene().addUINode(blueHealthBar);
+        }
         if (greenHealthBorder != null) {
             getGameScene().addUINode(greenHealthBorder);
         }
         if (greenHealthBar != null) {
             getGameScene().addUINode(greenHealthBar);
         }
-        getGameScene().addUINode(blueMpBorder);
-        getGameScene().addUINode(blueMpBar);
+        if (blueMpBorder != null) {
+            getGameScene().addUINode(blueMpBorder);
+        }
+        if (blueMpBar != null) {
+            getGameScene().addUINode(blueMpBar);
+        }
         if (greenMpBorder != null) {
             getGameScene().addUINode(greenMpBorder);
         }
         if (greenMpBar != null) {
             getGameScene().addUINode(greenMpBar);
         }
-        getGameScene().addUINode(redHealthBorder);
-        getGameScene().addUINode(redHealthBar);
+        if (redHealthBorder != null) {
+            getGameScene().addUINode(redHealthBorder);
+        }
+        if (redHealthBar != null) {
+            getGameScene().addUINode(redHealthBar);
+        }
         if (red2HealthBorder != null) {
             getGameScene().addUINode(red2HealthBorder);
         }
         if (red2HealthBar != null) {
             getGameScene().addUINode(red2HealthBar);
         }
-        getGameScene().addUINode(blueHPText);
+        if (blueHPText != null) {
+            getGameScene().addUINode(blueHPText);
+        }
         if (greenHPText != null) {
             getGameScene().addUINode(greenHPText);
         }
-        getGameScene().addUINode(blueMPText);
+        if (blueMPText != null) {
+            getGameScene().addUINode(blueMPText);
+        }
         if (greenMPText != null) {
             getGameScene().addUINode(greenMPText);
         }
-        getGameScene().addUINode(redHPText);
+        if (redHPText != null) {
+            getGameScene().addUINode(redHPText);
+        }
         if (red2HPText != null) {
             getGameScene().addUINode(red2HPText);
         }
@@ -482,9 +527,11 @@ public class  BattleUI {
     
     public void updateMpUI(Observer.characterSlot hero) {
         double ratio = hero.getCurrentMp() / hero.getCharacter().getMp();
-        if (hero == battleSystem.getHeroSlot()) {
-            blueMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
-            blueMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
+        if (hero == battleSystem.getHeroSlot() && battleSystem.getHeroSlot() != null) {
+            if (blueMpBar != null && blueMPText != null) {
+                blueMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
+                blueMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
+            }
         } else if (hero == battleSystem.getHeroSlot2() && battleSystem.getHeroSlot2() != null) {
             if (greenMpBar != null && greenMPText != null) {
                 greenMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
@@ -496,17 +543,21 @@ public class  BattleUI {
     public void updateHealthUI(Observer.characterSlot slot) {
         double ratio = slot.getCurrentHp() / slot.getCharacter().getHp();
 
-        if (slot == battleSystem.getHeroSlot()) {
-            blueHealthBar.setWidth(healthBarWidth * ratio);
-            blueHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        if (slot == battleSystem.getHeroSlot() && battleSystem.getHeroSlot() != null) {
+            if (blueHealthBar != null && blueHPText != null) {
+                blueHealthBar.setWidth(healthBarWidth * ratio);
+                blueHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+            }
         } else if (slot == battleSystem.getHeroSlot2() && battleSystem.getHeroSlot2() != null) {
             if (greenHealthBar != null && greenHPText != null) {
                 greenHealthBar.setWidth(healthBarWidth * ratio);
                 greenHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
             }
-        } else if (slot == battleSystem.getEnemySlot()) {
-            redHealthBar.setWidth(healthBarWidth * ratio);
-            redHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        } else if (slot == battleSystem.getEnemySlot() && battleSystem.getEnemySlot() != null) {
+            if (redHealthBar != null && redHPText != null) {
+                redHealthBar.setWidth(healthBarWidth * ratio);
+                redHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+            }
         } else if (slot == battleSystem.getEnemySlot2() && battleSystem.getEnemySlot2() != null) {
             if (red2HealthBar != null && red2HPText != null) {
                 red2HealthBar.setWidth(healthBarWidth * ratio);
@@ -638,7 +689,38 @@ public class  BattleUI {
             getGameScene().removeUINode(skill3Box);
         }
         
-        System.out.println("All battle UI elements cleared!");
+        // Set all UI element variables to null to prevent reuse
+        blueHealthBorder = null;
+        blueHealthBar = null;
+        greenHealthBorder = null;
+        greenHealthBar = null;
+        redHealthBorder = null;
+        redHealthBar = null;
+        red2HealthBorder = null;
+        red2HealthBar = null;
+        
+        blueMpBorder = null;
+        blueMpBar = null;
+        greenMpBorder = null;
+        greenMpBar = null;
+        
+        blueHPText = null;
+        greenHPText = null;
+        redHPText = null;
+        red2HPText = null;
+        blueMPText = null;
+        greenMPText = null;
+        
+        blueLine = null;
+        greenLine = null;
+        redLine = null;
+        yellowLine = null;
+        
+        skill1Box = null;
+        skill2Box = null;
+        skill3Box = null;
+        
+        System.out.println("All battle UI elements cleared and reset to null!");
     }
 
     public void showAllCombatUI() {
@@ -686,6 +768,8 @@ public class  BattleUI {
     public double getBarWidth() { return barWidth; }
     
     // Setters for line management
+    public void setBlueLine(Line blueLine) { this.blueLine = blueLine; }
+    public void setGreenLine(Line greenLine) { this.greenLine = greenLine; }
     public void setRedLine(Line redLine) { this.redLine = redLine; }
     public void setYellowLine(Line yellowLine) { this.yellowLine = yellowLine; }
 }

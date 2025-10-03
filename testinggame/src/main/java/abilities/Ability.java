@@ -161,7 +161,9 @@ public interface Ability {
                     "Support",
                     "Ally",
                     -1.5f,
-                    1.0f
+                    1.0f,
+                    300,
+                    0
             ));
             register(new Ability.skill(
                     4,

@@ -120,6 +120,9 @@ public class testing extends GameApplication {
         // Stop any existing battle loop first
         battleSystem.stopBattleLoop();
         
+        // Clear any old enemy data before starting new battle
+        
+        
         // Always reinitialize battle system for map battles
         System.out.println("Initializing battle system...");
         battleSystem.initializeBattle();
@@ -164,6 +167,9 @@ public class testing extends GameApplication {
         
         // Clear all battle UI elements
         battleUI.clearAllBattleUI();
+        
+        // Clear old enemy data to prevent showing dead enemies in next battle
+        battleSystem.clearEnemyData();
         
         // Stop the battle loop properly
         battleSystem.stopBattleLoop();

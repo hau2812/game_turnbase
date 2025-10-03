@@ -378,6 +378,16 @@ public class MapUI {
             case BOSS:
                 System.out.println("Boss battle begins!");
                 // Start boss battle
+                // Start battle with enemies in this node
+                System.out.println("Starting battle at: " + node.getName());
+                if (battleSystem != null && !node.getEnemies().isEmpty()) {
+                    // Set up battle with map enemies
+                    setupBattleWithMapEnemies(node);
+
+                    // Automatically switch to battle mode
+                    switchToBattleMode();
+                }
+
                 break;
         }
         

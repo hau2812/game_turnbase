@@ -74,8 +74,8 @@ public class BattleSystem {
         if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
 
         // Enemy slots
-        if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
-        if(enemySlot2 == null) {enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");}
+        //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
+        //if(enemySlot2 == null) {enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");}
         selectedTarget = enemySlot; // default target
 
         // Set current acting hero
@@ -259,6 +259,12 @@ public class BattleSystem {
                 } else if (slot == enemySlot2 && battleUI.getYellowLine() != null) {
                     getGameScene().removeUINode(battleUI.getYellowLine());
                     battleUI.setYellowLine(null);
+                } else if (slot == heroSlot && battleUI.getBlueLine() != null) {
+                    getGameScene().removeUINode(battleUI.getBlueLine());
+                    battleUI.setBlueLine(null);
+                } else if (slot == heroSlot2 && battleUI.getGreenLine() != null) {
+                    getGameScene().removeUINode(battleUI.getGreenLine());
+                    battleUI.setGreenLine(null);
                 }
                 
                 // Check if all enemies are defeated
@@ -281,10 +287,12 @@ public class BattleSystem {
     public Line getTurnOf() { return turnOf; }
     
     public void setMapEnemies(Observer.characterSlot enemy1, Observer.characterSlot enemy2) {
-
+        // Clear old enemy data first
+        this.enemySlot = null;
+        this.enemySlot2 = null;
+        
         // Update enemy slots with map enemies
         if (enemy1 != null) {
-
             this.enemySlot = enemy1;
         }
         if (enemy2 != null) {
@@ -293,6 +301,14 @@ public class BattleSystem {
         
         // Update selected target to first enemy
         this.selectedTarget = enemy1;
+    }
+    
+    public void clearEnemyData() {
+        // Clear all enemy data
+        this.enemySlot = null;
+        this.enemySlot2 = null;
+        this.selectedTarget = null;
+        System.out.println("Enemy data cleared");
     }
     
     private void checkVictoryCondition() {

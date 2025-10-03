@@ -118,24 +118,24 @@ public interface Characters {
             Characters.character hero = new Characters.character(
                     1,
                     "Hero",
-                    500,  // atk
+                    100,  // atk
                     30,  // matk
                     20,  // def
                     10,  // res
                     15,  // spd
-                    2000, // hp
+                    200, // hp
                     500,  // mp
                     new ArrayList<>()
             );
             Characters.character hero2 = new Characters.character(
                     4,
                     "Hero2",
-                    480,  // atk
+                    100,  // atk
                     35,   // matk
                     18,   // def
                     12,   // res
                     14,   // spd
-                    1800, // hp
+                    180, // hp
                     150,   // mp
                     new ArrayList<>()
             );
