@@ -169,6 +169,7 @@ public class DialogueGame extends GameApplication {
         createOptionButton("Ask about the ruins");
         createOptionButton("Look for supplies");
         createOptionButton("Set up camp");
+
     }
 
     private void createOptionButton(String text) {

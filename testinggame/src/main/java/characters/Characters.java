@@ -82,6 +82,23 @@ public interface Characters {
 
         public ArrayList<uniqueValue> getUniqueValues() { return uniqueValues; }
         public void setUniqueValues(ArrayList<uniqueValue> uniqueValues) { this.uniqueValues = uniqueValues; }
+
+        @Override
+        public String toString() {
+            return "character{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", atk=" + atk +
+                    ", matk=" + matk +
+                    ", def=" + def +
+                    ", res=" + res +
+                    ", spd=" + spd +
+                    ", AV=" + AV +
+                    ", hp=" + hp +
+                    ", mp=" + mp +
+                    ", uniqueValues=" + uniqueValues +
+                    '}';
+        }
     }
 
     public class CharacterRegistry {

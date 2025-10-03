@@ -2,6 +2,7 @@ package map;
 
 import event.GameEvent;
 import characters.Characters;
+import characters.Observer;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -19,7 +20,7 @@ public class MapNode {
     private String name;
     private String description;
     private NodeType type;
-    private List<Characters.character> enemies;
+    private List<Observer.characterSlot> enemies;
     private GameEvent event;
     private boolean completed;
     private int positionX;
@@ -49,9 +50,9 @@ public class MapNode {
     public NodeType getType() { return type; }
     public void setType(NodeType type) { this.type = type; }
 
-    public List<Characters.character> getEnemies() { return enemies; }
-    public void setEnemies(List<Characters.character> enemies) { this.enemies = enemies; }
-    public void addEnemy(Characters.character enemy) { this.enemies.add(enemy); }
+    public List<Observer.characterSlot> getEnemies() { return enemies; }
+    public void setEnemies(List<Observer.characterSlot> enemies) { this.enemies = enemies; }
+    public void addEnemy(Observer.characterSlot enemy) { this.enemies.add(enemy); }
 
     public GameEvent getEvent() { return event; }
     public void setEvent(GameEvent event) { this.event = event; }

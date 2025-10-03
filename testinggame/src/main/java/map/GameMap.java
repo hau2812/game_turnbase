@@ -2,6 +2,7 @@ package map;
 
 import characters.Characters;
 import characters.Observer;
+import abilities.Ability;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -37,7 +38,7 @@ public class GameMap {
                               MapNode.NodeType.BOSS, 400, 100);
         // Add boss enemy
         Characters.character boss = createBossCharacter();
-        bossNode.addEnemy(boss);
+        bossNode.addEnemy(createEnemySlotWithSkills(boss));
 
         paths.add(forestPath);
         paths.add(mountainPath);
@@ -53,13 +54,13 @@ public class GameMap {
         // Battle nodes
         MapNode battle1 = new MapNode("forest_battle1", "Wolf Pack", "Đàn sói hoang dã", 
                                      MapNode.NodeType.BATTLE, 150, 280);
-        battle1.addEnemy(createForestEnemy("Wolf", 300, 150));
-        battle1.addEnemy(createForestEnemy("Wolf", 300, 150));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 150)));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 150)));
         path.addNode(battle1);
 
         MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
                                      MapNode.NodeType.BATTLE, 200, 260);
-        battle2.addEnemy(createForestEnemy("Bear", 500, 300));
+        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 300)));
         path.addNode(battle2);
 
         // Event node
@@ -89,7 +90,7 @@ public class GameMap {
         // Final battle before boss
         MapNode finalBattle = new MapNode("forest_final", "Forest Guardian", "Thủ hộ rừng", 
                                          MapNode.NodeType.BATTLE, 300, 220);
-        finalBattle.addEnemy(createForestEnemy("Forest Guardian", 800, 400));
+        finalBattle.addEnemy(createEnemySlotWithSkills(createForestEnemy("Forest Guardian", 800, 400)));
         path.addNode(finalBattle);
     }
 
@@ -182,7 +183,7 @@ public class GameMap {
         // One battle
         MapNode battle1 = new MapNode("mountain_battle1", "Mountain Troll", "Troll núi", 
                                      MapNode.NodeType.BATTLE, 250, 140);
-        battle1.addEnemy(createMountainEnemy("Mountain Troll", 600, 350));
+        battle1.addEnemy(createEnemySlotWithSkills(createMountainEnemy("Mountain Troll", 600, 350)));
         path.addNode(battle1);
 
         // Final event
@@ -228,8 +229,8 @@ public class GameMap {
         // Battle node
         MapNode battle1 = new MapNode("village_battle1", "Bandits", "Bọn cướp", 
                                      MapNode.NodeType.BATTLE, 200, 360);
-        battle1.addEnemy(createVillageEnemy("Bandit", 350, 200));
-        battle1.addEnemy(createVillageEnemy("Bandit", 350, 200));
+        battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
+        battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
         path.addNode(battle1);
 
         // Rest node
@@ -240,7 +241,7 @@ public class GameMap {
         // Final battle
         MapNode finalBattle = new MapNode("village_final", "Bandit Leader", "Thủ lĩnh cướp", 
                                          MapNode.NodeType.BATTLE, 300, 320);
-        finalBattle.addEnemy(createVillageEnemy("Bandit Leader", 700, 400));
+        finalBattle.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit Leader", 700, 400)));
         path.addNode(finalBattle);
     }
 
@@ -266,6 +267,28 @@ public class GameMap {
     private Characters.character createBossCharacter() {
         return new Characters.character(
             9999, "Ancient Dragon", 1000, 800, 100, 80, 10, 5000, 1000, new ArrayList<>()
+        );
+    }
+    
+    // Helper method to create character slots with skills for map enemies
+    private Observer.characterSlot createEnemySlotWithSkills(Characters.character character) {
+        // Initialize skills registry if not already done
+        Ability.SkillRegistry.init();
+        
+        // Create skills list with skills 1, 2, 3
+        ArrayList<Ability.skill> enemySkills = new ArrayList<>();
+        enemySkills.add(Ability.SkillRegistry.getById(1)); // Slash
+        enemySkills.add(Ability.SkillRegistry.getById(2)); // Fireball
+        enemySkills.add(Ability.SkillRegistry.getById(3)); // Heal
+        
+        // Create character slot
+        return new Observer.characterSlot(
+            character.getId(),
+            character,
+            character,
+            enemySkills,
+            character.getHp(),
+            character.getMp()
         );
     }
 

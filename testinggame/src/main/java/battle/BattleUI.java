@@ -13,7 +13,7 @@ import javafx.scene.text.TextAlignment;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
-public class BattleUI {
+public class  BattleUI {
     
     // Lines
     private Line blueLine;
@@ -455,8 +455,9 @@ public class BattleUI {
                 if ((attacker == battleSystem.getHeroSlot() || attacker == battleSystem.getHeroSlot2()) && attacker.getCurrentMp() < skill.getMpCost()) {
                     return;
                 }
-                battleSystem.useSkill(attacker, resolvedTarget, skill);
                 battleSystem.setMoving(true);
+                battleSystem.useSkill(attacker, resolvedTarget, skill);
+
             }
         });
 
@@ -548,6 +549,96 @@ public class BattleUI {
         if (skill1Box != null) skill1Box.setVisible(false);
         if (skill2Box != null) skill2Box.setVisible(false);
         if (skill3Box != null) skill3Box.setVisible(false);
+    }
+    
+    public void clearAllBattleUI() {
+        System.out.println("Clearing all battle UI elements...");
+        
+        // Remove all UI elements from the scene
+        if (blueHealthBorder != null) {
+            getGameScene().removeUINode(blueHealthBorder);
+        }
+        if (blueHealthBar != null) {
+            getGameScene().removeUINode(blueHealthBar);
+        }
+        if (greenHealthBorder != null) {
+            getGameScene().removeUINode(greenHealthBorder);
+        }
+        if (greenHealthBar != null) {
+            getGameScene().removeUINode(greenHealthBar);
+        }
+        if (redHealthBorder != null) {
+            getGameScene().removeUINode(redHealthBorder);
+        }
+        if (redHealthBar != null) {
+            getGameScene().removeUINode(redHealthBar);
+        }
+        if (red2HealthBorder != null) {
+            getGameScene().removeUINode(red2HealthBorder);
+        }
+        if (red2HealthBar != null) {
+            getGameScene().removeUINode(red2HealthBar);
+        }
+        
+        if (blueMpBorder != null) {
+            getGameScene().removeUINode(blueMpBorder);
+        }
+        if (blueMpBar != null) {
+            getGameScene().removeUINode(blueMpBar);
+        }
+        if (greenMpBorder != null) {
+            getGameScene().removeUINode(greenMpBorder);
+        }
+        if (greenMpBar != null) {
+            getGameScene().removeUINode(greenMpBar);
+        }
+        
+        // Remove text
+        if (blueHPText != null) {
+            getGameScene().removeUINode(blueHPText);
+        }
+        if (greenHPText != null) {
+            getGameScene().removeUINode(greenHPText);
+        }
+        if (redHPText != null) {
+            getGameScene().removeUINode(redHPText);
+        }
+        if (red2HPText != null) {
+            getGameScene().removeUINode(red2HPText);
+        }
+        if (blueMPText != null) {
+            getGameScene().removeUINode(blueMPText);
+        }
+        if (greenMPText != null) {
+            getGameScene().removeUINode(greenMPText);
+        }
+        
+        // Remove lines
+        if (blueLine != null) {
+            getGameScene().removeUINode(blueLine);
+        }
+        if (greenLine != null) {
+            getGameScene().removeUINode(greenLine);
+        }
+        if (redLine != null) {
+            getGameScene().removeUINode(redLine);
+        }
+        if (yellowLine != null) {
+            getGameScene().removeUINode(yellowLine);
+        }
+        
+        // Remove skill boxes
+        if (skill1Box != null) {
+            getGameScene().removeUINode(skill1Box);
+        }
+        if (skill2Box != null) {
+            getGameScene().removeUINode(skill2Box);
+        }
+        if (skill3Box != null) {
+            getGameScene().removeUINode(skill3Box);
+        }
+        
+        System.out.println("All battle UI elements cleared!");
     }
 
     public void showAllCombatUI() {

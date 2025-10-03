@@ -27,7 +27,7 @@ public class BattleSystem {
     private Observer.characterSlot currentActingHero;
     
     // Combat state
-    private boolean moving = true;
+    private boolean moving = false;
     private boolean autoEnemy = true;
     private Line turnOf = null;
     
@@ -41,6 +41,12 @@ public class BattleSystem {
     // UI reference (will be injected)
     private BattleUI battleUI;
     
+    // Callback for battle end
+    private Runnable onBattleWon;
+    
+    // Flag to control battle loop
+    private boolean battleLoopActive = false;
+    
     public BattleSystem(boolean includeHero2, boolean includeEnemy2) {
         this.includeHero2 = includeHero2;
         this.includeEnemy2 = includeEnemy2;
@@ -48,6 +54,10 @@ public class BattleSystem {
     
     public void setBattleUI(BattleUI battleUI) {
         this.battleUI = battleUI;
+    }
+    
+    public void setOnBattleWon(Runnable callback) {
+        this.onBattleWon = callback;
     }
     
     public void initializeBattle() {
@@ -59,12 +69,13 @@ public class BattleSystem {
         Observer.CharacterSlotRegistry.init();
 
         // Hero slots
-        heroSlot = Observer.CharacterSlotRegistry.getByName("Hero");
-        heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");
+        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Hero");}
+
+        if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
 
         // Enemy slots
-        enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");
-        enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");
+        if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
+        if(enemySlot2 == null) {enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");}
         selectedTarget = enemySlot; // default target
 
         // Set current acting hero
@@ -72,8 +83,27 @@ public class BattleSystem {
     }
     
     public void startBattleLoop() {
-        // Move lines every frame
-        run(() -> updateLines(), Duration.millis(5));
+        // Stop any existing battle loop first
+        stopBattleLoop();
+        
+        // Start new battle loop
+        battleLoopActive = true;
+        startBattleLoopRecursive();
+        System.out.println("Battle loop started");
+    }
+    
+    private void startBattleLoopRecursive() {
+        if (battleLoopActive) {
+            updateLines();
+            runOnce(() -> startBattleLoopRecursive(), Duration.millis(5));
+        }
+    }
+    
+    public void stopBattleLoop() {
+        // Stop the battle loop
+        battleLoopActive = false;
+        setMoving(false);
+        System.out.println("Battle loop stopped");
     }
     
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
@@ -230,6 +260,9 @@ public class BattleSystem {
                     getGameScene().removeUINode(battleUI.getYellowLine());
                     battleUI.setYellowLine(null);
                 }
+                
+                // Check if all enemies are defeated
+                checkVictoryCondition();
             }
         }
     }
@@ -246,4 +279,32 @@ public class BattleSystem {
     public void setMoving(boolean moving) { this.moving = moving; }
     public boolean isMoving() { return moving; }
     public Line getTurnOf() { return turnOf; }
+    
+    public void setMapEnemies(Observer.characterSlot enemy1, Observer.characterSlot enemy2) {
+
+        // Update enemy slots with map enemies
+        if (enemy1 != null) {
+
+            this.enemySlot = enemy1;
+        }
+        if (enemy2 != null) {
+            this.enemySlot2 = enemy2;
+        }
+        
+        // Update selected target to first enemy
+        this.selectedTarget = enemy1;
+    }
+    
+    private void checkVictoryCondition() {
+        // Check if all enemies are defeated
+        boolean enemy1Defeated = enemySlot == null || enemySlot.getCurrentHp() <= 0;
+        boolean enemy2Defeated = enemySlot2 == null || enemySlot2.getCurrentHp() <= 0;
+        
+        if (enemy1Defeated && enemy2Defeated) {
+            System.out.println("Victory! All enemies defeated!");
+            if (onBattleWon != null) {
+                onBattleWon.run();
+            }
+        }
+    }
 }

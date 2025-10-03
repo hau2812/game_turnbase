@@ -39,27 +39,30 @@ public class testing extends GameApplication {
     protected void initGame() {
         getGameScene().setBackgroundColor(Color.LIGHTGRAY);
         
-        // Initialize battle system
+        // Initialize battle system (but don't start it yet)
         battleSystem = new BattleSystem(INCLUDE_HERO2, INCLUDE_ENEMY2);
         battleUI = new BattleUI(battleSystem);
         battleSystem.setBattleUI(battleUI);
+        battleSystem.setOnBattleWon(() -> {
+            // This callback is called when all enemies are defeated
+            handleBattleVictory();
+        });
         
-        // Initialize battle
-        battleSystem.initializeBattle();
-        battleUI.initializeUI();
-        
-        // Start battle loop
-        battleSystem.startBattleLoop();
-        
-        // Initialize hero skills for the first hero
-        battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
-
-        // Initialize Map System
+        // Initialize Map System first
         gameMap = new GameMap();
         mapUI = new MapUI(gameMap);
+        mapUI.setBattleSystem(battleSystem);
+        mapUI.setOnBattleModeRequested(() -> {
+            // This callback is called when a battle node is clicked
+            enterBattleMode();
+        });
+
+        // Start with map mode
+        inMapMode = true;
+        mapUI.showPathSelection();
 
         // Add instruction text
-        Text instructionText = new Text("Nhấn M để mở Map - Chọn đường đi của bạn!");
+        Text instructionText = new Text("Chọn đường đi của bạn! Nhấn N để thoát khỏi Map");
         instructionText.setFont(new Font(14));
         instructionText.setFill(Color.DARKBLUE);
         instructionText.setTranslateX(250);
@@ -69,15 +72,21 @@ public class testing extends GameApplication {
 
     @Override
     protected void initInput() {
-        // Toggle between combat and map mode with M key
-        onKeyDown(KeyCode.M, () -> {
-            toggleMapMode();
+        // N key to exit map mode and start battle
+        onKeyDown(KeyCode.N, () -> {
+            if (inMapMode) {
+                exitMapMode();
+            }
+        });
+
+        onKeyDown(KeyCode.B, () -> {
+                System.out.println(battleSystem.isMoving());
         });
         
-        // ESC to exit map mode
-        onKeyDown(KeyCode.N, () -> {
-            if (inMapMode || true) {
-                exitMapMode();
+        // M key to return to map mode from battle
+        onKeyDown(KeyCode.M, () -> {
+            if (!inMapMode) {
+                enterMapMode();
             }
         });
     }
@@ -100,6 +109,34 @@ public class testing extends GameApplication {
         // Show map UI
         mapUI.showPathSelection();
     }
+    
+    private void enterBattleMode() {
+        System.out.println("in battle mode");
+        inMapMode = false;
+        
+        // Hide map UI
+        mapUI.hide();
+        
+        // Stop any existing battle loop first
+        battleSystem.stopBattleLoop();
+        
+        // Always reinitialize battle system for map battles
+        System.out.println("Initializing battle system...");
+        battleSystem.initializeBattle();
+        System.out.println("Initializing battle UI...");
+        battleUI.initializeUI();
+        
+        // Start fresh battle loop
+        System.out.println("Starting battle loop...");
+        battleSystem.startBattleLoop();
+        
+        System.out.println("Rendering hero skills...");
+        battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
+        System.out.println("Showing all combat UI...");
+        battleUI.showAllCombatUI();
+        battleSystem.setMoving(true);
+        System.out.println("Battle mode setup complete!");
+    }
 
     private void exitMapMode() {
         inMapMode = false;
@@ -107,10 +144,41 @@ public class testing extends GameApplication {
         // Hide map UI
         mapUI.hide();
         
-        // Show combat UI elements again
-        battleUI.showAllCombatUI();
+        // Initialize battle if not already done
+        if (!battleSystem.isMoving()) {
+            battleSystem.initializeBattle();
+            battleUI.initializeUI();
+            battleSystem.startBattleLoop();
+            battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
+            battleSystem.setMoving(true);
+
+        } else {
+            // Show combat UI elements again
+            battleUI.showAllCombatUI();
+            battleSystem.setMoving(true); // Resume combat
+        }
+    }
+    
+    private void handleBattleVictory() {
+        System.out.println("Battle victory! Returning to map...");
         
-        battleSystem.setMoving(true); // Resume combat
+        // Clear all battle UI elements
+        battleUI.clearAllBattleUI();
+        
+        // Stop the battle loop properly
+        battleSystem.stopBattleLoop();
+        
+        // Return to map mode - show the selected path instead of path selection
+        inMapMode = true;
+        if (gameMap.getSelectedPath() != null) {
+            // Show the selected path with nodes
+            mapUI.showSelectedPath();
+        } else {
+            // Fallback to path selection if no path is selected
+            mapUI.showPathSelection();
+        }
+        
+        System.out.println("Returned to map mode!");
     }
 
     public static void main(String[] args) {

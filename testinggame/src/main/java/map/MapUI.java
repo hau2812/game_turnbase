@@ -10,12 +10,14 @@ import javafx.scene.text.TextAlignment;
 import com.almasb.fxgl.dsl.FXGL;
 import characters.Observer;
 import event.MapEvent;
+import battle.BattleSystem;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MapUI {
     private GameMap gameMap;
+    private BattleSystem battleSystem;
     private List<Rectangle> pathButtons;
     private List<Text> pathTexts;
     private List<Circle> nodeCircles;
@@ -23,6 +25,8 @@ public class MapUI {
     private boolean pathSelected;
     private Rectangle mapBackground;
     private List<Text> nodeLabels;
+    private List<Observer.characterSlot> currentBattleEnemies;
+    private Runnable onBattleModeRequested;
 
 
     public MapUI(GameMap gameMap) {
@@ -33,7 +37,15 @@ public class MapUI {
         this.pathLines = new ArrayList<>();
         this.nodeLabels = new ArrayList<>();
         this.pathSelected = false;
-
+        this.currentBattleEnemies = new ArrayList<>();
+    }
+    
+    public void setBattleSystem(BattleSystem battleSystem) {
+        this.battleSystem = battleSystem;
+    }
+    
+    public void setOnBattleModeRequested(Runnable callback) {
+        this.onBattleModeRequested = callback;
     }
 
     public void showPathSelection() {
@@ -325,7 +337,13 @@ public class MapUI {
             case BATTLE:
                 // Start battle with enemies in this node
                 System.out.println("Starting battle at: " + node.getName());
-                // You can trigger combat mode here
+                if (battleSystem != null && !node.getEnemies().isEmpty()) {
+                    // Set up battle with map enemies
+                    setupBattleWithMapEnemies(node);
+                    
+                    // Automatically switch to battle mode
+                    switchToBattleMode();
+                }
                 break;
             case SHOP:
                 System.out.println("Opened shop at: " + node.getName());
@@ -370,55 +388,87 @@ public class MapUI {
             gameMap.getSelectedPath().moveToNextNode();
         }
         
-        // Refresh the UI to show updated status
-        showSelectedPath();
+        // Only refresh the UI if it's not a battle node (battle nodes switch to battle mode)
+        if (node.getType() != MapNode.NodeType.BATTLE) {
+            // Refresh the UI to show updated status
+            showSelectedPath();
+        }
     }
 
     private void clearUI() {
+        System.out.println("Clearing MapUI elements...");
+        int removedCount = 0;
+        
         // Remove all UI elements
         if (mapBackground != null) {
             FXGL.getGameScene().removeUINode(mapBackground);
+            removedCount++;
+            System.out.println("Removed map background");
         }
         
         for (Rectangle button : pathButtons) {
             FXGL.getGameScene().removeUINode(button);
+            removedCount++;
         }
+        System.out.println("Removed " + pathButtons.size() + " path buttons");
         
         for (Text text : pathTexts) {
             FXGL.getGameScene().removeUINode(text);
+            removedCount++;
         }
+        System.out.println("Removed " + pathTexts.size() + " path texts");
         
         for (Circle circle : nodeCircles) {
             FXGL.getGameScene().removeUINode(circle);
+            removedCount++;
         }
+        System.out.println("Removed " + nodeCircles.size() + " node circles");
         
         for (Line line : pathLines) {
             FXGL.getGameScene().removeUINode(line);
+            removedCount++;
         }
+        System.out.println("Removed " + pathLines.size() + " path lines");
+        
         for (Text text : nodeLabels) {
             FXGL.getGameScene().removeUINode(text);
+            removedCount++;
         }
+        System.out.println("Removed " + nodeLabels.size() + " node labels");
+        
         if(title!=null) {
             FXGL.getGameScene().removeUINode(title);
-//        }
-//        if(progress!=null) {
+            removedCount++;
+            System.out.println("Removed title");
+        }
+        if(progress!=null) {
             FXGL.getGameScene().removeUINode(progress);
-        //}
-//        if(title!=null) {
+            removedCount++;
+            System.out.println("Removed progress");
+        }
+        if(title2!=null) {
             FXGL.getGameScene().removeUINode(title2);
-        //}
-        //if(progress!=null) {
+            removedCount++;
+            System.out.println("Removed title2");
+        }
+        if(backText!=null) {
             FXGL.getGameScene().removeUINode(backText);
-        //}
-        //if(backButton!=null) {
+            removedCount++;
+            System.out.println("Removed backText");
+        }
+        if(backButton!=null) {
             FXGL.getGameScene().removeUINode(backButton);
-
+            removedCount++;
+            System.out.println("Removed backButton");
         }
 
         pathButtons.clear();
         pathTexts.clear();
         nodeCircles.clear();
         pathLines.clear();
+        nodeLabels.clear();
+        
+        System.out.println("Total MapUI elements removed: " + removedCount);
     }
 
     public boolean isPathSelected() {
@@ -426,7 +476,55 @@ public class MapUI {
     }
 
     public void hide() {
+        System.out.println("Hiding map UI...");
         clearUI();
         pathSelected = false;
+        System.out.println("Map UI hidden!");
+    }
+    
+    private void setupBattleWithMapEnemies(MapNode node) {
+        // Get the enemies from the map node
+        List<Observer.characterSlot> mapEnemies = node.getEnemies();
+        
+        if (mapEnemies.isEmpty()) {
+            System.out.println("No enemies in this node!");
+            return;
+        }
+        
+        // Store the current battle enemies
+        currentBattleEnemies.clear();
+        currentBattleEnemies.addAll(mapEnemies);
+        
+        // Set up battle system with map enemies
+        Observer.characterSlot enemy1 = mapEnemies.get(0);
+        Observer.characterSlot enemy2 = mapEnemies.size() > 1 ? mapEnemies.get(1) : null;
+        
+        System.out.println("Setting up battle with: " + enemy1.getCharacter().getName());
+        if (enemy2 != null) {
+            System.out.println("And: " + enemy2.getCharacter().getName());
+        }
+        
+        // Update battle system with map enemies
+        if (battleSystem != null) {
+            battleSystem.setMapEnemies(enemy1, enemy2);
+        }
+    }
+    
+    public List<Observer.characterSlot> getCurrentBattleEnemies() {
+        return currentBattleEnemies;
+    }
+    
+    private void switchToBattleMode() {
+        System.out.println("Switching to battle mode from MapUI...");
+        // Don't hide here - let enterBattleMode handle it
+        // hide();
+        
+        // Notify the main game to switch to battle mode
+        if (onBattleModeRequested != null) {
+            System.out.println("Calling battle mode callback...");
+            onBattleModeRequested.run();
+        } else {
+            System.out.println("No battle mode callback set!");
+        }
     }
 }
