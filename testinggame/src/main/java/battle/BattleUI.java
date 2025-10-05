@@ -15,41 +15,65 @@ import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class  BattleUI {
     
+    /**
+     * Helper class to hold Burning Rage bar data
+     */
+    private static class BurningRageBarData {
+        public Observer.characterSlot characterSlot;
+        public Rectangle rageBar;
+        public double baseX;
+        public double baseY;
+        
+        public BurningRageBarData(Observer.characterSlot slot, Rectangle bar, double x, double y) {
+            this.characterSlot = slot;
+            this.rageBar = bar;
+            this.baseX = x;
+            this.baseY = y;
+        }
+    }
+    
+    /**
+     * Helper class to hold Health bar data
+     */
+    private static class HealthBarData {
+        public Observer.characterSlot characterSlot;
+        public Rectangle healthBar;
+        public Rectangle healthBorder;
+        public Rectangle mpBar;
+        public Rectangle mpBorder;
+        public Text hpText;
+        public Text mpText;
+        public Text nameText;
+        public double baseX;
+        public double baseY;
+        
+        public HealthBarData(Observer.characterSlot slot, Rectangle healthBar, Rectangle healthBorder, 
+                           Rectangle mpBar, Rectangle mpBorder, Text hpText, Text mpText, Text nameText, 
+                           double x, double y) {
+            this.characterSlot = slot;
+            this.healthBar = healthBar;
+            this.healthBorder = healthBorder;
+            this.mpBar = mpBar;
+            this.mpBorder = mpBorder;
+            this.hpText = hpText;
+            this.mpText = mpText;
+            this.nameText = nameText;
+            this.baseX = x;
+            this.baseY = y;
+        }
+    }
+    
     // Lines
     private Line blueLine;
     private Line greenLine;
     private Line redLine;
     private Line yellowLine;
     
-    // Health bars
-    private Rectangle blueHealthBar;
-    private Rectangle greenHealthBar;
-    private Rectangle redHealthBar;
-    private Rectangle red2HealthBar;
-    private Rectangle blueMpBar;
-    private Rectangle greenMpBar;
+    // Health bars - using list-based approach
+    private java.util.List<HealthBarData> healthBars = new java.util.ArrayList<>();
     
-    // Health bar borders
-    private Rectangle blueHealthBorder;
-    private Rectangle greenHealthBorder;
-    private Rectangle redHealthBorder;
-    private Rectangle red2HealthBorder;
-    private Rectangle blueMpBorder;
-    private Rectangle greenMpBorder;
-    
-    // Text elements
-    private Text blueHPText;
-    private Text greenHPText;
-    private Text redHPText;
-    private Text red2HPText;
-    private Text blueMPText;
-    private Text greenMPText;
-    
-    // Name text elements
-    private Text blueNameText;
-    private Text greenNameText;
-    private Text redNameText;
-    private Text red2NameText;
+    // Burning Rage bars (red bars that show accumulated rage)
+    private java.util.List<BurningRageBarData> burningRageBars = new java.util.ArrayList<>();
     
     // Skill boxes
     private Rectangle skill1Box;
@@ -86,19 +110,16 @@ public class  BattleUI {
     
     private void updateAllHealthAndMpBars() {
         // Update health bars for all characters
-        if (battleSystem.getHeroSlot() != null) {
-            updateHealthUI(battleSystem.getHeroSlot());
-            updateMpUI(battleSystem.getHeroSlot());
+        for (HealthBarData healthBarData : healthBars) {
+            updateHealthUI(healthBarData.characterSlot);
+            if (healthBarData.mpBar != null) {
+                updateMpUI(healthBarData.characterSlot);
+            }
         }
-        if (battleSystem.getHeroSlot2() != null) {
-            updateHealthUI(battleSystem.getHeroSlot2());
-            updateMpUI(battleSystem.getHeroSlot2());
-        }
-        if (battleSystem.getEnemySlot() != null) {
-            updateHealthUI(battleSystem.getEnemySlot());
-        }
-        if (battleSystem.getEnemySlot2() != null) {
-            updateHealthUI(battleSystem.getEnemySlot2());
+        
+        // Update all Burning Rage bars
+        for (BurningRageBarData rageBarData : burningRageBars) {
+            updateBurningRageBar(rageBarData.characterSlot);
         }
     }
     
@@ -135,13 +156,13 @@ public class  BattleUI {
     private void createLines() {
         // Blue line (Hero 1) - only if hero exists and has HP > 0
         if (battleSystem.getHeroSlot() != null && battleSystem.getHeroSlot().getCurrentHp() > 0) {
-            blueLine = new Line();
-            blueLine.setStroke(Color.BLUE);
-            blueLine.setStrokeWidth(3);
-            blueLine.setStartX(barX + barWidth / 1.75);
-            blueLine.setEndX(barX + barWidth / 1.75);
-            blueLine.setStartY(barY);
-            blueLine.setEndY(barY + barHeight);
+        blueLine = new Line();
+        blueLine.setStroke(Color.BLUE);
+        blueLine.setStrokeWidth(3);
+        blueLine.setStartX(barX + barWidth / 1.75);
+        blueLine.setEndX(barX + barWidth / 1.75);
+        blueLine.setStartY(barY);
+        blueLine.setEndY(barY + barHeight);
         }
 
         // Green line (Hero 2) - only if hero exists and has HP > 0
@@ -157,13 +178,13 @@ public class  BattleUI {
 
         // Red line (Enemy 1) - only if enemy exists and has HP > 0
         if (battleSystem.getEnemySlot() != null && battleSystem.getEnemySlot().getCurrentHp() > 0) {
-            redLine = new Line();
-            redLine.setStroke(Color.RED);
-            redLine.setStrokeWidth(3);
-            redLine.setStartX(barX + barWidth/1.5);
-            redLine.setEndX(barX + barWidth/1.5);
-            redLine.setStartY(barY);
-            redLine.setEndY(barY + barHeight);
+        redLine = new Line();
+        redLine.setStroke(Color.RED);
+        redLine.setStrokeWidth(3);
+        redLine.setStartX(barX + barWidth/1.5);
+        redLine.setEndX(barX + barWidth/1.5);
+        redLine.setStartY(barY);
+        redLine.setEndY(barY + barHeight);
         }
 
         // Yellow line (Enemy 2) - only if enemy exists and has HP > 0
@@ -179,13 +200,13 @@ public class  BattleUI {
 
         // Add lines to scene - only if they were created
         if (blueLine != null) {
-            getGameScene().addUINode(blueLine);
+        getGameScene().addUINode(blueLine);
         }
         if (greenLine != null) {
             getGameScene().addUINode(greenLine);
         }
         if (redLine != null) {
-            getGameScene().addUINode(redLine);
+        getGameScene().addUINode(redLine);
         }
         if (yellowLine != null) {
             getGameScene().addUINode(yellowLine);
@@ -193,13 +214,13 @@ public class  BattleUI {
 
         // Set lines to character slots - only if characters exist and have HP > 0
         if (battleSystem.getHeroSlot() != null && battleSystem.getHeroSlot().getCurrentHp() > 0) {
-            battleSystem.getHeroSlot().setLine(blueLine);
+        battleSystem.getHeroSlot().setLine(blueLine);
         }
         if (battleSystem.getHeroSlot2() != null && battleSystem.getHeroSlot2().getCurrentHp() > 0) {
             battleSystem.getHeroSlot2().setLine(greenLine);
         }
         if (battleSystem.getEnemySlot() != null && battleSystem.getEnemySlot().getCurrentHp() > 0) {
-            battleSystem.getEnemySlot().setLine(redLine);
+        battleSystem.getEnemySlot().setLine(redLine);
         }
         if (battleSystem.getEnemySlot2() != null && battleSystem.getEnemySlot2().getCurrentHp() > 0) {
             battleSystem.getEnemySlot2().setLine(yellowLine);
@@ -207,377 +228,249 @@ public class  BattleUI {
     }
     
     private void createHealthBars() {
-        // Health bar positions
-        double blueHealthX = 50;
-        double blueHealthY = 300;
-        double greenHealthX = 50;
-        double greenHealthY = 350;
-        double blueMpX = 50;
-        double blueMpY = 325;
-        double greenMpX = 50;
-        double greenMpY = 375;
-
-        double redHealthX = 550;
-        double redHealthY = 300;
-        double red2HealthX = 550;
-        double red2HealthY = 350;
-
-        // Create borders
-        blueHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-        blueHealthBorder.setStroke(Color.BLACK);
-        blueHealthBorder.setStrokeWidth(2);
-        blueHealthBorder.setTranslateX(blueHealthX);
-        blueHealthBorder.setTranslateY(blueHealthY);
-
-        if (battleSystem.getHeroSlot2() != null) {
-            greenHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-            greenHealthBorder.setStroke(Color.BLACK);
-            greenHealthBorder.setStrokeWidth(2);
-            greenHealthBorder.setTranslateX(greenHealthX);
-            greenHealthBorder.setTranslateY(greenHealthY);
+        // Clear existing health bars
+        healthBars.clear();
+        
+        // Define character slots and their positions/colors
+        Observer.characterSlot[] allSlots = {
+            battleSystem.getHeroSlot(),
+            battleSystem.getHeroSlot2(),
+            battleSystem.getEnemySlot(),
+            battleSystem.getEnemySlot2()
+        };
+        
+        // Position data: [healthX, healthY, mpX, mpY]
+        double[][] positions = {
+            {50, 300, 50, 325},   // Hero (blue)
+            {50, 350, 50, 375},   // Hero2 (green)
+            {550, 300, 550, 325}, // Enemy (red)
+            {550, 350, 550, 375}  // Enemy2 (crimson)
+        };
+        
+        // Health bar colors
+        Color[] healthColors = {Color.BLUE, Color.LIMEGREEN, Color.RED, Color.CRIMSON};
+        Color[] mpColors = {Color.DODGERBLUE, Color.MEDIUMSEAGREEN, Color.DODGERBLUE, Color.DODGERBLUE};
+        
+        // Create health bars for all existing characters
+        for (int i = 0; i < allSlots.length; i++) {
+            Observer.characterSlot slot = allSlots[i];
+            if (slot == null) continue;
+            
+            double[] pos = positions[i];
+            double healthX = pos[0];
+            double healthY = pos[1];
+            double mpX = pos[2];
+            double mpY = pos[3];
+            
+            // Create health border
+            Rectangle healthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
+            healthBorder.setStroke(Color.BLACK);
+            healthBorder.setStrokeWidth(2);
+            healthBorder.setTranslateX(healthX);
+            healthBorder.setTranslateY(healthY);
+            
+            // Create health bar
+            Rectangle healthBar = new Rectangle(healthBarWidth, healthBarHeight, healthColors[i]);
+            healthBar.setTranslateX(healthX);
+            healthBar.setTranslateY(healthY);
+            
+            // Create MP border and bar (only for heroes)
+            Rectangle mpBorder = null;
+            Rectangle mpBar = null;
+            if (i < 2) { // Only heroes have MP
+                mpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
+                mpBorder.setStroke(Color.BLACK);
+                mpBorder.setStrokeWidth(1);
+                mpBorder.setTranslateX(mpX);
+                mpBorder.setTranslateY(mpY);
+                
+                mpBar = new Rectangle(healthBarWidth, 10, mpColors[i]);
+                mpBar.setTranslateX(mpX);
+                mpBar.setTranslateY(mpY);
+            }
+            
+            // Create text elements (will be created in createHealthText)
+            Text hpText = null;
+            Text mpText = null;
+            Text nameText = null;
+            
+            // Add to health bars list
+            healthBars.add(new HealthBarData(slot, healthBar, healthBorder, 
+                mpBar, mpBorder, hpText, mpText, nameText, healthX, healthY));
         }
-
-        blueMpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
-        blueMpBorder.setStroke(Color.BLACK);
-        blueMpBorder.setStrokeWidth(1);
-        blueMpBorder.setTranslateX(blueMpX);
-        blueMpBorder.setTranslateY(blueMpY);
-
-        if (battleSystem.getHeroSlot2() != null) {
-            greenMpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
-            greenMpBorder.setStroke(Color.BLACK);
-            greenMpBorder.setStrokeWidth(1);
-            greenMpBorder.setTranslateX(greenMpX);
-            greenMpBorder.setTranslateY(greenMpY);
-        }
-
-        // Create health bar borders - only if enemies exist
-        if (battleSystem.getEnemySlot() != null) {
-            redHealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-            redHealthBorder.setStroke(Color.BLACK);
-            redHealthBorder.setStrokeWidth(2);
-            redHealthBorder.setTranslateX(redHealthX);
-            redHealthBorder.setTranslateY(redHealthY);
-        }
-
-        if (battleSystem.getEnemySlot2() != null) {
-            red2HealthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
-            red2HealthBorder.setStroke(Color.BLACK);
-            red2HealthBorder.setStrokeWidth(2);
-            red2HealthBorder.setTranslateX(red2HealthX);
-            red2HealthBorder.setTranslateY(red2HealthY);
-        }
-
-        // Create health bars - only if characters exist
-        if (battleSystem.getHeroSlot() != null) {
-            blueHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.BLUE);
-            blueHealthBar.setTranslateX(blueHealthX);
-            blueHealthBar.setTranslateY(blueHealthY);
-        }
-
-        if (battleSystem.getHeroSlot2() != null) {
-            greenHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.LIMEGREEN);
-            greenHealthBar.setTranslateX(greenHealthX);
-            greenHealthBar.setTranslateY(greenHealthY);
-        }
-
-        if (battleSystem.getHeroSlot() != null) {
-            blueMpBar = new Rectangle(healthBarWidth, 10, Color.DODGERBLUE);
-            blueMpBar.setTranslateX(blueMpX);
-            blueMpBar.setTranslateY(blueMpY);
-        }
-
-        if (battleSystem.getHeroSlot2() != null) {
-            greenMpBar = new Rectangle(healthBarWidth, 10, Color.MEDIUMSEAGREEN);
-            greenMpBar.setTranslateX(greenMpX);
-            greenMpBar.setTranslateY(greenMpY);
-        }
-
-        if (battleSystem.getEnemySlot() != null) {
-            redHealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.RED);
-            redHealthBar.setTranslateX(redHealthX);
-            redHealthBar.setTranslateY(redHealthY);
-        }
-
-        if (battleSystem.getEnemySlot2() != null) {
-            red2HealthBar = new Rectangle(healthBarWidth, healthBarHeight, Color.CRIMSON);
-            red2HealthBar.setTranslateX(red2HealthX);
-            red2HealthBar.setTranslateY(red2HealthY);
+        
+        // Create Burning Rage bars (red bars that show accumulated rage)
+        createBurningRageBars();
+    }
+    
+    private void createBurningRageBars() {
+        // Clear existing rage bars
+        burningRageBars.clear();
+        
+        // Create rage bars for all characters that have Burning Rage talent
+        for (HealthBarData healthBarData : healthBars) {
+            Observer.characterSlot slot = healthBarData.characterSlot;
+            
+            if (hasBurningRage(slot)) {
+                Rectangle rageBar = new Rectangle(0, healthBarHeight, Color.DARKRED);
+                rageBar.setTranslateX(healthBarData.healthBorder.getTranslateX());
+                rageBar.setTranslateY(healthBarData.healthBorder.getTranslateY());
+                rageBar.setVisible(false); // Initially hidden
+                rageBar.setMouseTransparent(true); // Make non-interactive so clicks pass through
+                
+                burningRageBars.add(new BurningRageBarData(slot, rageBar, 
+                    healthBarData.healthBorder.getTranslateX(), healthBarData.healthBorder.getTranslateY()));
+            }
         }
     }
     
+    /**
+     * Check if a character has the Burning Rage talent
+     */
+    private boolean hasBurningRage(Observer.characterSlot slot) {
+        return slot.getCharacter().getUniqueValue("Burning rage") != null;
+    }
+    
     private void createHealthText() {
-        Observer.characterSlot heroSlot = battleSystem.getHeroSlot();
-        Observer.characterSlot heroSlot2 = battleSystem.getHeroSlot2();
-        Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
-        Observer.characterSlot enemySlot2 = battleSystem.getEnemySlot2();
-        
-        // HP text - only create if characters exist
-        if (heroSlot != null) {
-            blueHPText = new Text("HP: " + (int) heroSlot.getCurrentHp() + " / " + (int) heroSlot.getCharacter().getHp());
-            blueHPText.setFont(new Font(16));
-            blueHPText.setFill(Color.WHITE);
-            blueHPText.setTranslateX(blueHealthBorder.getTranslateX() + 4);
-            blueHPText.setTranslateY(blueHealthBorder.getTranslateY() + healthBarHeight - 5);
-        }
-
-        if (heroSlot2 != null) {
-            greenHPText = new Text("HP: " + (int) heroSlot2.getCurrentHp() + " / " + (int) heroSlot2.getCharacter().getHp());
-            greenHPText.setFont(new Font(16));
-            greenHPText.setFill(Color.WHITE);
-            greenHPText.setTranslateX(greenHealthBorder.getTranslateX() + 4);
-            greenHPText.setTranslateY(greenHealthBorder.getTranslateY() + healthBarHeight - 5);
-        }
-
-        if (heroSlot != null) {
-            blueMPText = new Text("MP: " + (int) heroSlot.getCurrentMp() + " / " + (int) heroSlot.getCharacter().getMp());
-            blueMPText.setFont(new Font(12));
-            blueMPText.setFill(Color.WHITE);
-            blueMPText.setTranslateX(blueMpBorder.getTranslateX() + 4);
-            blueMPText.setTranslateY(blueMpBorder.getTranslateY() + 8);
-        }
-
-        if (heroSlot2 != null) {
-            greenMPText = new Text("MP: " + (int) heroSlot2.getCurrentMp() + " / " + (int) heroSlot2.getCharacter().getMp());
-            greenMPText.setFont(new Font(12));
-            greenMPText.setFill(Color.WHITE);
-            greenMPText.setTranslateX(greenMpBorder.getTranslateX() + 4);
-            greenMPText.setTranslateY(greenMpBorder.getTranslateY() + 8);
-        }
-
-        if (enemySlot != null) {
-            redHPText = new Text("HP: " + (int) enemySlot.getCurrentHp() + " / " + (int) enemySlot.getCharacter().getHp());
-            redHPText.setFont(new Font(16));
-            redHPText.setFill(Color.BLACK);
-            redHPText.setTranslateX(redHealthBorder.getTranslateX() + 4);
-            redHPText.setTranslateY(redHealthBorder.getTranslateY() + healthBarHeight - 5);
-        }
-
-        if (enemySlot2 != null) {
-            red2HPText = new Text("HP: " + (int) enemySlot2.getCurrentHp() + " / " + (int) enemySlot2.getCharacter().getHp());
-            red2HPText.setFont(new Font(16));
-            red2HPText.setFill(Color.BLACK);
-            red2HPText.setTranslateX(red2HealthBorder.getTranslateX() + 4);
-            red2HPText.setTranslateY(red2HealthBorder.getTranslateY() + healthBarHeight - 5);
+        // Create text elements for all health bars
+        for (HealthBarData healthBarData : healthBars) {
+            Observer.characterSlot slot = healthBarData.characterSlot;
+            
+            // Create HP text
+            Text hpText = new Text("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+            hpText.setFont(new Font(16));
+            hpText.setFill(slot == battleSystem.getHeroSlot() || slot == battleSystem.getHeroSlot2() ? Color.WHITE : Color.BLACK);
+            hpText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
+            hpText.setTranslateY(healthBarData.healthBorder.getTranslateY() + healthBarHeight - 5);
+            healthBarData.hpText = hpText;
+            
+            // Create MP text (only for heroes)
+            if (healthBarData.mpBorder != null) {
+                Text mpText = new Text("MP: " + (int) slot.getCurrentMp() + " / " + (int) slot.getCharacter().getMp());
+                mpText.setFont(new Font(12));
+                mpText.setFill(Color.WHITE);
+                mpText.setTranslateX(healthBarData.mpBorder.getTranslateX() + 4);
+                mpText.setTranslateY(healthBarData.mpBorder.getTranslateY() + 8);
+                healthBarData.mpText = mpText;
+            }
         }
     }
     
     private void createNameText() {
-        Observer.characterSlot heroSlot = battleSystem.getHeroSlot();
-        Observer.characterSlot heroSlot2 = battleSystem.getHeroSlot2();
-        Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
-        Observer.characterSlot enemySlot2 = battleSystem.getEnemySlot2();
-        
-        // Name text - only create if characters exist
-        if (heroSlot != null) {
-            blueNameText = new Text(heroSlot.getCharacter().getName());
-            blueNameText.setFont(new Font(18));
-            blueNameText.setFill(Color.BLACK);
-            blueNameText.setTranslateX(blueHealthBorder.getTranslateX() + 4);
-            blueNameText.setTranslateY(blueHealthBorder.getTranslateY() - 5);
-        }
-
-        if (heroSlot2 != null) {
-            greenNameText = new Text(heroSlot2.getCharacter().getName());
-            greenNameText.setFont(new Font(18));
-            greenNameText.setFill(Color.BLACK);
-            greenNameText.setTranslateX(greenHealthBorder.getTranslateX() + 4);
-            greenNameText.setTranslateY(greenHealthBorder.getTranslateY() - 5);
-        }
-
-        if (enemySlot != null) {
-            redNameText = new Text(enemySlot.getCharacter().getName());
-            redNameText.setFont(new Font(18));
-            redNameText.setFill(Color.BLACK);
-            redNameText.setTranslateX(redHealthBorder.getTranslateX() + 4);
-            redNameText.setTranslateY(redHealthBorder.getTranslateY() - 5);
-        }
-
-        if (enemySlot2 != null) {
-            red2NameText = new Text(enemySlot2.getCharacter().getName());
-            red2NameText.setFont(new Font(18));
-            red2NameText.setFill(Color.BLACK);
-            red2NameText.setTranslateX(red2HealthBorder.getTranslateX() + 4);
-            red2NameText.setTranslateY(red2HealthBorder.getTranslateY() - 5);
+        // Create name text for all health bars
+        for (HealthBarData healthBarData : healthBars) {
+            Observer.characterSlot slot = healthBarData.characterSlot;
+            
+            Text nameText = new Text(slot.getCharacter().getName());
+            nameText.setFont(new Font(18));
+            nameText.setFill(Color.BLACK);
+            nameText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
+            nameText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+            healthBarData.nameText = nameText;
         }
     }
     
     private void addUIElements() {
-        // Add UI elements to scene
-        if (blueHealthBorder != null) {
-            getGameScene().addUINode(blueHealthBorder);
-        }
-        if (blueHealthBar != null) {
-            getGameScene().addUINode(blueHealthBar);
-        }
-        if (greenHealthBorder != null) {
-            getGameScene().addUINode(greenHealthBorder);
-        }
-        if (greenHealthBar != null) {
-            getGameScene().addUINode(greenHealthBar);
-        }
-        if (blueMpBorder != null) {
-            getGameScene().addUINode(blueMpBorder);
-        }
-        if (blueMpBar != null) {
-            getGameScene().addUINode(blueMpBar);
-        }
-        if (greenMpBorder != null) {
-            getGameScene().addUINode(greenMpBorder);
-        }
-        if (greenMpBar != null) {
-            getGameScene().addUINode(greenMpBar);
-        }
-        if (redHealthBorder != null) {
-            getGameScene().addUINode(redHealthBorder);
-        }
-        if (redHealthBar != null) {
-            getGameScene().addUINode(redHealthBar);
-        }
-        if (red2HealthBorder != null) {
-            getGameScene().addUINode(red2HealthBorder);
-        }
-        if (red2HealthBar != null) {
-            getGameScene().addUINode(red2HealthBar);
-        }
-        if (blueHPText != null) {
-            getGameScene().addUINode(blueHPText);
-        }
-        if (greenHPText != null) {
-            getGameScene().addUINode(greenHPText);
-        }
-        if (blueMPText != null) {
-            getGameScene().addUINode(blueMPText);
-        }
-        if (greenMPText != null) {
-            getGameScene().addUINode(greenMPText);
-        }
-        if (redHPText != null) {
-            getGameScene().addUINode(redHPText);
-        }
-        if (red2HPText != null) {
-            getGameScene().addUINode(red2HPText);
+        // Add health bar elements to scene
+        for (HealthBarData healthBarData : healthBars) {
+            getGameScene().addUINode(healthBarData.healthBorder);
+            getGameScene().addUINode(healthBarData.healthBar);
+            
+            if (healthBarData.mpBorder != null) {
+                getGameScene().addUINode(healthBarData.mpBorder);
+            }
+            if (healthBarData.mpBar != null) {
+                getGameScene().addUINode(healthBarData.mpBar);
+            }
         }
         
-        // Add name text elements
-        if (blueNameText != null) {
-            getGameScene().addUINode(blueNameText);
+        // Add Burning Rage bars (drawn on top of health bars but below text)
+        for (BurningRageBarData rageBarData : burningRageBars) {
+            getGameScene().addUINode(rageBarData.rageBar);
         }
-        if (greenNameText != null) {
-            getGameScene().addUINode(greenNameText);
-        }
-        if (redNameText != null) {
-            getGameScene().addUINode(redNameText);
-        }
-        if (red2NameText != null) {
-            getGameScene().addUINode(red2NameText);
+        
+        // Add text elements last so they appear on top of everything
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.hpText != null) {
+                getGameScene().addUINode(healthBarData.hpText);
+            }
+            if (healthBarData.mpText != null) {
+                getGameScene().addUINode(healthBarData.mpText);
+            }
+            if (healthBarData.nameText != null) {
+                getGameScene().addUINode(healthBarData.nameText);
+            }
         }
     }
     
     private void setupTargetSelection() {
         // Target selection on click
         Runnable highlightSelection = () -> {
-            // Highlight enemy health borders based on selected enemy target
-            redHealthBorder.setStroke(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot() ? Color.GOLD : Color.BLACK);
-            redHealthBorder.setStrokeWidth(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot() ? 3 : 2);
-            if (red2HealthBorder != null) {
-                red2HealthBorder.setStroke(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot2() ? Color.GOLD : Color.BLACK);
-                red2HealthBorder.setStrokeWidth(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot2() ? 3 : 2);
-            }
-            
-            // Highlight hero health borders based on selected ally target
-            if (blueHealthBorder != null) {
-                blueHealthBorder.setStroke(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot() ? Color.GOLD : Color.BLACK);
-                blueHealthBorder.setStrokeWidth(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot() ? 3 : 2);
-            }
-            if (greenHealthBorder != null) {
-                greenHealthBorder.setStroke(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot2() ? Color.GOLD : Color.BLACK);
-                greenHealthBorder.setStrokeWidth(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot2() ? 3 : 2);
+            // Update highlighting for all health bars
+            for (HealthBarData healthBarData : healthBars) {
+                Observer.characterSlot slot = healthBarData.characterSlot;
+                boolean isEnemy = (slot == battleSystem.getEnemySlot() || slot == battleSystem.getEnemySlot2());
+                boolean isAlly = (slot == battleSystem.getHeroSlot() || slot == battleSystem.getHeroSlot2());
+                
+                if (isEnemy) {
+                    boolean isSelected = battleSystem.getSelectedEnemyTarget() == slot;
+                    healthBarData.healthBorder.setStroke(isSelected ? Color.GOLD : Color.BLACK);
+                    healthBarData.healthBorder.setStrokeWidth(isSelected ? 3 : 2);
+                } else if (isAlly) {
+                    boolean isSelected = battleSystem.getSelectedAllyTarget() == slot;
+                    healthBarData.healthBorder.setStroke(isSelected ? Color.GOLD : Color.BLACK);
+                    healthBarData.healthBorder.setStrokeWidth(isSelected ? 3 : 2);
+                }
             }
         };
         
-        redHealthBar.setOnMouseClicked(e -> { 
-            battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot()); 
-            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); // Keep for backward compatibility
+        // Set up click handlers for all health bars
+        for (HealthBarData healthBarData : healthBars) {
+            Observer.characterSlot slot = healthBarData.characterSlot;
+            boolean isEnemy = (slot == battleSystem.getEnemySlot() || slot == battleSystem.getEnemySlot2());
+            boolean isAlly = (slot == battleSystem.getHeroSlot() || slot == battleSystem.getHeroSlot2());
+            
+            // Set up click handlers for health bar, border, and HP text
+            if (healthBarData.healthBar != null) {
+                healthBarData.healthBar.setOnMouseClicked(e -> {
+                    if (isEnemy) {
+                        battleSystem.setSelectedEnemyTarget(slot);
+                        battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                    } else if (isAlly) {
+                        battleSystem.setSelectedAllyTarget(slot);
+                        battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                    }
             highlightSelection.run(); 
         });
-        redHealthBorder.setOnMouseClicked(e -> { 
-            battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot()); 
-            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); // Keep for backward compatibility
-            highlightSelection.run(); 
-        });
-        redHPText.setOnMouseClicked(e -> { 
-            battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot()); 
-            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); // Keep for backward compatibility
-            highlightSelection.run(); 
-        });
-        
-        if (red2HealthBar != null) {
-            red2HealthBar.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot2()); 
-                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); // Keep for backward compatibility
+            }
+            
+            if (healthBarData.healthBorder != null) {
+                healthBarData.healthBorder.setOnMouseClicked(e -> {
+                    if (isEnemy) {
+                        battleSystem.setSelectedEnemyTarget(slot);
+                        battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                    } else if (isAlly) {
+                        battleSystem.setSelectedAllyTarget(slot);
+                        battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                    }
                 highlightSelection.run(); 
             });
         }
-        if (red2HealthBorder != null) {
-            red2HealthBorder.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot2()); 
-                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); // Keep for backward compatibility
+            
+            if (healthBarData.hpText != null) {
+                healthBarData.hpText.setOnMouseClicked(e -> {
+                    if (isEnemy) {
+                        battleSystem.setSelectedEnemyTarget(slot);
+                        battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                    } else if (isAlly) {
+                        battleSystem.setSelectedAllyTarget(slot);
+                        battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                    }
                 highlightSelection.run(); 
             });
         }
-        if (red2HPText != null) {
-            red2HPText.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot2()); 
-                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
         }
         
-        // Add click handlers for hero health bars (allies)
-        if (blueHealthBar != null) {
-            blueHealthBar.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot()); 
-                battleSystem.setSelectedTarget(battleSystem.getHeroSlot()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
-        }
-        if (blueHealthBorder != null) {
-            blueHealthBorder.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot()); 
-                battleSystem.setSelectedTarget(battleSystem.getHeroSlot()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
-        }
-        if (blueHPText != null) {
-            blueHPText.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot()); 
-                battleSystem.setSelectedTarget(battleSystem.getHeroSlot()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
-        }
-        
-        if (greenHealthBar != null) {
-            greenHealthBar.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot2()); 
-                battleSystem.setSelectedTarget(battleSystem.getHeroSlot2()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
-        }
-        if (greenHealthBorder != null) {
-            greenHealthBorder.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot2()); 
-                battleSystem.setSelectedTarget(battleSystem.getHeroSlot2()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
-        }
-        if (greenHPText != null) {
-            greenHPText.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot2()); 
-                battleSystem.setSelectedTarget(battleSystem.getHeroSlot2()); // Keep for backward compatibility
-                highlightSelection.run(); 
-            });
-        }
         highlightSelection.run();
     }
     
@@ -659,7 +552,10 @@ public class  BattleUI {
                     return; // not available
                 }
                 Observer.characterSlot resolvedTarget;
-                if (skill.getTarget().equals("Ally")) {
+                if (skill.getTarget().equals("Self")) {
+                    // For self-targeting skills, always target the attacker
+                    resolvedTarget = attacker;
+                } else if (skill.getTarget().equals("Ally")) {
                     // For ally-targeting skills, use the selected ally target
                     resolvedTarget = battleSystem.getSelectedAllyTarget();
                     if (resolvedTarget == null) {
@@ -680,8 +576,15 @@ public class  BattleUI {
                     resolvedTarget = target != null ? target : battleSystem.getSelectedTarget();
                 }
                 // Enforce affordability for heroes before calling useSkill
-                if ((attacker == battleSystem.getHeroSlot() || attacker == battleSystem.getHeroSlot2()) && attacker.getCurrentMp() < skill.getMpCost()) {
-                    return;
+                if (attacker == battleSystem.getHeroSlot() || attacker == battleSystem.getHeroSlot2()) {
+                    // Check MP affordability
+                    if (attacker.getCurrentMp() < skill.getMpCost()) {
+                        return; // Not enough MP
+                    }
+                    // Check Burning Rage affordability
+                    if (!characters.SpecialTalents.hasEnoughBurningRage(attacker, skill.getBurningRageRequired())) {
+                        return; // Not enough Burning Rage
+                    }
                 }
                 battleSystem.setMoving(true);
                 battleSystem.useSkill(attacker, resolvedTarget, skill);
@@ -698,80 +601,80 @@ public class  BattleUI {
     
     private void updateSkillAffordabilityVisual(Rectangle box, Observer.characterSlot hero, Ability.skill skill) {
         boolean available = skill != null;
-        boolean affordable = available && hero.getCurrentMp() >= skill.getMpCost();
+        boolean hasEnoughMp = available && hero.getCurrentMp() >= skill.getMpCost();
+        boolean hasEnoughRage = available && characters.SpecialTalents.hasEnoughBurningRage(hero, skill.getBurningRageRequired());
+        boolean affordable = hasEnoughMp && hasEnoughRage;
+        
         if (!available) {
             box.setOpacity(0.3);
             box.setStroke(Color.GRAY);
+            box.setMouseTransparent(true); // Make completely unclickable for unavailable skills
         } else {
             box.setOpacity(affordable ? 1.0 : 0.4);
-            box.setStroke(affordable ? Color.BLACK : Color.GRAY);
+            box.setMouseTransparent(false); // Keep hover functionality for available skills
+            // Use different colors to indicate what's missing
+            if (!hasEnoughMp && !hasEnoughRage) {
+                box.setStroke(Color.RED); // Missing both MP and Rage
+            } else if (!hasEnoughMp) {
+                box.setStroke(Color.BLUE); // Missing MP
+            } else if (!hasEnoughRage) {
+                box.setStroke(Color.ORANGE); // Missing Rage
+            } else {
+                box.setStroke(Color.BLACK); // Can afford
+            }
         }
     }
     
     public void updateMpUI(Observer.characterSlot hero) {
+        // Find the health bar data for this character
+        HealthBarData healthBarData = findHealthBarData(hero);
+        if (healthBarData == null || healthBarData.mpBar == null || healthBarData.mpText == null) return;
+        
         double ratio = hero.getCurrentMp() / hero.getCharacter().getMp();
-        if (hero == battleSystem.getHeroSlot() && battleSystem.getHeroSlot() != null) {
-            if (blueMpBar != null && blueMPText != null) {
-                blueMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
-                blueMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
-            }
-        } else if (hero == battleSystem.getHeroSlot2() && battleSystem.getHeroSlot2() != null) {
-            if (greenMpBar != null && greenMPText != null) {
-                greenMpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
-                greenMPText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
-            }
-        }
+        healthBarData.mpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
+        healthBarData.mpText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
     }
     
     public void updateHealthUI(Observer.characterSlot slot) {
+        // Find the health bar data for this character
+        HealthBarData healthBarData = findHealthBarData(slot);
+        if (healthBarData == null || healthBarData.healthBar == null || healthBarData.hpText == null) return;
+        
         double ratio = slot.getCurrentHp() / slot.getCharacter().getHp();
-
-        if (slot == battleSystem.getHeroSlot() && battleSystem.getHeroSlot() != null) {
-            if (blueHealthBar != null && blueHPText != null) {
-                blueHealthBar.setWidth(healthBarWidth * ratio);
-                blueHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
-            }
-        } else if (slot == battleSystem.getHeroSlot2() && battleSystem.getHeroSlot2() != null) {
-            if (greenHealthBar != null && greenHPText != null) {
-                greenHealthBar.setWidth(healthBarWidth * ratio);
-                greenHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
-            }
-        } else if (slot == battleSystem.getEnemySlot() && battleSystem.getEnemySlot() != null) {
-            if (redHealthBar != null && redHPText != null) {
-                redHealthBar.setWidth(healthBarWidth * ratio);
-                redHPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
-            }
-        } else if (slot == battleSystem.getEnemySlot2() && battleSystem.getEnemySlot2() != null) {
-            if (red2HealthBar != null && red2HPText != null) {
-                red2HealthBar.setWidth(healthBarWidth * ratio);
-                red2HPText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        healthBarData.healthBar.setWidth(healthBarWidth * ratio);
+        healthBarData.hpText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+    }
+    
+    /**
+     * Finds the health bar data for a specific character slot
+     * @param slot The character slot
+     * @return The corresponding health bar data, or null if not found
+     */
+    private HealthBarData findHealthBarData(Observer.characterSlot slot) {
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.characterSlot == slot) {
+                return healthBarData;
             }
         }
+        return null;
     }
     
     public void hideAllCombatUI() {
         // Hide health bars and related UI
-        if (blueHealthBorder != null) blueHealthBorder.setVisible(false);
-        if (blueHealthBar != null) blueHealthBar.setVisible(false);
-        if (greenHealthBorder != null) greenHealthBorder.setVisible(false);
-        if (greenHealthBar != null) greenHealthBar.setVisible(false);
-        if (redHealthBorder != null) redHealthBorder.setVisible(false);
-        if (redHealthBar != null) redHealthBar.setVisible(false);
-        if (red2HealthBorder != null) red2HealthBorder.setVisible(false);
-        if (red2HealthBar != null) red2HealthBar.setVisible(false);
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.healthBorder != null) healthBarData.healthBorder.setVisible(false);
+            if (healthBarData.healthBar != null) healthBarData.healthBar.setVisible(false);
+            if (healthBarData.mpBorder != null) healthBarData.mpBorder.setVisible(false);
+            if (healthBarData.mpBar != null) healthBarData.mpBar.setVisible(false);
+            if (healthBarData.hpText != null) healthBarData.hpText.setVisible(false);
+            if (healthBarData.mpText != null) healthBarData.mpText.setVisible(false);
+            if (healthBarData.nameText != null) healthBarData.nameText.setVisible(false);
+        }
         
-        if (blueMpBorder != null) blueMpBorder.setVisible(false);
-        if (blueMpBar != null) blueMpBar.setVisible(false);
-        if (greenMpBorder != null) greenMpBorder.setVisible(false);
-        if (greenMpBar != null) greenMpBar.setVisible(false);
-        
-        // Hide text
-        if (blueHPText != null) blueHPText.setVisible(false);
-        if (greenHPText != null) greenHPText.setVisible(false);
-        if (redHPText != null) redHPText.setVisible(false);
-        if (red2HPText != null) red2HPText.setVisible(false);
-        if (blueMPText != null) blueMPText.setVisible(false);
-        if (greenMPText != null) greenMPText.setVisible(false);
+        // Hide Burning Rage bars
+        for (BurningRageBarData rageBarData : burningRageBars) {
+            if (rageBarData.rageBar != null) rageBarData.rageBar.setVisible(false);
+        }
         
         // Hide lines
         if (blueLine != null) blueLine.setVisible(false);
@@ -787,77 +690,36 @@ public class  BattleUI {
     
     public void clearAllBattleUI() {
         
-        // Remove all UI elements from the scene
-        if (blueHealthBorder != null) {
-            getGameScene().removeUINode(blueHealthBorder);
-        }
-        if (blueHealthBar != null) {
-            getGameScene().removeUINode(blueHealthBar);
-        }
-        if (greenHealthBorder != null) {
-            getGameScene().removeUINode(greenHealthBorder);
-        }
-        if (greenHealthBar != null) {
-            getGameScene().removeUINode(greenHealthBar);
-        }
-        if (redHealthBorder != null) {
-            getGameScene().removeUINode(redHealthBorder);
-        }
-        if (redHealthBar != null) {
-            getGameScene().removeUINode(redHealthBar);
-        }
-        if (red2HealthBorder != null) {
-            getGameScene().removeUINode(red2HealthBorder);
-        }
-        if (red2HealthBar != null) {
-            getGameScene().removeUINode(red2HealthBar);
-        }
-        
-        if (blueMpBorder != null) {
-            getGameScene().removeUINode(blueMpBorder);
-        }
-        if (blueMpBar != null) {
-            getGameScene().removeUINode(blueMpBar);
-        }
-        if (greenMpBorder != null) {
-            getGameScene().removeUINode(greenMpBorder);
-        }
-        if (greenMpBar != null) {
-            getGameScene().removeUINode(greenMpBar);
+        // Remove health bar elements from scene
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.healthBorder != null) {
+                getGameScene().removeUINode(healthBarData.healthBorder);
+            }
+            if (healthBarData.healthBar != null) {
+                getGameScene().removeUINode(healthBarData.healthBar);
+            }
+            if (healthBarData.mpBorder != null) {
+                getGameScene().removeUINode(healthBarData.mpBorder);
+            }
+            if (healthBarData.mpBar != null) {
+                getGameScene().removeUINode(healthBarData.mpBar);
+            }
+            if (healthBarData.hpText != null) {
+                getGameScene().removeUINode(healthBarData.hpText);
+            }
+            if (healthBarData.mpText != null) {
+                getGameScene().removeUINode(healthBarData.mpText);
+            }
+            if (healthBarData.nameText != null) {
+                getGameScene().removeUINode(healthBarData.nameText);
+            }
         }
         
-        // Remove text
-        if (blueHPText != null) {
-            getGameScene().removeUINode(blueHPText);
-        }
-        if (greenHPText != null) {
-            getGameScene().removeUINode(greenHPText);
-        }
-        if (redHPText != null) {
-            getGameScene().removeUINode(redHPText);
-        }
-        if (red2HPText != null) {
-            getGameScene().removeUINode(red2HPText);
-        }
-        if (blueMPText != null) {
-            getGameScene().removeUINode(blueMPText);
-        }
-        if (greenMPText != null) {
-            getGameScene().removeUINode(greenMPText);
-        }
-        
-        // Remove name text
-        if (blueNameText != null) {
-            getGameScene().removeUINode(blueNameText);
-        }
-        if (greenNameText != null) {
-            getGameScene().removeUINode(greenNameText);
-        }
-        if (redNameText != null) {
-            getGameScene().removeUINode(redNameText);
-        }
-        if (red2NameText != null) {
-            getGameScene().removeUINode(red2NameText);
+        // Remove Burning Rage bars
+        for (BurningRageBarData rageBarData : burningRageBars) {
+            if (rageBarData.rageBar != null) {
+                getGameScene().removeUINode(rageBarData.rageBar);
+            }
         }
         
         // Remove lines
@@ -885,32 +747,9 @@ public class  BattleUI {
             getGameScene().removeUINode(skill3Box);
         }
         
-        // Set all UI element variables to null to prevent reuse
-        blueHealthBorder = null;
-        blueHealthBar = null;
-        greenHealthBorder = null;
-        greenHealthBar = null;
-        redHealthBorder = null;
-        redHealthBar = null;
-        red2HealthBorder = null;
-        red2HealthBar = null;
-        
-        blueMpBorder = null;
-        blueMpBar = null;
-        greenMpBorder = null;
-        greenMpBar = null;
-        
-        blueHPText = null;
-        greenHPText = null;
-        redHPText = null;
-        red2HPText = null;
-        blueMPText = null;
-        greenMPText = null;
-        
-        blueNameText = null;
-        greenNameText = null;
-        redNameText = null;
-        red2NameText = null;
+        // Clear health bars and Burning Rage bars lists
+        healthBars.clear();
+        burningRageBars.clear();
         
         blueLine = null;
         greenLine = null;
@@ -925,33 +764,20 @@ public class  BattleUI {
 
     public void showAllCombatUI() {
         // Show health bars and related UI
-        if (blueHealthBorder != null) blueHealthBorder.setVisible(true);
-        if (blueHealthBar != null) blueHealthBar.setVisible(true);
-        if (greenHealthBorder != null) greenHealthBorder.setVisible(true);
-        if (greenHealthBar != null) greenHealthBar.setVisible(true);
-        if (redHealthBorder != null) redHealthBorder.setVisible(true);
-        if (redHealthBar != null) redHealthBar.setVisible(true);
-        if (red2HealthBorder != null) red2HealthBorder.setVisible(true);
-        if (red2HealthBar != null) red2HealthBar.setVisible(true);
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.healthBorder != null) healthBarData.healthBorder.setVisible(true);
+            if (healthBarData.healthBar != null) healthBarData.healthBar.setVisible(true);
+            if (healthBarData.mpBorder != null) healthBarData.mpBorder.setVisible(true);
+            if (healthBarData.mpBar != null) healthBarData.mpBar.setVisible(true);
+            if (healthBarData.hpText != null) healthBarData.hpText.setVisible(true);
+            if (healthBarData.mpText != null) healthBarData.mpText.setVisible(true);
+            if (healthBarData.nameText != null) healthBarData.nameText.setVisible(true);
+        }
         
-        if (blueMpBorder != null) blueMpBorder.setVisible(true);
-        if (blueMpBar != null) blueMpBar.setVisible(true);
-        if (greenMpBorder != null) greenMpBorder.setVisible(true);
-        if (greenMpBar != null) greenMpBar.setVisible(true);
-        
-        // Show text
-        if (blueHPText != null) blueHPText.setVisible(true);
-        if (greenHPText != null) greenHPText.setVisible(true);
-        if (redHPText != null) redHPText.setVisible(true);
-        if (red2HPText != null) red2HPText.setVisible(true);
-        if (blueMPText != null) blueMPText.setVisible(true);
-        if (greenMPText != null) greenMPText.setVisible(true);
-        
-        // Show name text
-        if (blueNameText != null) blueNameText.setVisible(true);
-        if (greenNameText != null) greenNameText.setVisible(true);
-        if (redNameText != null) redNameText.setVisible(true);
-        if (red2NameText != null) red2NameText.setVisible(true);
+        // Show Burning Rage bars
+        for (BurningRageBarData rageBarData : burningRageBars) {
+            if (rageBarData.rageBar != null) rageBarData.rageBar.setVisible(true);
+        }
         
         // Show lines
         if (blueLine != null) blueLine.setVisible(true);
@@ -978,4 +804,60 @@ public class  BattleUI {
     public void setGreenLine(Line greenLine) { this.greenLine = greenLine; }
     public void setRedLine(Line redLine) { this.redLine = redLine; }
     public void setYellowLine(Line yellowLine) { this.yellowLine = yellowLine; }
+    
+    /**
+     * Updates the Burning Rage bar for a character
+     * @param slot The character slot to update
+     */
+    public void updateBurningRageBar(Observer.characterSlot slot) {
+        if (slot == null) return;
+        
+        // Find the rage bar data for this character
+        BurningRageBarData rageBarData = findRageBarData(slot);
+        if (rageBarData == null) return;
+        
+        // Get the Burning Rage value
+        float burningRage = slot.getCharacter().getUniqueValueAsFloat("Burning rage");
+        if (burningRage <= 0) {
+            // Hide the rage bar if no rage
+            rageBarData.rageBar.setVisible(false);
+            return;
+        }
+        
+        // Calculate rage bar properties based on health + rage vs max HP
+        float currentHp = slot.getCurrentHp();
+        float maxHp = slot.getCharacter().getHp();
+        float totalHp = currentHp + burningRage;
+        
+        double rageBarWidth = (burningRage / maxHp) * healthBarWidth;
+        double rageBarX;
+        
+        if (totalHp <= maxHp) {
+            // When health + rage <= max HP: draw rage bar from right end of current health bar
+            double currentHpWidth = (currentHp / maxHp) * healthBarWidth;
+            rageBarX = currentHpWidth; // Start after current health
+        } else {
+            // When health + rage > max HP: draw rage bar from right to left (current behavior)
+            rageBarX = healthBarWidth - rageBarWidth; // Start from right edge
+        }
+        
+        // Update the rage bar
+        rageBarData.rageBar.setWidth(rageBarWidth);
+        rageBarData.rageBar.setTranslateX(rageBarData.baseX + rageBarX);
+        rageBarData.rageBar.setVisible(true);
+    }
+    
+    /**
+     * Finds the rage bar data for a specific character slot
+     * @param slot The character slot
+     * @return The corresponding rage bar data, or null if not found
+     */
+    private BurningRageBarData findRageBarData(Observer.characterSlot slot) {
+        for (BurningRageBarData rageBarData : burningRageBars) {
+            if (rageBarData.characterSlot == slot) {
+                return rageBarData;
+            }
+        }
+        return null;
+    }
 }

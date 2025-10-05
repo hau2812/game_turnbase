@@ -15,8 +15,6 @@ import static com.almasb.fxgl.dsl.FXGL.*;
 public class BattleSystem {
     
     // Configuration
-    private boolean includeHero2;
-    private boolean includeEnemy2;
     
     // Character slots
     private Observer.characterSlot heroSlot;
@@ -49,9 +47,7 @@ public class BattleSystem {
     // Flag to control battle loop
     private boolean battleLoopActive = false;
     
-    public BattleSystem(boolean includeHero2, boolean includeEnemy2) {
-        this.includeHero2 = includeHero2;
-        this.includeEnemy2 = includeEnemy2;
+    public BattleSystem() {
     }
     
     public void setBattleUI(BattleUI battleUI) {
@@ -64,16 +60,14 @@ public class BattleSystem {
     
     public void initializeBattle() {
         // Configure which characters to create
-        Observer.CharacterSlotRegistry.createHero2 = includeHero2;
-        Observer.CharacterSlotRegistry.createEnemy2 = includeEnemy2;
         
         // Init registry
         Observer.CharacterSlotRegistry.init();
 
         // Hero slots
-        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Hero");}
+        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Flamita");}
 
-        if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
+        //if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
 
         // Enemy slots
         //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
@@ -133,18 +127,20 @@ public class BattleSystem {
                 }
             }
         }
-        
+
+
         // Calculate base damage
-        double dmg = attacker.getCharacter().getAtk() * skill.getAtkScale();
-        
-        // Apply special talent bonuses
-        float talentBonus = characters.SpecialTalents.getDamageBonus(attacker);
-        if (talentBonus > 0) {
-            dmg += talentBonus;
-            System.out.println(attacker.getCharacter().getName() + " talent bonus: +" + talentBonus + " damage!");
+        double baseDamage = attacker.getCharacter().getAtk() * skill.getAtkScale();
+        double burnBonus = 0;
+        // Handle Burning Rage effects and validation
+        if(attacker.getCharacter().getUniqueValue("Burning rage")!=null){
+            float rageConsumed = handleBurningRageEffects(attacker, skill);
+            burnBonus = calculateDamageWithRage(rageConsumed, skill, attacker);
         }
-        
-        applyDamage(target, dmg);
+        double talentBonus = calculateDamageWithTalentBonus(skill, attacker);
+        double finalDmg = baseDamage+burnBonus+talentBonus;
+        // Calculate final damage with Burning Rage bonuses and talent bonuses
+        applyDamage(target, finalDmg);
 
         // Push line back (if attacker is hero)
         if (attacker == heroSlot || attacker == heroSlot2) {
@@ -293,6 +289,7 @@ public class BattleSystem {
         if (battleUI != null) {
             battleUI.updateHealthUI(slot);
             battleUI.updateMpUI(slot); // Update MP bar when mana shield is used
+            battleUI.updateBurningRageBar(slot); // Update Burning Rage bar
             
             // Remove line if character dies
             if (slot.getCurrentHp() <= 0) {
@@ -372,5 +369,82 @@ public class BattleSystem {
                 onBattleWon.run();
             }
         }
+    }
+    
+    /**
+     * Handle all Burning Rage interactions for a skill
+     * @param attacker The character using the skill
+     * @param skill The skill being used
+     * @return The amount of rage consumed (for damage calculation), or -1 if skill cannot be used
+     */
+    private float handleBurningRageEffects(Observer.characterSlot attacker, Ability.skill skill) {
+        float rageRequired = skill.getBurningRageRequired();
+        float rageConsumed = skill.getBurningRageConsumed();
+        float rageGained = skill.getBurningRageGained();
+        
+        // Check if character has enough Burning Rage
+        if(rageConsumed > attacker.getCharacter().getUniqueValueAsFloat("Burning rage")) {
+            rageConsumed = attacker.getCharacter().getUniqueValueAsFloat("Burning rage");
+        }
+        attacker.getCharacter().addToUniqueValue("Burning rage",-rageConsumed);
+        // Gain Burning Rage after using skill
+        if (rageGained > 0) {
+            characters.SpecialTalents.gainBurningRage(attacker, rageGained);
+
+        }
+        
+        // Update Burning Rage bar if it changed
+        if (rageConsumed > 0 || rageGained > 0) {
+            if (battleUI != null) {
+                battleUI.updateBurningRageBar(attacker);
+            }
+        }
+        
+        return rageConsumed; // Return amount consumed for damage calculation
+    }
+    
+    /**
+     * Calculate damage with Burning Rage bonuses
+     * @param rageConsumed The amount of Burning Rage consumed
+     * @param skill The skill being used
+     * @param attacker The character using the skill
+     * @return The final damage amount
+     */
+    private double calculateDamageWithRage(float rageConsumed, Ability.skill skill, Observer.characterSlot attacker) {
+        double dmg=0;
+
+        // Special damage calculation for Burning Rage skills
+        if (rageConsumed > 0) {
+            if (skill.getName().equals("Rage Heal")) {
+                // Rage Heal: healing = rage * (rage / (rage + currentHP))
+                float currentHp = attacker.getCurrentHp();
+                float healingAmount = rageConsumed * (rageConsumed / (rageConsumed + currentHp));
+                dmg = -healingAmount; // Negative damage = healing
+                System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage to heal for " + healingAmount + " HP!");
+            } else if (skill.getName().equals("Rage Burst")) {
+                float currentHp = Math.max(100, attacker.getCurrentHp());
+                float maxHp = attacker.getCharacter().getHp();
+                dmg = 3 * maxHp * (rageConsumed / (10*currentHp + rageConsumed));
+                float heal = (float)dmg/2;
+                attacker.heal(heal);
+                battleUI.updateHealthUI(attacker);
+                System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage for " + dmg + " damage!");
+            } else {
+                // Other rage skills: add rage as bonus damage
+                dmg += rageConsumed * 0.5f; // 50% of rage consumed as bonus damage
+                System.out.println(attacker.getCharacter().getName() + " consumed " + rageConsumed + " rage for +" + (rageConsumed * 0.5f) + " bonus damage!");
+            }
+        }
+        return dmg;
+    }
+    private double calculateDamageWithTalentBonus(Ability.skill skill, Observer.characterSlot attacker) {
+        double dmg=0;
+        // Apply special talent bonuses
+        float talentBonus = characters.SpecialTalents.getDamageBonus(attacker);
+        if (talentBonus > 0) {
+            dmg += talentBonus;
+            System.out.println(attacker.getCharacter().getName() + " talent bonus: +" + talentBonus + " damage!");
+        }
+        return dmg;
     }
 }

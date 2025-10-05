@@ -50,6 +50,8 @@ public interface Characters {
             this.uniqueValues = uniqueValues;
         }
 
+
+
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
 
@@ -191,6 +193,8 @@ public interface Characters {
                     500   // mp
             );
             hero2.setUniqueValue("Regeneration","25");
+            //hero2.setUniqueValue("Burning rage","0");
+
             Characters.character enemy = new Characters.character(
                     2,
                     "Enemy",
@@ -215,6 +219,21 @@ public interface Characters {
                     2000, // hp
                     50,  // mp
                     new ArrayList<>()
+
+            );
+            Characters.character hero3 = new Characters.character(
+                    5,
+                    "Flamita",
+                    50,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    12,   // spd
+                    500, // hp
+                    0,   // mp
+                    new ArrayList<uniqueValue>() {{
+                        add(new uniqueValue("Burning rage", "0"));
+                    }}
             );
             
 
@@ -222,6 +241,7 @@ public interface Characters {
             // Register the character
             registry.put(hero.getName(), hero);
             registry.put(hero2.getName(), hero2);
+            registry.put(hero3.getName(), hero3);
             registry.put(enemy.getName(), enemy);
             registry.put(enemy2.getName(), enemy2);
         }

@@ -14,6 +14,7 @@ public class SpecialTalents {
     public static final String MANA_SHIELD = "MANA_SHIELD";
     public static final String CRITICAL_STRIKE = "CriticalStrike";
     public static final String REGENERATION = "Regeneration";
+    public static final String BURNING_RAGE = "Burning rage";
     
     /**
      * Calculate actual damage after special talent effects (like mana shield)
@@ -49,6 +50,17 @@ public class SpecialTalents {
             System.out.println(character.getName() + " lost " + damageAmount + " HP. Berserker rage: " + 
                 character.getUniqueValueAsFloat(BERSERKER_RAGE));
         }
+        
+        // Burning Rage - increases by 1 for each 1 HP lost
+        if (character.getUniqueValue(BURNING_RAGE) != null) {
+            character.addToUniqueValue(BURNING_RAGE, damageAmount);
+            if(character.getUniqueValueAsFloat(BURNING_RAGE) > character.getHp() ){
+                character.getUniqueValue(BURNING_RAGE).setValue(character.hp+"");
+            }
+            System.out.println(character.getName() + " lost " + damageAmount + " HP. Burning rage: " + 
+                character.getUniqueValueAsFloat(BURNING_RAGE));
+        }
+
     }
     
     /**
@@ -147,5 +159,55 @@ public class SpecialTalents {
         uniqueValues.add(new Characters.uniqueValue(REGENERATION, String.valueOf(regenAmount)));
         
         return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+    }
+    
+    /**
+     * Create a character with burning rage talent
+     */
+    public static character createBurningRageCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
+        java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
+        uniqueValues.add(new Characters.uniqueValue(BURNING_RAGE, "0")); // Start with 0 rage
+        
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+    }
+    
+    /**
+     * Check if a character has enough Burning Rage to use a skill
+     */
+    public static boolean hasEnoughBurningRage(characterSlot slot, float requiredRage) {
+        if (slot == null || slot.getCharacter().getUniqueValue(BURNING_RAGE) == null) {
+            return requiredRage <= 0; // No rage required or character has no rage talent
+        }
+        return slot.getCharacter().getUniqueValueAsFloat(BURNING_RAGE) >= requiredRage;
+    }
+    
+    /**
+     * Consume Burning Rage from a character
+     */
+
+    
+    /**
+     * Gain Burning Rage for a character
+     */
+    public static void gainBurningRage(characterSlot slot, float amount) {
+        if (slot == null || slot.getCharacter().getUniqueValue(BURNING_RAGE) == null) {
+            return; // Character has no rage talent
+        }
+        
+        slot.getCharacter().addToUniqueValue(BURNING_RAGE, amount);
+        if(slot.getCharacter().getHp() < slot.getCharacter().getUniqueValueAsFloat(BURNING_RAGE)) {
+            slot.getCharacter().setUniqueValue(BURNING_RAGE,slot.getCharacter().hp+"");
+        }
+        System.out.println(slot.getCharacter().getName() + " gained " + amount + " Burning Rage!");
+    }
+    
+    /**
+     * Get current Burning Rage amount for a character
+     */
+    public static float getCurrentBurningRage(characterSlot slot) {
+        if (slot == null || slot.getCharacter().getUniqueValue(BURNING_RAGE) == null) {
+            return 0;
+        }
+        return slot.getCharacter().getUniqueValueAsFloat(BURNING_RAGE);
     }
 }

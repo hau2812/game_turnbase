@@ -15,9 +15,7 @@ import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class testing extends GameApplication {
 
-    // Configuration for which characters to include
-    private static final boolean INCLUDE_HERO2 = true;  // Set to false for 1 hero
-    private static final boolean INCLUDE_ENEMY2 = true; // Set to false for 1 enemy
+
 
     // Battle system components
     private BattleSystem battleSystem;
@@ -40,7 +38,7 @@ public class testing extends GameApplication {
         getGameScene().setBackgroundColor(Color.LIGHTGRAY);
         
         // Initialize battle system (but don't start it yet)
-        battleSystem = new BattleSystem(INCLUDE_HERO2, INCLUDE_ENEMY2);
+        battleSystem = new BattleSystem();
         battleUI = new BattleUI(battleSystem);
         battleSystem.setBattleUI(battleUI);
         battleSystem.setOnBattleWon(() -> {
@@ -81,7 +79,7 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            System.out.println(battleSystem.getHeroSlot2().getCharacter().getUniqueValue("MANA_SHIELD"));
+            System.out.println(battleSystem.getHeroSlot().getCharacter().getUniqueValueAsFloat("BerserkerRage"));
         });
         
         // M key to return to map mode from battle

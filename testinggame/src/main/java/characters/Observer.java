@@ -50,15 +50,20 @@ public interface Observer {
 
         public float getCurrentMp() { return currentMp; }
         public void setCurrentMp(float currentMp) { this.currentMp = currentMp; }
+
+        public void heal(float amount){
+            currentHp += amount;
+            if(currentHp>character.getHp()){
+                currentHp = character.getHp();
+            }
+        }
     }
 
     // ===================== REGISTRY =====================
     public class CharacterSlotRegistry {
         private static final Map<String, characterSlot> registry = new HashMap<>();
 
-        // Configuration for which characters to create
-        public static boolean createHero2 = true;
-        public static boolean createEnemy2 = true;
+        // Characters are created by default - comment out lines to disable them
 
         public static characterSlot getByName(String name) {
             return registry.get(name);
@@ -66,6 +71,65 @@ public interface Observer {
 
         public static Collection<characterSlot> getAll() {
             return registry.values();
+        }
+        
+        /**
+         * Helper function to create and register a character slot with skills
+         * @param characterName The name of the character (must exist in CharacterRegistry)
+         * @param skill1 First skill name
+         * @param skill2 Second skill name  
+         * @param skill3 Third skill name
+         * @return The created character slot
+         */
+        public static characterSlot createCharacterSlot(String characterName, String skill1, String skill2, String skill3) {
+            // Get the character from registry
+            Characters.character character = Characters.CharacterRegistry.getByName(characterName);
+            if (character == null) {
+                System.err.println("Character '" + characterName + "' not found in CharacterRegistry!");
+                return null;
+            }
+            
+            // Create skills list
+            ArrayList<Ability.skill> skills = new ArrayList<>();
+            if (skill1 != null) {
+                Ability.skill skill = Ability.SkillRegistry.getByName(skill1);
+                if (skill != null) {
+                    skills.add(skill);
+                } else {
+                    System.err.println("Skill '" + skill1 + "' not found for character '" + characterName + "'");
+                }
+            }
+            if (skill2 != null) {
+                Ability.skill skill = Ability.SkillRegistry.getByName(skill2);
+                if (skill != null) {
+                    skills.add(skill);
+                } else {
+                    System.err.println("Skill '" + skill2 + "' not found for character '" + characterName + "'");
+                }
+            }
+            if (skill3 != null) {
+                Ability.skill skill = Ability.SkillRegistry.getByName(skill3);
+                if (skill != null) {
+                    skills.add(skill);
+                } else {
+                    System.err.println("Skill '" + skill3 + "' not found for character '" + characterName + "'");
+                }
+            }
+            
+            // Create character slot
+            characterSlot slot = new characterSlot(
+                character.getId(),
+                character,
+                character,
+                skills,
+                character.getHp(),
+                character.getMp()
+            );
+            
+            // Register the slot
+            registry.put(character.getName(), slot);
+            
+            return slot;
         }
 
         public static void init() {
@@ -75,94 +139,15 @@ public interface Observer {
             Characters.CharacterRegistry.init();
 
             //Hero 1
-            // Get the Hero character
-            Characters.character hero = Characters.CharacterRegistry.getByName("Hero");
-
-            // Create empty skills list
-            ArrayList<Ability.skill> heroSkills = new ArrayList<>();
-            heroSkills.add(Ability.SkillRegistry.getByName("Slash"));
-            heroSkills.add(Ability.SkillRegistry.getByName("Fireball"));
-            heroSkills.add(Ability.SkillRegistry.getByName("heavy attack"));
-
-            // Create a slot for Hero
-            characterSlot heroSlot = new characterSlot(
-                    1,
-                    hero,
-                    hero,               // no transformed version yet
-                    heroSkills,
-                    hero.getHp(),       // start with full HP
-                    hero.getMp()        // start with full MP
-            );
-
-            // Hero 2 (conditional)
-            characterSlot hero2Slot = null;
-            if (createHero2) {
-                Characters.character hero2 = Characters.CharacterRegistry.getByName("Hero2");
-                ArrayList<Ability.skill> hero2Skills = new ArrayList<>();
-                hero2Skills.add(Ability.SkillRegistry.getByName("Charge attack"));
-                hero2Skills.add(Ability.SkillRegistry.getByName("Fireball"));
-                hero2Skills.add(Ability.SkillRegistry.getByName("Heal"));
-
-                hero2Slot = new characterSlot(
-                        4,
-                        hero2,
-                        hero2,
-                        hero2Skills,
-                        hero2.getHp(),
-                        hero2.getMp()
-                );
-            }
-
-            //Enemy
-            // Get the Enemy character
-            Characters.character enemy = Characters.CharacterRegistry.getByName("Enemy");
-            // Create empty skills list
-            ArrayList<Ability.skill> enemySkills = new ArrayList<>();
-            enemySkills.add(Ability.SkillRegistry.getByName("Slash"));
-            enemySkills.add(Ability.SkillRegistry.getByName("Fireball"));
-            enemySkills.add(Ability.SkillRegistry.getByName("Heal"));
-
-            // Create a slot for Hero
-            characterSlot enemySlot = new characterSlot(
-                    2,
-                    enemy,
-                    enemy,               // no transformed version yet
-                    enemySkills,
-                    enemy.getHp(),       // start with full HP
-                    enemy.getMp()        // start with full MP
-            );
+            characterSlot heroSlot = createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack");
+            // Hero 2
+            characterSlot hero2Slot = createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal");
+            // Hero 3
+            characterSlot hero3Slot = createCharacterSlot("Flamita", "Rage Strike", "Rage Heal", "Rage Burst");
 
 
-             // Enemy 2 (conditional)
-            characterSlot enemySlot2 = null;
-            if (createEnemy2) {
-                Characters.character enemy2 = Characters.CharacterRegistry.getByName("Enemy2");
-                // Create empty skills list
-                ArrayList<Ability.skill> enemySkills2 = new ArrayList<>();
-                enemySkills2.add(Ability.SkillRegistry.getByName("Slash"));
-                enemySkills2.add(Ability.SkillRegistry.getByName("Fireball"));
-                enemySkills2.add(Ability.SkillRegistry.getByName("Heal"));
 
-                // Create a slot for Enemy2
-                enemySlot2 = new characterSlot(
-                        3,
-                        enemy2,
-                        enemy2,               // no transformed version yet
-                        enemySkills2,
-                        enemy2.getHp(),       // start with full HP
-                        enemy2.getMp()        // start with full MP
-                );
-            }
 
-            // Register the slots (only non-null ones)
-            registry.put(hero.getName(), heroSlot);
-            if (hero2Slot != null) {
-                registry.put(hero2Slot.getCharacter().getName(), hero2Slot);
-            }
-            registry.put(enemy.getName(), enemySlot);
-            if (enemySlot2 != null) {
-                registry.put(enemySlot2.getCharacter().getName(), enemySlot2);
-            }
 
         }
     }

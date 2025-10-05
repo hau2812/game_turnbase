@@ -14,6 +14,11 @@ public interface Ability {
         float AVScale;
         float mpCost;
         float partyMpCost;
+        
+        // Burning Rage interaction properties
+        float burningRageRequired;  // Minimum Burning Rage required to use skill
+        float burningRageConsumed;  // Amount of Burning Rage consumed when using skill
+        float burningRageGained;    // Amount of Burning Rage gained when using skill
         //Contructor----------------------------------------------------------------------------------
         public skill(int id, String name, String description, String type, String target, float atkScale, float AVScale, float mpCost, float partyMpCost) {
             this.id = id;
@@ -25,6 +30,9 @@ public interface Ability {
             this.AVScale = AVScale;
             this.mpCost = mpCost;
             this.partyMpCost = partyMpCost;
+            this.burningRageRequired = 0;
+            this.burningRageConsumed = 0;
+            this.burningRageGained = 0;
         }
 
         public skill(int id, String name, String description, String type, String target, float atkScale, float AVScale) {
@@ -37,6 +45,25 @@ public interface Ability {
             this.AVScale = AVScale;
             this.mpCost = 0;
             this.partyMpCost = 0;
+            this.burningRageRequired = 0;
+            this.burningRageConsumed = 0;
+            this.burningRageGained = 0;
+        }
+        
+        // New constructor for Burning Rage skills
+        public skill(int id, String name, String description, String type, String target, float atkScale, float AVScale, float mpCost, float partyMpCost, float burningRageRequired, float burningRageConsumed, float burningRageGained) {
+            this.id = id;
+            this.name = name;
+            this.description = description;
+            this.type = type;
+            this.target = target;
+            this.atkScale = atkScale;
+            this.AVScale = AVScale;
+            this.mpCost = mpCost;
+            this.partyMpCost = partyMpCost;
+            this.burningRageRequired = burningRageRequired;
+            this.burningRageConsumed = burningRageConsumed;
+            this.burningRageGained = burningRageGained;
         }
 
         //-------------------------------------------------------------------------------------------
@@ -110,6 +137,31 @@ public interface Ability {
 
         public void setPartyMpCost(float partyMpCost) {
             this.partyMpCost = partyMpCost;
+        }
+        
+        // Burning Rage getters and setters
+        public float getBurningRageRequired() {
+            return burningRageRequired;
+        }
+
+        public void setBurningRageRequired(float burningRageRequired) {
+            this.burningRageRequired = burningRageRequired;
+        }
+
+        public float getBurningRageConsumed() {
+            return burningRageConsumed;
+        }
+
+        public void setBurningRageConsumed(float burningRageConsumed) {
+            this.burningRageConsumed = burningRageConsumed;
+        }
+
+        public float getBurningRageGained() {
+            return burningRageGained;
+        }
+
+        public void setBurningRageGained(float burningRageGained) {
+            this.burningRageGained = burningRageGained;
         }
     }
 
@@ -188,6 +240,78 @@ public interface Ability {
                     1.0f,
                     -100,
                     0
+            ));
+            register(new Ability.skill(
+                    6,
+                    "Burning slash",
+                    "an attack that gain burning rage",
+                    "Physical",
+                    "Single Enemy",
+                    1.0f,
+                    1.2f,
+                    0,
+                    0
+            ));
+            
+            // Burning Rage skills
+            register(new Ability.skill(
+                    7,
+                    "Rage Strike",
+                    "Powerful attack that consumes Burning Rage for massive damage",
+                    "Physical",
+                    "Single Enemy",
+                    1.0f,
+                    1.0f,
+                    0,
+                    0,
+                    0,    // Requires 50 Burning Rage
+                    0,    // Consumes 50 Burning Rage
+                    50      // Gains 0 Burning Rage
+            ));
+            
+            register(new Ability.skill(
+                    8,
+                    "Rage Burst",
+                    "Consumes all Burning Rage to deal damage based on max HP and rage ratio",
+                    "Physical",
+                    "Single Enemy",
+                    0.0f,  // Base damage is 0, all damage comes from rage
+                    1.0f,
+                    0,
+                    0,
+                    0,     // No minimum rage required (handled specially)
+                    999,   // Consumes all Burning Rage (999 = all)
+                    0      // Gains 0 Burning Rage
+            ));
+            
+            register(new Ability.skill(
+                    9,
+                    "Rage Heal",
+                    "Convert Burning Rage into healing for self",
+                    "Support",
+                    "Self",
+                    0.0f, // Healing
+                    1.0f,
+                    0,
+                    0,
+                    0,     // No minimum rage required (handled specially)
+                    999,    // Consumes 30 Burning Rage
+                    0      // Gains 0 Burning Rage
+            ));
+            
+            register(new Ability.skill(
+                    10,
+                    "Berserker's Fury",
+                    "Gain extra Burning Rage when taking damage",
+                    "Support",
+                    "Self",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0,
+                    0,     // No Burning Rage required
+                    0,     // Consumes 0 Burning Rage
+                    25     // Gains 25 Burning Rage
             ));
         }
     }
