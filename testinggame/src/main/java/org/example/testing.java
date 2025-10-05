@@ -80,7 +80,8 @@ public class testing extends GameApplication {
         });
 
         onKeyDown(KeyCode.B, () -> {
-                System.out.println(battleSystem.isMoving());
+                // Debug key - can be used for testing
+            System.out.println(battleSystem.getHeroSlot2().getCharacter().getUniqueValue("MANA_SHIELD"));
         });
         
         // M key to return to map mode from battle
@@ -111,7 +112,6 @@ public class testing extends GameApplication {
     }
     
     private void enterBattleMode() {
-        System.out.println("in battle mode");
         inMapMode = false;
         
         // Hide map UI
@@ -120,25 +120,19 @@ public class testing extends GameApplication {
         // Stop any existing battle loop first
         battleSystem.stopBattleLoop();
         
-        // Clear any old enemy data before starting new battle
-        
+
+
         
         // Always reinitialize battle system for map battles
-        System.out.println("Initializing battle system...");
         battleSystem.initializeBattle();
-        System.out.println("Initializing battle UI...");
         battleUI.initializeUI();
         
         // Start fresh battle loop
-        System.out.println("Starting battle loop...");
         battleSystem.startBattleLoop();
         
-        System.out.println("Rendering hero skills...");
         battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
-        System.out.println("Showing all combat UI...");
         battleUI.showAllCombatUI();
         battleSystem.setMoving(true);
-        System.out.println("Battle mode setup complete!");
     }
 
     private void exitMapMode() {
@@ -163,8 +157,6 @@ public class testing extends GameApplication {
     }
     
     private void handleBattleVictory() {
-        System.out.println("Battle victory! Returning to map...");
-        
         // Clear all battle UI elements
         battleUI.clearAllBattleUI();
         
@@ -183,8 +175,6 @@ public class testing extends GameApplication {
             // Fallback to path selection if no path is selected
             mapUI.showPathSelection();
         }
-        
-        System.out.println("Returned to map mode!");
     }
 
     public static void main(String[] args) {

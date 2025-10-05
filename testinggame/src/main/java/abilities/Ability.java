@@ -178,6 +178,17 @@ public interface Ability {
                     100,
                     0
             ));
+            register(new Ability.skill(
+                    5,
+                    "Charge attack",
+                    "a charge attack that gain a lot of mana.",
+                    "Physical",
+                    "Single Enemy",
+                    0.5f,
+                    1.0f,
+                    -100,
+                    0
+            ));
         }
     }
 

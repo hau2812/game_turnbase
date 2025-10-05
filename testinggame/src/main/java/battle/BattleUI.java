@@ -45,6 +45,12 @@ public class  BattleUI {
     private Text blueMPText;
     private Text greenMPText;
     
+    // Name text elements
+    private Text blueNameText;
+    private Text greenNameText;
+    private Text redNameText;
+    private Text red2NameText;
+    
     // Skill boxes
     private Rectangle skill1Box;
     private Rectangle skill2Box;
@@ -70,6 +76,7 @@ public class  BattleUI {
         createLines();
         createHealthBars();
         createHealthText();
+        createNameText();
         addUIElements();
         setupTargetSelection();
         
@@ -79,6 +86,28 @@ public class  BattleUI {
     
     private void updateAllHealthAndMpBars() {
         // Update health bars for all characters
+        if (battleSystem.getHeroSlot() != null) {
+            updateHealthUI(battleSystem.getHeroSlot());
+            updateMpUI(battleSystem.getHeroSlot());
+        }
+        if (battleSystem.getHeroSlot2() != null) {
+            updateHealthUI(battleSystem.getHeroSlot2());
+            updateMpUI(battleSystem.getHeroSlot2());
+        }
+        if (battleSystem.getEnemySlot() != null) {
+            updateHealthUI(battleSystem.getEnemySlot());
+        }
+        if (battleSystem.getEnemySlot2() != null) {
+            updateHealthUI(battleSystem.getEnemySlot2());
+        }
+    }
+    
+    /**
+     * Refresh HP and MP UI for all character slots
+     * This method updates all characters' health and MP bars in one call
+     */
+    public void refreshAllCharacterUI() {
+        // Update health and MP bars for all characters
         if (battleSystem.getHeroSlot() != null) {
             updateHealthUI(battleSystem.getHeroSlot());
             updateMpUI(battleSystem.getHeroSlot());
@@ -333,6 +362,46 @@ public class  BattleUI {
         }
     }
     
+    private void createNameText() {
+        Observer.characterSlot heroSlot = battleSystem.getHeroSlot();
+        Observer.characterSlot heroSlot2 = battleSystem.getHeroSlot2();
+        Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
+        Observer.characterSlot enemySlot2 = battleSystem.getEnemySlot2();
+        
+        // Name text - only create if characters exist
+        if (heroSlot != null) {
+            blueNameText = new Text(heroSlot.getCharacter().getName());
+            blueNameText.setFont(new Font(18));
+            blueNameText.setFill(Color.BLACK);
+            blueNameText.setTranslateX(blueHealthBorder.getTranslateX() + 4);
+            blueNameText.setTranslateY(blueHealthBorder.getTranslateY() - 5);
+        }
+
+        if (heroSlot2 != null) {
+            greenNameText = new Text(heroSlot2.getCharacter().getName());
+            greenNameText.setFont(new Font(18));
+            greenNameText.setFill(Color.BLACK);
+            greenNameText.setTranslateX(greenHealthBorder.getTranslateX() + 4);
+            greenNameText.setTranslateY(greenHealthBorder.getTranslateY() - 5);
+        }
+
+        if (enemySlot != null) {
+            redNameText = new Text(enemySlot.getCharacter().getName());
+            redNameText.setFont(new Font(18));
+            redNameText.setFill(Color.BLACK);
+            redNameText.setTranslateX(redHealthBorder.getTranslateX() + 4);
+            redNameText.setTranslateY(redHealthBorder.getTranslateY() - 5);
+        }
+
+        if (enemySlot2 != null) {
+            red2NameText = new Text(enemySlot2.getCharacter().getName());
+            red2NameText.setFont(new Font(18));
+            red2NameText.setFill(Color.BLACK);
+            red2NameText.setTranslateX(red2HealthBorder.getTranslateX() + 4);
+            red2NameText.setTranslateY(red2HealthBorder.getTranslateY() - 5);
+        }
+    }
+    
     private void addUIElements() {
         // Add UI elements to scene
         if (blueHealthBorder != null) {
@@ -389,47 +458,123 @@ public class  BattleUI {
         if (red2HPText != null) {
             getGameScene().addUINode(red2HPText);
         }
+        
+        // Add name text elements
+        if (blueNameText != null) {
+            getGameScene().addUINode(blueNameText);
+        }
+        if (greenNameText != null) {
+            getGameScene().addUINode(greenNameText);
+        }
+        if (redNameText != null) {
+            getGameScene().addUINode(redNameText);
+        }
+        if (red2NameText != null) {
+            getGameScene().addUINode(red2NameText);
+        }
     }
     
     private void setupTargetSelection() {
         // Target selection on click
         Runnable highlightSelection = () -> {
-            redHealthBorder.setStroke(battleSystem.getSelectedTarget() == battleSystem.getEnemySlot() ? Color.GOLD : Color.BLACK);
-            redHealthBorder.setStrokeWidth(battleSystem.getSelectedTarget() == battleSystem.getEnemySlot() ? 3 : 2);
+            // Highlight enemy health borders based on selected enemy target
+            redHealthBorder.setStroke(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot() ? Color.GOLD : Color.BLACK);
+            redHealthBorder.setStrokeWidth(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot() ? 3 : 2);
             if (red2HealthBorder != null) {
-                red2HealthBorder.setStroke(battleSystem.getSelectedTarget() == battleSystem.getEnemySlot2() ? Color.GOLD : Color.BLACK);
-                red2HealthBorder.setStrokeWidth(battleSystem.getSelectedTarget() == battleSystem.getEnemySlot2() ? 3 : 2);
+                red2HealthBorder.setStroke(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot2() ? Color.GOLD : Color.BLACK);
+                red2HealthBorder.setStrokeWidth(battleSystem.getSelectedEnemyTarget() == battleSystem.getEnemySlot2() ? 3 : 2);
+            }
+            
+            // Highlight hero health borders based on selected ally target
+            if (blueHealthBorder != null) {
+                blueHealthBorder.setStroke(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot() ? Color.GOLD : Color.BLACK);
+                blueHealthBorder.setStrokeWidth(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot() ? 3 : 2);
+            }
+            if (greenHealthBorder != null) {
+                greenHealthBorder.setStroke(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot2() ? Color.GOLD : Color.BLACK);
+                greenHealthBorder.setStrokeWidth(battleSystem.getSelectedAllyTarget() == battleSystem.getHeroSlot2() ? 3 : 2);
             }
         };
         
         redHealthBar.setOnMouseClicked(e -> { 
-            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); 
+            battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot()); 
+            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); // Keep for backward compatibility
             highlightSelection.run(); 
         });
         redHealthBorder.setOnMouseClicked(e -> { 
-            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); 
+            battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot()); 
+            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); // Keep for backward compatibility
             highlightSelection.run(); 
         });
         redHPText.setOnMouseClicked(e -> { 
-            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); 
+            battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot()); 
+            battleSystem.setSelectedTarget(battleSystem.getEnemySlot()); // Keep for backward compatibility
             highlightSelection.run(); 
         });
         
         if (red2HealthBar != null) {
             red2HealthBar.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); 
+                battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot2()); 
+                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); // Keep for backward compatibility
                 highlightSelection.run(); 
             });
         }
         if (red2HealthBorder != null) {
             red2HealthBorder.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); 
+                battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot2()); 
+                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); // Keep for backward compatibility
                 highlightSelection.run(); 
             });
         }
         if (red2HPText != null) {
             red2HPText.setOnMouseClicked(e -> { 
-                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); 
+                battleSystem.setSelectedEnemyTarget(battleSystem.getEnemySlot2()); 
+                battleSystem.setSelectedTarget(battleSystem.getEnemySlot2()); // Keep for backward compatibility
+                highlightSelection.run(); 
+            });
+        }
+        
+        // Add click handlers for hero health bars (allies)
+        if (blueHealthBar != null) {
+            blueHealthBar.setOnMouseClicked(e -> { 
+                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot()); 
+                battleSystem.setSelectedTarget(battleSystem.getHeroSlot()); // Keep for backward compatibility
+                highlightSelection.run(); 
+            });
+        }
+        if (blueHealthBorder != null) {
+            blueHealthBorder.setOnMouseClicked(e -> { 
+                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot()); 
+                battleSystem.setSelectedTarget(battleSystem.getHeroSlot()); // Keep for backward compatibility
+                highlightSelection.run(); 
+            });
+        }
+        if (blueHPText != null) {
+            blueHPText.setOnMouseClicked(e -> { 
+                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot()); 
+                battleSystem.setSelectedTarget(battleSystem.getHeroSlot()); // Keep for backward compatibility
+                highlightSelection.run(); 
+            });
+        }
+        
+        if (greenHealthBar != null) {
+            greenHealthBar.setOnMouseClicked(e -> { 
+                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot2()); 
+                battleSystem.setSelectedTarget(battleSystem.getHeroSlot2()); // Keep for backward compatibility
+                highlightSelection.run(); 
+            });
+        }
+        if (greenHealthBorder != null) {
+            greenHealthBorder.setOnMouseClicked(e -> { 
+                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot2()); 
+                battleSystem.setSelectedTarget(battleSystem.getHeroSlot2()); // Keep for backward compatibility
+                highlightSelection.run(); 
+            });
+        }
+        if (greenHPText != null) {
+            greenHPText.setOnMouseClicked(e -> { 
+                battleSystem.setSelectedAllyTarget(battleSystem.getHeroSlot2()); 
+                battleSystem.setSelectedTarget(battleSystem.getHeroSlot2()); // Keep for backward compatibility
                 highlightSelection.run(); 
             });
         }
@@ -484,7 +629,9 @@ public class  BattleUI {
         } else {
             detailText = skill.getName() + "\n" +
                     "Damage: " + (int)(attacker.getCharacter().getAtk() * skill.getAtkScale()) + "\n" +
-                    "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale());
+                    "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())+ "\n" +
+                    "Mp Cost: " + (int)(skill.getMpCost())
+            ;
         }
         Text skillDetail = new Text(detailText);
         skillDetail.setFont(new Font(14));
@@ -512,9 +659,24 @@ public class  BattleUI {
                     return; // not available
                 }
                 Observer.characterSlot resolvedTarget;
-                if (skill.getAtkScale() < 0) {
-                    resolvedTarget = attacker; // heals or negative dmg goes to self/ally
+                if (skill.getTarget().equals("Ally")) {
+                    // For ally-targeting skills, use the selected ally target
+                    resolvedTarget = battleSystem.getSelectedAllyTarget();
+                    if (resolvedTarget == null) {
+                        // Fallback to attacker if no ally is selected
+                        resolvedTarget = attacker;
+                    }
+                } else if (skill.getTarget().equals("Single Enemy")) {
+                    // For enemy-targeting skills, use the selected enemy target
+                    resolvedTarget = battleSystem.getSelectedEnemyTarget();
+                    if (resolvedTarget == null) {
+                        // Fallback to first enemy if no enemy is selected
+                        resolvedTarget = battleSystem.getEnemySlot();
+                    }
+                } else if (skill.getAtkScale() < 0) {
+                    resolvedTarget = attacker; // negative dmg goes to self
                 } else {
+                    // Default behavior - use the general selected target
                     resolvedTarget = target != null ? target : battleSystem.getSelectedTarget();
                 }
                 // Enforce affordability for heroes before calling useSkill
@@ -624,7 +786,6 @@ public class  BattleUI {
     }
     
     public void clearAllBattleUI() {
-        System.out.println("Clearing all battle UI elements...");
         
         // Remove all UI elements from the scene
         if (blueHealthBorder != null) {
@@ -685,6 +846,20 @@ public class  BattleUI {
             getGameScene().removeUINode(greenMPText);
         }
         
+        // Remove name text
+        if (blueNameText != null) {
+            getGameScene().removeUINode(blueNameText);
+        }
+        if (greenNameText != null) {
+            getGameScene().removeUINode(greenNameText);
+        }
+        if (redNameText != null) {
+            getGameScene().removeUINode(redNameText);
+        }
+        if (red2NameText != null) {
+            getGameScene().removeUINode(red2NameText);
+        }
+        
         // Remove lines
         if (blueLine != null) {
             getGameScene().removeUINode(blueLine);
@@ -732,6 +907,11 @@ public class  BattleUI {
         blueMPText = null;
         greenMPText = null;
         
+        blueNameText = null;
+        greenNameText = null;
+        redNameText = null;
+        red2NameText = null;
+        
         blueLine = null;
         greenLine = null;
         redLine = null;
@@ -741,7 +921,6 @@ public class  BattleUI {
         skill2Box = null;
         skill3Box = null;
         
-        System.out.println("All battle UI elements cleared and reset to null!");
     }
 
     public void showAllCombatUI() {
@@ -767,6 +946,12 @@ public class  BattleUI {
         if (red2HPText != null) red2HPText.setVisible(true);
         if (blueMPText != null) blueMPText.setVisible(true);
         if (greenMPText != null) greenMPText.setVisible(true);
+        
+        // Show name text
+        if (blueNameText != null) blueNameText.setVisible(true);
+        if (greenNameText != null) greenNameText.setVisible(true);
+        if (redNameText != null) redNameText.setVisible(true);
+        if (red2NameText != null) red2NameText.setVisible(true);
         
         // Show lines
         if (blueLine != null) blueLine.setVisible(true);

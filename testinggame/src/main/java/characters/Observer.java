@@ -82,7 +82,7 @@ public interface Observer {
             ArrayList<Ability.skill> heroSkills = new ArrayList<>();
             heroSkills.add(Ability.SkillRegistry.getByName("Slash"));
             heroSkills.add(Ability.SkillRegistry.getByName("Fireball"));
-            heroSkills.add(Ability.SkillRegistry.getByName("Heal"));
+            heroSkills.add(Ability.SkillRegistry.getByName("heavy attack"));
 
             // Create a slot for Hero
             characterSlot heroSlot = new characterSlot(
@@ -99,9 +99,9 @@ public interface Observer {
             if (createHero2) {
                 Characters.character hero2 = Characters.CharacterRegistry.getByName("Hero2");
                 ArrayList<Ability.skill> hero2Skills = new ArrayList<>();
-                hero2Skills.add(Ability.SkillRegistry.getByName("Slash"));
+                hero2Skills.add(Ability.SkillRegistry.getByName("Charge attack"));
                 hero2Skills.add(Ability.SkillRegistry.getByName("Fireball"));
-                hero2Skills.add(Ability.SkillRegistry.getByName("heavy attack"));
+                hero2Skills.add(Ability.SkillRegistry.getByName("Heal"));
 
                 hero2Slot = new characterSlot(
                         4,

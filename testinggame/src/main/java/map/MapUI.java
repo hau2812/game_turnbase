@@ -406,70 +406,45 @@ public class MapUI {
     }
 
     private void clearUI() {
-        System.out.println("Clearing MapUI elements...");
-        int removedCount = 0;
-        
         // Remove all UI elements
         if (mapBackground != null) {
             FXGL.getGameScene().removeUINode(mapBackground);
-            removedCount++;
-            System.out.println("Removed map background");
         }
         
         for (Rectangle button : pathButtons) {
             FXGL.getGameScene().removeUINode(button);
-            removedCount++;
         }
-        System.out.println("Removed " + pathButtons.size() + " path buttons");
         
         for (Text text : pathTexts) {
             FXGL.getGameScene().removeUINode(text);
-            removedCount++;
         }
-        System.out.println("Removed " + pathTexts.size() + " path texts");
         
         for (Circle circle : nodeCircles) {
             FXGL.getGameScene().removeUINode(circle);
-            removedCount++;
         }
-        System.out.println("Removed " + nodeCircles.size() + " node circles");
         
         for (Line line : pathLines) {
             FXGL.getGameScene().removeUINode(line);
-            removedCount++;
         }
-        System.out.println("Removed " + pathLines.size() + " path lines");
         
         for (Text text : nodeLabels) {
             FXGL.getGameScene().removeUINode(text);
-            removedCount++;
         }
-        System.out.println("Removed " + nodeLabels.size() + " node labels");
         
         if(title!=null) {
             FXGL.getGameScene().removeUINode(title);
-            removedCount++;
-            System.out.println("Removed title");
         }
         if(progress!=null) {
             FXGL.getGameScene().removeUINode(progress);
-            removedCount++;
-            System.out.println("Removed progress");
         }
         if(title2!=null) {
             FXGL.getGameScene().removeUINode(title2);
-            removedCount++;
-            System.out.println("Removed title2");
         }
         if(backText!=null) {
             FXGL.getGameScene().removeUINode(backText);
-            removedCount++;
-            System.out.println("Removed backText");
         }
         if(backButton!=null) {
             FXGL.getGameScene().removeUINode(backButton);
-            removedCount++;
-            System.out.println("Removed backButton");
         }
 
         pathButtons.clear();
@@ -477,8 +452,6 @@ public class MapUI {
         nodeCircles.clear();
         pathLines.clear();
         nodeLabels.clear();
-        
-        System.out.println("Total MapUI elements removed: " + removedCount);
     }
 
     public boolean isPathSelected() {

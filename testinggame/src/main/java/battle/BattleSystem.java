@@ -24,6 +24,8 @@ public class BattleSystem {
     private Observer.characterSlot enemySlot;
     private Observer.characterSlot enemySlot2;
     private Observer.characterSlot selectedTarget;
+    private Observer.characterSlot selectedAllyTarget;
+    private Observer.characterSlot selectedEnemyTarget;
     private Observer.characterSlot currentActingHero;
     
     // Combat state
@@ -77,6 +79,8 @@ public class BattleSystem {
         //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
         //if(enemySlot2 == null) {enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");}
         selectedTarget = enemySlot; // default target
+        selectedAllyTarget = heroSlot; // ally selected initially
+        selectedEnemyTarget = enemySlot; // default enemy target
 
         // Set current acting hero
         currentActingHero = heroSlot;
@@ -89,7 +93,6 @@ public class BattleSystem {
         // Start new battle loop
         battleLoopActive = true;
         startBattleLoopRecursive();
-        System.out.println("Battle loop started");
     }
     
     private void startBattleLoopRecursive() {
@@ -103,7 +106,6 @@ public class BattleSystem {
         // Stop the battle loop
         battleLoopActive = false;
         setMoving(false);
-        System.out.println("Battle loop stopped");
     }
     
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
@@ -132,8 +134,16 @@ public class BattleSystem {
             }
         }
         
-        // Damage target
+        // Calculate base damage
         double dmg = attacker.getCharacter().getAtk() * skill.getAtkScale();
+        
+        // Apply special talent bonuses
+        float talentBonus = characters.SpecialTalents.getDamageBonus(attacker);
+        if (talentBonus > 0) {
+            dmg += talentBonus;
+            System.out.println(attacker.getCharacter().getName() + " talent bonus: +" + talentBonus + " damage!");
+        }
+        
         applyDamage(target, dmg);
 
         // Push line back (if attacker is hero)
@@ -166,6 +176,14 @@ public class BattleSystem {
         if (actingEnemy == null || actingEnemy.getCurrentHp() <= 0) {
             moving = true;
             return;
+        }
+        
+        // Apply turn-based effects (like regeneration)
+        characters.SpecialTalents.onTurnStart(actingEnemy);
+        
+        // Update UI after turn-based effects
+        if (battleUI != null) {
+            battleUI.updateHealthUI(actingEnemy);
         }
         Ability.skill chosenSkill = actingEnemy.getSkills()
                 .get(random.nextInt(actingEnemy.getSkills().size()));
@@ -222,20 +240,28 @@ public class BattleSystem {
             if(autoEnemy) {
                 // Enemy 1 turn
                 if (line == battleUI.getRedLine() && enemySlot.getCurrentHp() > 0) {
+
                     runOnce(() -> enemyTurn(enemySlot), Duration.seconds(0.25));
                 }
                 // Enemy 2 turn
                 else if (line == battleUI.getYellowLine() && enemySlot2 != null && enemySlot2.getCurrentHp() > 0) {
+
                     runOnce(() -> enemyTurn(enemySlot2), Duration.seconds(0.25));
-                } else if (line == battleUI.getBlueLine() || (line == battleUI.getGreenLine() && heroSlot2 != null)) {
+                }
+                else if (line == battleUI.getBlueLine() || (line == battleUI.getGreenLine() && heroSlot2 != null)) {
                     // When a hero's line reaches, render that hero's skills
+
                     currentActingHero = (line == battleUI.getBlueLine()) ? heroSlot : heroSlot2;
+                    characters.SpecialTalents.onTurnStart(currentActingHero);
+                    battleUI.refreshAllCharacterUI();
                     if (currentActingHero != null && battleUI != null) {
                         battleUI.renderHeroSkillsFor(currentActingHero);
                     }
                 }
             }
+
             return;
+
         }
 
         line.setStartX(newX);
@@ -243,13 +269,30 @@ public class BattleSystem {
     }
     
     private void applyDamage(Observer.characterSlot slot, double amount) {
-        slot.setCurrentHp((float)Math.max(0, slot.getCurrentHp() - amount));
+        float oldHp = slot.getCurrentHp();
+        float actualAmount = (float)amount;
+
+        // Calculate actual damage after special talents (like mana shield)
+        if (amount > 0) { // Damage taken
+            actualAmount = characters.SpecialTalents.calculateActualDamage(slot, (float)amount);
+        }
+
+        // Apply the actual damage/healing to HP
+        slot.setCurrentHp((float)Math.max(0, slot.getCurrentHp() - actualAmount));
         if(slot.getCurrentHp() > slot.getCharacter().getHp()) {
             slot.setCurrentHp(slot.getCharacter().getHp());
+        }
+
+        // Handle special talents after damage is applied
+        if (amount > 0) { // Damage taken
+            characters.SpecialTalents.onDamageTaken(slot, actualAmount);
+        } else if (amount < 0) { // Healing received
+            characters.SpecialTalents.onHealingReceived(slot, Math.abs((float)amount));
         }
         
         if (battleUI != null) {
             battleUI.updateHealthUI(slot);
+            battleUI.updateMpUI(slot); // Update MP bar when mana shield is used
             
             // Remove line if character dies
             if (slot.getCurrentHp() <= 0) {
@@ -279,9 +322,13 @@ public class BattleSystem {
     public Observer.characterSlot getEnemySlot() { return enemySlot; }
     public Observer.characterSlot getEnemySlot2() { return enemySlot2; }
     public Observer.characterSlot getSelectedTarget() { return selectedTarget; }
+    public Observer.characterSlot getSelectedAllyTarget() { return selectedAllyTarget; }
+    public Observer.characterSlot getSelectedEnemyTarget() { return selectedEnemyTarget; }
     public Observer.characterSlot getCurrentActingHero() { return currentActingHero; }
     
     public void setSelectedTarget(Observer.characterSlot target) { this.selectedTarget = target; }
+    public void setSelectedAllyTarget(Observer.characterSlot target) { this.selectedAllyTarget = target; }
+    public void setSelectedEnemyTarget(Observer.characterSlot target) { this.selectedEnemyTarget = target; }
     public void setMoving(boolean moving) { this.moving = moving; }
     public boolean isMoving() { return moving; }
     public Line getTurnOf() { return turnOf; }
@@ -301,6 +348,7 @@ public class BattleSystem {
         
         // Update selected target to first enemy
         this.selectedTarget = enemy1;
+        this.selectedEnemyTarget = enemy1;
     }
     
     public void clearEnemyData() {
@@ -308,6 +356,8 @@ public class BattleSystem {
         this.enemySlot = null;
         this.enemySlot2 = null;
         this.selectedTarget = null;
+        this.selectedAllyTarget = null;
+        this.selectedEnemyTarget = null;
         System.out.println("Enemy data cleared");
     }
     

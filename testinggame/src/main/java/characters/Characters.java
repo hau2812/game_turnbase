@@ -82,6 +82,57 @@ public interface Characters {
 
         public ArrayList<uniqueValue> getUniqueValues() { return uniqueValues; }
         public void setUniqueValues(ArrayList<uniqueValue> uniqueValues) { this.uniqueValues = uniqueValues; }
+        
+        // Helper methods for managing unique values
+        public uniqueValue getUniqueValue(String name) {
+            if (uniqueValues == null) return null;
+            for (uniqueValue uv : uniqueValues) {
+                if (uv.getName().equals(name)) {
+                    return uv;
+                }
+            }
+            return null;
+        }
+        
+        public void setUniqueValue(String name, String value) {
+            if (uniqueValues == null) {
+                uniqueValues = new ArrayList<>();
+            }
+            
+            uniqueValue existing = getUniqueValue(name);
+            if (existing != null) {
+                existing.setValue(value);
+            } else {
+                uniqueValues.add(new uniqueValue(name, value));
+            }
+        }
+        
+        public void addToUniqueValue(String name, float amount) {
+            uniqueValue existing = getUniqueValue(name);
+            if (existing != null) {
+                try {
+                    float currentValue = Float.parseFloat(existing.getValue());
+                    existing.setValue(String.valueOf(currentValue + amount));
+                } catch (NumberFormatException e) {
+                    // If not a number, treat as 0
+                    existing.setValue(String.valueOf(amount));
+                }
+            } else {
+                setUniqueValue(name, String.valueOf(amount));
+            }
+        }
+        
+        public float getUniqueValueAsFloat(String name) {
+            uniqueValue uv = getUniqueValue(name);
+            if (uv != null) {
+                try {
+                    return Float.parseFloat(uv.getValue());
+                } catch (NumberFormatException e) {
+                    return 0f;
+                }
+            }
+            return 0f;
+        }
 
         @Override
         public String toString() {
@@ -115,7 +166,8 @@ public interface Characters {
         public static void init() {
             // Example: create a Hero character
 
-            Characters.character hero = new Characters.character(
+            // Create Hero with berserker talent using utility method
+            Characters.character hero = characters.SpecialTalents.createBerserker(
                     1,
                     "Hero",
                     100,  // atk
@@ -123,22 +175,22 @@ public interface Characters {
                     20,  // def
                     10,  // res
                     15,  // spd
-                    200, // hp
-                    500,  // mp
-                    new ArrayList<>()
+                    300, // hp
+                    200   // mp
             );
-            Characters.character hero2 = new Characters.character(
+            // Create Hero2 with mana shield talent using utility method
+            Characters.character hero2 = characters.SpecialTalents.createMage(
                     4,
                     "Hero2",
                     100,  // atk
                     35,   // matk
                     18,   // def
                     12,   // res
-                    14,   // spd
+                    12,   // spd
                     180, // hp
-                    150,   // mp
-                    new ArrayList<>()
+                    500   // mp
             );
+            hero2.setUniqueValue("Regeneration","25");
             Characters.character enemy = new Characters.character(
                     2,
                     "Enemy",

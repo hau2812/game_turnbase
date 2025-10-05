@@ -60,7 +60,7 @@ public class GameMap {
 
         MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
                                      MapNode.NodeType.BATTLE, 200, 260);
-        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 100)));
+        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 150)));
         path.addNode(battle2);
 
         // Event node
@@ -95,6 +95,7 @@ public class GameMap {
         Characters.character forestGuardian = new Characters.character(
             (int)(Math.random() * 1000), "Forest Guardian", 100, 30, 20, 10, 5, 800, 50, new ArrayList<>()
         );
+        forestGuardian.setUniqueValue("Regeneration","200");
         finalBattle.addEnemy(createEnemySlotWithSkills(forestGuardian));
         path.addNode(finalBattle);
     }
@@ -283,8 +284,8 @@ public class GameMap {
         // Create skills list with skills 1, 2, 3
         ArrayList<Ability.skill> enemySkills = new ArrayList<>();
         enemySkills.add(Ability.SkillRegistry.getById(1)); // Slash
-        enemySkills.add(Ability.SkillRegistry.getById(2)); // Fireball
-        enemySkills.add(Ability.SkillRegistry.getById(3)); // Heal
+        //enemySkills.add(Ability.SkillRegistry.getById(2)); // Fireball
+        //enemySkills.add(Ability.SkillRegistry.getById(3)); // Heal
         
         // Create character slot
         return new Observer.characterSlot(
