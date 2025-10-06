@@ -1,11 +1,9 @@
 package battle;
 
 import abilities.Ability;
+import characters.BuffDebuff;
 import characters.Observer;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.util.Duration;
 
 import java.util.Objects;
@@ -46,7 +44,8 @@ public class BattleSystem {
     
     // UI reference (will be injected)
     private BattleUI battleUI;
-    
+    private boolean hideTalents = false;
+    private String[] selectedHeroes = {"Flamita"}; // Default heroes
     // Callback for battle end
     private Runnable onBattleWon;
     
@@ -156,6 +155,36 @@ public class BattleSystem {
     
     public void setBattleUI(BattleUI battleUI) {
         this.battleUI = battleUI;
+        // Pass hideTalents setting to BattleUI
+        battleUI.setHideTalents(hideTalents);
+    }
+    
+    /**
+     * Configure battle settings
+     * @param hideTalents Whether to hide talent text in UI
+     * @param selectedHeroes Array of hero names to use
+     */
+    public void configureBattle(boolean hideTalents, String[] selectedHeroes) {
+        this.hideTalents = hideTalents;
+        this.selectedHeroes = selectedHeroes.clone(); // Create a copy to avoid external modification
+        
+        // Update BattleUI if it's already set
+        if (battleUI != null) {
+            battleUI.setHideTalents(hideTalents);
+        }
+    }
+    
+    public boolean getHideTalents() {
+        return this.hideTalents;
+    }
+    
+    public String[] getSelectedHeroes() {
+        return selectedHeroes.clone(); // Return a copy to avoid external modification
+    }
+    
+    public String getSelectedHero() {
+        // For backward compatibility, return the first selected hero
+        return selectedHeroes.length > 0 ? selectedHeroes[0] : "Flamita";
     }
     
     public void setOnBattleWon(Runnable callback) {
@@ -168,12 +197,18 @@ public class BattleSystem {
         // Init registry
         Observer.CharacterSlotRegistry.init();
 
-        // Hero slots
-        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Pieberry");}
+        // Hero slots - use configured heroes
+        if(heroSlot == null && selectedHeroes.length > 0) {
+            heroSlot = Observer.CharacterSlotRegistry.getByName(selectedHeroes[0]);
+        }
 
-        if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
+        if(heroSlot2 == null && selectedHeroes.length > 1) {
+            heroSlot2 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[1]);
+        }
 
-        //if(heroSlot3 == null) {heroSlot3 = Observer.CharacterSlotRegistry.getByName("Flamita");}
+        if(heroSlot3 == null && selectedHeroes.length > 2) {
+            heroSlot3 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[2]);
+        }
 
         // Enemy slots
         //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
@@ -221,10 +256,10 @@ public class BattleSystem {
             }
             if (true) {
                 if(!Objects.equals(skill.getName(), "Ecarr Vertel")) {
-                    attacker.setCurrentMp(attacker.getCurrentMp() - mpCost);
+                attacker.setCurrentMp(attacker.getCurrentMp() - mpCost);
                 }
-                if(attacker.getCurrentMp() > attacker.getCharacterAfter().getMp()) {
-                    attacker.setCurrentMp(attacker.getCharacterAfter().getMp());
+                if(attacker.getCurrentMp() > attacker.getBaseCharacter().getMp()) {
+                    attacker.setCurrentMp(attacker.getBaseCharacter().getMp());
                 }
                 if (battleUI != null) {
                     battleUI.updateMpUI(attacker);
@@ -235,7 +270,7 @@ public class BattleSystem {
                 }
             }
         }
-
+        
 
         // Calculate base damage
         double baseDamage = attacker.getCharacter().getAtk() * skill.getAtkScale();
@@ -251,11 +286,39 @@ public class BattleSystem {
         // Calculate final damage with Burning Rage bonuses, talent bonuses, and special skill bonuses
         applyDamage(target, finalDmg);
 
+        // Apply skill effects (buffs/debuffs) to target
+        if (skill.getSkillEffects() != null && !skill.getSkillEffects().isEmpty()) {
+            for (Ability.skillEffect effect : skill.getSkillEffects()) {
+                // Create a copy of the BuffDebuff with the skill's duration and stack
+                BuffDebuff effectCopy = new BuffDebuff(
+                    effect.getBuffDebuff().getName(),
+                    effect.getBuffDebuff().getType(),
+                    effect.getDuration(),
+                    effect.getBuffDebuff().getEffects(),
+                    effect.getBuffDebuff().getValue(),
+                    effect.getStack(),
+                    effect.getBuffDebuff().getMaxStack(),
+                    effect.getBuffDebuff().getSource()
+                );
+                
+                // Apply the effect to the target
+                characters.SpecialTalents.applyBuffDebuff(target, effectCopy);
+            }
+        }
+        
+        // Update barrier bar for target if effects were applied
+        if (battleUI != null && skill.getSkillEffects() != null && !skill.getSkillEffects().isEmpty()) {
+            battleUI.updateBarrierBar(target);
+        }
+
         // Push line back for any character
         if (isHero(attacker) || isEnemy(attacker)) {
             double push = attacker.getCharacter().getAV() * skill.getAVScale();
             pushCharacterLine(attacker, push);
         }
+        
+        // Reduce duration of buff/debuff effects at the end of turn
+        characters.SpecialTalents.onTurnEnd(attacker);
     }
     
     /**
@@ -273,7 +336,7 @@ public class BattleSystem {
             enemyActionTime = false; // Re-enable hero skill usage after enemy action
         }, Duration.seconds(0.25));
     }
-
+    
     private void enemyTurn(Observer.characterSlot actingEnemy) {
         Random random = new Random();
         if (actingEnemy == null || actingEnemy.getCurrentHp() <= 0) {
@@ -283,7 +346,7 @@ public class BattleSystem {
         
         // Apply turn-based effects (like regeneration)
         characters.SpecialTalents.onTurnStart(actingEnemy);
-        
+        checkVictoryCondition();
         // Update UI after turn-based effects
         if (battleUI != null) {
             battleUI.updateHealthUI(actingEnemy);
@@ -400,6 +463,7 @@ public class BattleSystem {
             battleUI.updateHealthUI(slot);
             battleUI.updateMpUI(slot); // Update MP bar when mana shield is used
             battleUI.updateBurningRageBar(slot); // Update Burning Rage bar
+            battleUI.updateBarrierBar(slot); // Update Barrier bar
             
             // Remove line if character dies
             if (slot.getCurrentHp() <= 0) {
@@ -409,12 +473,18 @@ public class BattleSystem {
                 } else if (slot == enemySlot2 && battleUI.getYellowLine() != null) {
                     getGameScene().removeUINode(battleUI.getYellowLine());
                     battleUI.setYellowLine(null);
+                } else if (slot == enemySlot3 && battleUI.getOrangeLine() != null) {
+                    getGameScene().removeUINode(battleUI.getOrangeLine());
+                    battleUI.setOrangeLine(null);
                 } else if (slot == heroSlot && battleUI.getBlueLine() != null) {
                     getGameScene().removeUINode(battleUI.getBlueLine());
                     battleUI.setBlueLine(null);
                 } else if (slot == heroSlot2 && battleUI.getGreenLine() != null) {
                     getGameScene().removeUINode(battleUI.getGreenLine());
                     battleUI.setGreenLine(null);
+                } else if (slot == heroSlot3 && battleUI.getPurpleLine() != null) {
+                    getGameScene().removeUINode(battleUI.getPurpleLine());
+                    battleUI.setPurpleLine(null);
                 }
                 
                 // Check if all enemies are defeated

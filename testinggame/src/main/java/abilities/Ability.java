@@ -1,9 +1,33 @@
 package abilities;
 
+import characters.BuffDebuff;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public interface Ability {
+    
+    public class skillEffect {
+        BuffDebuff buffDebuff;
+        int duration;
+        int stack;
+        
+        public skillEffect(BuffDebuff buffDebuff, int duration, int stack) {
+            this.buffDebuff = buffDebuff;
+            this.duration = duration;
+            this.stack = stack;
+        }
+        
+        public BuffDebuff getBuffDebuff() { return buffDebuff; }
+        public void setBuffDebuff(BuffDebuff buffDebuff) { this.buffDebuff = buffDebuff; }
+        
+        public int getDuration() { return duration; }
+        public void setDuration(int duration) { this.duration = duration; }
+        
+        public int getStack() { return stack; }
+        public void setStack(int stack) { this.stack = stack; }
+    }
+    
     public class skill {
         int id;
         String name;
@@ -19,6 +43,9 @@ public interface Ability {
         float burningRageRequired;  // Minimum Burning Rage required to use skill
         float burningRageConsumed;  // Amount of Burning Rage consumed when using skill
         float burningRageGained;    // Amount of Burning Rage gained when using skill
+        
+        // Skill effects (buffs/debuffs)
+        ArrayList<skillEffect> skillEffects;
         //Contructor----------------------------------------------------------------------------------
         public skill(int id, String name, String description, String type, String target, float atkScale, float AVScale, float mpCost, float partyMpCost) {
             this.id = id;
@@ -33,6 +60,7 @@ public interface Ability {
             this.burningRageRequired = 0;
             this.burningRageConsumed = 0;
             this.burningRageGained = 0;
+            this.skillEffects = new ArrayList<>();
         }
 
         public skill(int id, String name, String description, String type, String target, float atkScale, float AVScale) {
@@ -48,6 +76,7 @@ public interface Ability {
             this.burningRageRequired = 0;
             this.burningRageConsumed = 0;
             this.burningRageGained = 0;
+            this.skillEffects = new ArrayList<>();
         }
         
         // New constructor for Burning Rage skills
@@ -64,6 +93,7 @@ public interface Ability {
             this.burningRageRequired = burningRageRequired;
             this.burningRageConsumed = burningRageConsumed;
             this.burningRageGained = burningRageGained;
+            this.skillEffects = new ArrayList<>();
         }
 
         //-------------------------------------------------------------------------------------------
@@ -163,6 +193,36 @@ public interface Ability {
         public void setBurningRageGained(float burningRageGained) {
             this.burningRageGained = burningRageGained;
         }
+        
+        public ArrayList<skillEffect> getSkillEffects() { return skillEffects; }
+        public void setSkillEffects(ArrayList<skillEffect> skillEffects) { this.skillEffects = skillEffects; }
+        
+        /**
+         * Helper method to easily add effects to a skill
+         * @param effectName The name of the BuffDebuff effect
+         * @param duration Duration in turns
+         * @param stack Number of stacks
+         */
+        public void addEffect(String effectName, int duration, int stack) {
+            BuffDebuff effect = BuffDebuff.getByName(effectName);
+            if (effect != null) {
+                this.skillEffects.add(new skillEffect(effect, duration, stack));
+            } else {
+                System.err.println("Warning: BuffDebuff effect '" + effectName + "' not found!");
+            }
+        }
+        
+        /**
+         * Helper method to add multiple effects at once
+         * @param effects Array of effect data: {effectName, duration, stack}
+         */
+        public void addEffects(String[][] effects) {
+            for (String[] effectData : effects) {
+                if (effectData.length >= 3) {
+                    addEffect(effectData[0], Integer.parseInt(effectData[1]), Integer.parseInt(effectData[2]));
+                }
+            }
+        }
     }
 
     public class SkillRegistry {
@@ -183,6 +243,8 @@ public interface Ability {
         }
 
         public static void init() {
+            // Initialize BuffDebuff registry
+            BuffDebuff.init();
             register(new Ability.skill(
                     0,
                     "N/A",
@@ -207,7 +269,11 @@ public interface Ability {
                     0
 
             ));
-
+                Ability.skill slash = getByName("Slash");
+                if (slash != null) {
+                    slash.addEffect("Burn", 2, 1);        // Burn for 2 turns, 1 stack
+                    slash.addEffect("Weakness", 1, 1);    // Weakness for 1 turn, 1 stack
+                }
             register(new Ability.skill(
                     2,
                     "Fireball",
@@ -219,7 +285,15 @@ public interface Ability {
                     50,
                     0
             ));
-
+                // Example: Adding multiple effects at once using the array method
+                Ability.skill fireball = getByName("Fireball");
+                if (fireball != null) {
+                    String[][] effects = {
+                            {"Burn", "3", "1"},           // Burn for 3 turns, 1 stack
+                            //{"Weakness", "2", "1"}
+                    };
+                    fireball.addEffects(effects);
+                }
             register(new Ability.skill(
                     3,
                     "Heal",
@@ -231,6 +305,10 @@ public interface Ability {
                     300,
                     0
             ));
+                Ability.skill heal = getByName("Heal");
+                if (heal != null) {
+                    heal.addEffect("Regeneration", 3, 1);  // Regeneration for 3 turns, 1 stack
+                }
             register(new Ability.skill(
                     4,
                     "heavy attack",
@@ -339,6 +417,10 @@ public interface Ability {
                     150,
                     0
             ));
+                Ability.skill orbFlame = getByName("5-Orb Flame");
+                if (orbFlame != null) {
+                    orbFlame.addEffect("Burn", 3, 2);
+                }
             register(new Ability.skill(
                     12,
                     "7-Fork Lightning",
@@ -350,6 +432,11 @@ public interface Ability {
                     300,
                     0
             ));
+            Ability.skill forkLightning = getByName("7-Fork Lightning");
+            if (forkLightning != null) {
+                //forkLightning.addEffect("Burn", 2, 1);        // Burn for 2 turns, 1 stack
+                forkLightning.addEffect("Weakness", 2, 5);    // Weakness for 1 turn, 1 stack
+            }
             register(new Ability.skill(
                     13,
                     "Ecarr Vertel",
@@ -361,6 +448,24 @@ public interface Ability {
                     200,
                     0
             ));
+            
+            register(new Ability.skill(
+                    14,
+                    "Barrier",
+                    "Creates a protective barrier that absorbs damage",
+                    "Magic",
+                    "Ally",
+                    0.0f,
+                    1.0f,
+                    50,
+                    0
+            ));
+            
+            // Add Barrier effect to the Barrier skill
+            Ability.skill barrier = getByName("Barrier");
+            if (barrier != null) {
+                barrier.addEffect("Barrier", 3, 100);  // 50 barrier points for 3 turns
+            }
         }
     }
 

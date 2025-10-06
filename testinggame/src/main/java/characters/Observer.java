@@ -3,7 +3,6 @@ package characters;
 import abilities.Ability;
 import javafx.scene.shape.Line;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,18 +13,20 @@ public interface Observer {
     public class characterSlot {
         int id;
         Characters.character character;        // base character
-        Characters.character characterAfter;   // transformed/altered state (optional)
+        Characters.character baseCharacter;   // transformed/altered state (optional)
         ArrayList<Ability.skill> skills;       // skills assigned to this slot
+        ArrayList<BuffDebuff> activeEffects;   // active buffs/debuffs
         float currentHp;
         float currentMp;
         Line line;
 
-        public characterSlot(int id, Characters.character character, Characters.character characterAfter,
+        public characterSlot(int id, Characters.character character, Characters.character baseCharacter,
                              ArrayList<Ability.skill> skills, float currentHp, float currentMp) {
             this.id = id;
             this.character = character;
-            this.characterAfter = characterAfter;
+            this.baseCharacter = baseCharacter;
             this.skills = skills;
+            this.activeEffects = new ArrayList<>();
             this.currentHp = currentHp;
             this.currentMp = currentMp;
         }
@@ -35,6 +36,9 @@ public interface Observer {
 
         public ArrayList<Ability.skill> getSkills() { return skills; }
         public void setSkills(ArrayList<Ability.skill> skills) { this.skills = skills; }
+        
+        public ArrayList<BuffDebuff> getActiveEffects() { return activeEffects; }
+        public void setActiveEffects(ArrayList<BuffDebuff> activeEffects) { this.activeEffects = activeEffects; }
 
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
@@ -42,8 +46,8 @@ public interface Observer {
         public Characters.character getCharacter() { return character; }
         public void setCharacter(Characters.character character) { this.character = character; }
 
-        public Characters.character getCharacterAfter() { return characterAfter; }
-        public void setCharacterAfter(Characters.character characterAfter) { this.characterAfter = characterAfter; }
+        public Characters.character getBaseCharacter() { return baseCharacter; }
+        public void setBaseCharacter(Characters.character baseCharacter) { this.baseCharacter = baseCharacter; }
 
         public float getCurrentHp() { return currentHp; }
         public void setCurrentHp(float currentHp) { this.currentHp = currentHp; }
@@ -100,11 +104,9 @@ public interface Observer {
          */
         public static characterSlot createCharacterSlot(String characterName, String skill1, String skill2, String skill3, String skill4) {
             // Get the character from registry
+
             Characters.character character = Characters.CharacterRegistry.getByName(characterName);
-            if (character == null) {
-                System.err.println("Character '" + characterName + "' not found in CharacterRegistry!");
-                return null;
-            }
+            Characters.character baseCharacter = new Characters.character(character); // Create copy
             
             // Create skills list using helper function
             ArrayList<Ability.skill> skills = new ArrayList<>();
@@ -117,7 +119,7 @@ public interface Observer {
             characterSlot slot = new characterSlot(
                 character.getId(),
                 character,
-                character,
+                baseCharacter,
                 skills,
                 character.getHp(),
                 character.getMp()
@@ -138,7 +140,7 @@ public interface Observer {
             //Hero 1
             characterSlot heroSlot = createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack", null);
             // Hero 2
-            characterSlot hero2Slot = createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal", null);
+            characterSlot hero2Slot = createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal", "Barrier");
             // Hero 3
             characterSlot hero3Slot = createCharacterSlot("Flamita", "Rage Strike", "Burning slash", "Rage Heal", "Rage Burst");
             // Hero 4

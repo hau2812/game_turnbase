@@ -49,6 +49,24 @@ public interface Characters {
             this.mp = mp;
             this.uniqueValues = uniqueValues;
         }
+        // In Characters.java
+        public character(character other) {
+            this.id = other.id;
+            this.name = other.name;
+            this.atk = other.atk;
+            this.matk = other.matk;
+            this.def = other.def;
+            this.res = other.res;
+            this.spd = other.spd;
+            this.AV = other.AV;
+            this.hp = other.hp;
+            this.mp = other.mp;
+            // Deep copy uniqueValues list
+            this.uniqueValues = new ArrayList<>();
+            for (uniqueValue uv : other.uniqueValues) {
+                this.uniqueValues.add(new uniqueValue(uv.getName(), uv.getValue()));
+            }
+        }
 
 
 
@@ -179,7 +197,7 @@ public interface Characters {
                     20,  // def
                     10,  // res
                     15,  // spd
-                    300, // hp
+                    3000, // hp
                     200   // mp
             ));
             

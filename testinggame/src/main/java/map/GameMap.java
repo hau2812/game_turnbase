@@ -54,14 +54,14 @@ public class GameMap {
         // Battle nodes
         MapNode battle1 = new MapNode("forest_battle1", "Wolf Pack", "Đàn sói hoang dã", 
                                      MapNode.NodeType.BATTLE, 150, 280);
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 25)));
         battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
+        //battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
         path.addNode(battle1);
 
         MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
                                      MapNode.NodeType.BATTLE, 200, 260);
-        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 150)));
+        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 75)));
         path.addNode(battle2);
 
         // Event node
@@ -94,7 +94,7 @@ public class GameMap {
 
         // Create Forest Guardian with custom speed of 5
         Characters.character forestGuardian = new Characters.character(
-            (int)(Math.random() * 1000), "Forest Guardian", 100, 30, 20, 10, 5, 800, 50, new ArrayList<>()
+            (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 5, 800, 50, new ArrayList<>()
         );
         forestGuardian.setUniqueValue("Regeneration","200");
         finalBattle.addEnemy(createEnemySlotWithSkills(forestGuardian));
@@ -285,7 +285,7 @@ public class GameMap {
         
         // Create skills list with skills 1, 2, 3
         ArrayList<Ability.skill> enemySkills = new ArrayList<>();
-        enemySkills.add(Ability.SkillRegistry.getById(1)); // Slash
+        enemySkills.add(Ability.SkillRegistry.getById(4)); // Slash
         //enemySkills.add(Ability.SkillRegistry.getById(2)); // Fireball
         //enemySkills.add(Ability.SkillRegistry.getById(3)); // Heal
         

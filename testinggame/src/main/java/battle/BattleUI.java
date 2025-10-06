@@ -33,6 +33,23 @@ public class  BattleUI {
     }
     
     /**
+     * Helper class to hold Barrier bar data
+     */
+    private static class BarrierBarData {
+        public Observer.characterSlot characterSlot;
+        public Rectangle barrierBar;
+        public double baseX;
+        public double baseY;
+        
+        public BarrierBarData(Observer.characterSlot slot, Rectangle bar, double x, double y) {
+            this.characterSlot = slot;
+            this.barrierBar = bar;
+            this.baseX = x;
+            this.baseY = y;
+        }
+    }
+    
+    /**
      * Helper class to hold Health bar data
      */
     private static class HealthBarData {
@@ -77,6 +94,9 @@ public class  BattleUI {
     // Burning Rage bars (red bars that show accumulated rage)
     private java.util.List<BurningRageBarData> burningRageBars = new java.util.ArrayList<>();
     
+    // Barrier bars (light blue bars that show barrier points)
+    private java.util.List<BarrierBarData> barrierBars = new java.util.ArrayList<>();
+    
     // Skill boxes
     private Rectangle skill1Box;
     private Rectangle skill2Box;
@@ -93,6 +113,8 @@ public class  BattleUI {
     
     // Battle system reference
     private BattleSystem battleSystem;
+    // Hide talents text setting (Burning Rage bars still show)
+    boolean hideTalents = true;
     
     public BattleUI(BattleSystem battleSystem) {
         this.battleSystem = battleSystem;
@@ -230,6 +252,11 @@ public class  BattleUI {
         for (BurningRageBarData rageBarData : burningRageBars) {
             updateBurningRageBar(rageBarData.characterSlot);
         }
+        
+        // Update all Barrier bars
+        for (BarrierBarData barrierBarData : barrierBars) {
+            updateBarrierBar(barrierBarData.characterSlot);
+        }
     }
     
     /**
@@ -296,12 +323,12 @@ public class  BattleUI {
         
         // Position data: [healthX, healthY, mpX, mpY]
         double[][] positions = {
-            {50, 300, 50, 325},   // Hero (blue)
-            {50, 350, 50, 375},   // Hero2 (green)
-            {50, 400, 50, 425},   // Hero3 (purple)
-            {550, 300, 550, 325}, // Enemy (red)
-            {550, 350, 550, 375}, // Enemy2 (yellow)
-            {550, 400, 550, 425}  // Enemy3 (orange)
+                {50, 300, 50, 325},   // Hero (blue)
+                {50, 375, 50, 400},   // Hero2 (green)
+                {50, 450, 50, 475},   // Hero3 (purple)
+                {550, 300, 550, 325}, // Enemy (red)
+                {550, 375, 550, 375}, // Enemy2 (yellow)
+                {550, 450, 550, 425}  // Enemy3 (orange)
         };
         
         // Health bar colors
@@ -354,10 +381,16 @@ public class  BattleUI {
             // Add to health bars list
             healthBars.add(new HealthBarData(slot, healthBar, healthBorder, 
                 mpBar, mpBorder, hpText, mpText, nameText, healthX, healthY));
+            
+            // Add hover functionality to show debuffs (for both heroes and enemies)
+            addDebuffHoverToHealthBar(healthBar, healthBorder, slot);
         }
         
         // Create Burning Rage bars (red bars that show accumulated rage)
         createBurningRageBars();
+        
+        // Create Barrier bars (light blue bars that show barrier points)
+        createBarrierBars();
     }
     
     private void createBurningRageBars() {
@@ -381,11 +414,248 @@ public class  BattleUI {
         }
     }
     
+    private void createBarrierBars() {
+        // Clear existing barrier bars
+        barrierBars.clear();
+        
+        // Create barrier bars for all characters (they will be shown/hidden based on barrier effects)
+        for (HealthBarData healthBarData : healthBars) {
+            Observer.characterSlot slot = healthBarData.characterSlot;
+            
+            // Create barrier bar (light blue, 1/5 height of health bar)
+            Rectangle barrierBar = new Rectangle(0, healthBarHeight / 2, Color.LIGHTSEAGREEN);
+            barrierBar.setTranslateX(healthBarData.healthBorder.getTranslateX());
+            barrierBar.setTranslateY(healthBarData.healthBorder.getTranslateY()); // Position at top of health bar
+            barrierBar.setVisible(false); // Initially hidden
+            barrierBar.setMouseTransparent(true); // Make non-interactive so clicks pass through
+            
+            barrierBars.add(new BarrierBarData(slot, barrierBar, 
+                healthBarData.healthBorder.getTranslateX(), healthBarData.healthBorder.getTranslateY()));
+        }
+    }
+    
     /**
      * Check if a character has the Burning Rage talent
      */
     private boolean hasBurningRage(Observer.characterSlot slot) {
         return slot.getCharacter().getUniqueValue("Burning rage") != null;
+    }
+    
+    /**
+     * Check if a character has an active barrier effect
+     */
+    private boolean hasBarrier(Observer.characterSlot slot) {
+        if (slot.getActiveEffects() == null) return false;
+        
+        for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+            if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Add hover functionality to health bar to show debuff information
+     */
+    private void addDebuffHoverToHealthBar(Rectangle healthBar, Rectangle healthBorder, Observer.characterSlot slot) {
+        // Create debuff detail text (similar to skill tooltip)
+        Text debuffDetail = new Text();
+        debuffDetail.setFont(new Font(14));
+        debuffDetail.setFill(Color.BLACK);
+        debuffDetail.setVisible(false);
+        
+        // Center on screen with wrapping and centered alignment (same as skill tooltip)
+        double wrapWidth = 300;
+        debuffDetail.setWrappingWidth(wrapWidth);
+        debuffDetail.setTextAlignment(TextAlignment.CENTER);
+        debuffDetail.setTranslateX((getAppWidth() - wrapWidth) / 2.0);
+        debuffDetail.setTranslateY(getAppHeight() / 2.0 - 60);
+        // Prevent flicker when moving mouse from bar over the text
+        debuffDetail.setMouseTransparent(true);
+        
+        getGameScene().addUINode(debuffDetail);
+        
+        // Show / hide when hovering over health bar or border
+        healthBar.setOnMouseEntered(e -> {
+            String debuffText = generateDebuffText(slot);
+            debuffDetail.setText(debuffText);
+            debuffDetail.setVisible(true);
+        });
+        healthBar.setOnMouseExited(e -> debuffDetail.setVisible(false));
+        
+        healthBorder.setOnMouseEntered(e -> {
+            String debuffText = generateDebuffText(slot);
+            debuffDetail.setText(debuffText);
+            debuffDetail.setVisible(true);
+        });
+        healthBorder.setOnMouseExited(e -> debuffDetail.setVisible(false));
+        
+        // Attach detail ref to the health bar so we can remove it later
+        healthBar.setUserData(debuffDetail);
+    }
+    
+    /**
+     * Generate debuff text for a character (shows both uniqueValue effects and BuffDebuff effects)
+     */
+    private String generateDebuffText(Observer.characterSlot slot) {
+        StringBuilder debuffText = new StringBuilder();
+        //debuffText.append(slot.getCharacter().getName()).append(" - Active Effects:\n\n");        
+        
+        boolean hasUniqueEffects = false;
+        boolean hasBuffDebuffEffects = false;
+        
+        // === UNIQUE VALUE EFFECTS (Special Talents) ===
+        if (!hideTalents) {
+            
+            debuffText.append("Special Talents:\n");
+            
+            // Show Burning Rage if present
+            if (slot.getCharacter().getUniqueValue("Burning rage") != null) {
+                float currentRage = characters.SpecialTalents.getCurrentBurningRage(slot);
+                if (currentRage > 0) {
+                    debuffText.append("🔥 Burning Rage: ").append((int)currentRage).append("\n");
+                    hasUniqueEffects = true;
+                }
+            }
+            
+            // Show Regeneration if present
+            if (slot.getCharacter().getUniqueValue("Regeneration") != null) {
+                float regenAmount = slot.getCharacter().getUniqueValueAsFloat("Regeneration");
+                if (regenAmount > 0) {
+                    debuffText.append("💚 Regeneration: +").append((int)regenAmount).append(" HP/turn\n");
+                    hasUniqueEffects = true;
+                }
+            }
+            
+            // Show MP Regeneration if present
+            if (slot.getCharacter().getUniqueValue("MpRegeneration") != null) {
+                float mpRegenAmount = slot.getCharacter().getUniqueValueAsFloat("MpRegeneration");
+                if (mpRegenAmount > 0) {
+                    debuffText.append("💙 MP Regeneration: +").append((int)mpRegenAmount).append(" MP/turn\n");
+                    hasUniqueEffects = true;
+                }
+            }
+            
+            // Show Mana Shield if present
+            if (slot.getCharacter().getUniqueValue("MANA_SHIELD") != null) {
+                float shieldAmount = slot.getCharacter().getUniqueValueAsFloat("MANA_SHIELD");
+                if (shieldAmount > 0) {
+                    debuffText.append("🛡️ Mana Shield: Active\n");
+                    hasUniqueEffects = true;
+                }
+            }
+            
+            // Show Berserker Rage if present
+            if (slot.getCharacter().getUniqueValue("BerserkerRage") != null) {
+                float berserkerRage = slot.getCharacter().getUniqueValueAsFloat("BerserkerRage");
+                if (berserkerRage > 0) {
+                    debuffText.append("⚔️ Berserker Rage: +").append((int)berserkerRage).append(" ATK\n");
+                    hasUniqueEffects = true;
+                }
+            }
+            
+            if (!hasUniqueEffects) {
+                debuffText.append("None\n");
+            }
+        }
+        
+        // === BUFF/DEBUFF EFFECTS ===
+        debuffText.append("\nBuff/Debuff Effects:\n");
+        
+        if (slot.getActiveEffects() != null && !slot.getActiveEffects().isEmpty()) {
+            for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+                String effectIcon = getEffectIcon(effect.getType(), effect.getEffects());
+                String effectDescription = getEffectDescription(effect);
+                debuffText.append(effectIcon).append(" ").append(effect.getName())
+                         .append(" (").append(effect.getDuration()).append(" turns)")
+                         .append(": ").append(effectDescription).append("\n");
+                hasBuffDebuffEffects = true;
+            }
+        }
+        
+        if (!hasBuffDebuffEffects) {
+            debuffText.append("None");
+        }
+        
+        return debuffText.toString();
+    }
+    
+    /**
+     * Get appropriate emoji icon for effect type and effect
+     */
+    private String getEffectIcon(String type, String effects) {
+        if ("Buff".equals(type)) {
+            switch (effects) {
+                case "ATK": return "⚔️";
+                case "DEF": return "🛡️";
+                case "SPD": return "💨";
+                case "HOT": return "💚";
+                case "MP_COST": return "💙";
+                case "BARRIER": return "🔰";
+                default: return "✨";
+            }
+        } else if ("Debuff".equals(type)) {
+            switch (effects) {
+                case "ATK": return "💔";
+                case "DEF": return "🩸";
+                case "SPD": return "🐌";
+                case "DOT": return "☠️";
+                default: return "💀";
+            }
+        }
+        return "❓";
+    }
+    
+    /**
+     * Get description for effect based on its properties using total value (value * stack)
+     */
+    private String getEffectDescription(characters.BuffDebuff effect) {
+        String effects = effect.getEffects();
+        float totalValue = effect.getTotalValue(); // This combines value and stack
+        int stack = effect.getStack();
+        
+        switch (effects) {
+            case "ATK":
+                if (totalValue > 1.0f) {
+                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                    return "+" + (int)((totalValue - 1.0f) * 100) + "% ATK" + stackInfo;
+                } else {
+                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                    return "-" + (int)((1.0f - totalValue) * 100) + "% ATK" + stackInfo;
+                }
+            case "DEF":
+                if (totalValue > 1.0f) {
+                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                    return "+" + (int)((totalValue - 1.0f) * 100) + "% DEF" + stackInfo;
+                } else {
+                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                    return "-" + (int)((1.0f - totalValue) * 100) + "% DEF" + stackInfo;
+                }
+            case "SPD":
+                if (totalValue > 1.0f) {
+                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                    return "+" + (int)((totalValue - 1.0f) * 100) + "% SPD" + stackInfo;
+                } else {
+                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                    return "-" + (int)((1.0f - totalValue) * 100) + "% SPD" + stackInfo;
+                }
+            case "DOT":
+                String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                return totalValue + " damage/turn" + stackInfo;
+            case "HOT":
+                String hotStackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                return "+" + totalValue + " HP/turn" + hotStackInfo;
+            case "MP_COST":
+                String mpStackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                return "-" + (int)((1.0f - totalValue) * 100) + "% MP cost" + mpStackInfo;
+            case "BARRIER":
+                String barrierStackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                return stack + " barrier points" + barrierStackInfo;
+            default:
+                String defaultStackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                return "Effect: " + effects + " (" + totalValue + ")" + defaultStackInfo;
+        }
     }
     
     private void createHealthText() {
@@ -399,6 +669,7 @@ public class  BattleUI {
             hpText.setFill(isHero(slot) ? Color.WHITE : Color.BLACK);
             hpText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
             hpText.setTranslateY(healthBarData.healthBorder.getTranslateY() + healthBarHeight - 5);
+            hpText.setMouseTransparent(true); // Allow mouse events to pass through to health bar
             healthBarData.hpText = hpText;
             
             // Create MP text (only for heroes)
@@ -408,6 +679,7 @@ public class  BattleUI {
                 mpText.setFill(Color.WHITE);
                 mpText.setTranslateX(healthBarData.mpBorder.getTranslateX() + 4);
                 mpText.setTranslateY(healthBarData.mpBorder.getTranslateY() + 8);
+                mpText.setMouseTransparent(true); // Allow mouse events to pass through
                 healthBarData.mpText = mpText;
             }
         }
@@ -423,6 +695,7 @@ public class  BattleUI {
             nameText.setFill(Color.BLACK);
             nameText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
             nameText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+            nameText.setMouseTransparent(true); // Allow mouse events to pass through
             healthBarData.nameText = nameText;
         }
     }
@@ -444,6 +717,11 @@ public class  BattleUI {
         // Add Burning Rage bars (drawn on top of health bars but below text)
         for (BurningRageBarData rageBarData : burningRageBars) {
             getGameScene().addUINode(rageBarData.rageBar);
+        }
+        
+        // Add Barrier bars (drawn on top of health bars but below text)
+        for (BarrierBarData barrierBarData : barrierBars) {
+            getGameScene().addUINode(barrierBarData.barrierBar);
         }
         
         // Add text elements last so they appear on top of everything
@@ -497,9 +775,9 @@ public class  BattleUI {
                         battleSystem.setSelectedAllyTarget(slot);
                         battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
                     }
-            highlightSelection.run(); 
-        });
-            }
+                highlightSelection.run(); 
+            });
+        }
             
             if (healthBarData.healthBorder != null) {
                 healthBarData.healthBorder.setOnMouseClicked(e -> {
@@ -747,6 +1025,11 @@ public class  BattleUI {
             if (rageBarData.rageBar != null) rageBarData.rageBar.setVisible(false);
         }
         
+        // Hide Barrier bars
+        for (BarrierBarData barrierBarData : barrierBars) {
+            if (barrierBarData.barrierBar != null) barrierBarData.barrierBar.setVisible(false);
+        }
+        
         // Hide lines
         Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
         for (Line line : allLines) {
@@ -785,6 +1068,14 @@ public class  BattleUI {
             if (healthBarData.nameText != null) {
                 getGameScene().removeUINode(healthBarData.nameText);
             }
+            
+            // Remove debuff tooltip if it exists
+            if (healthBarData.healthBar != null) {
+                Object userData = healthBarData.healthBar.getUserData();
+                if (userData instanceof Text) {
+                    getGameScene().removeUINode((Text) userData);
+                }
+            }
         }
         
         // Remove Burning Rage bars
@@ -794,18 +1085,32 @@ public class  BattleUI {
             }
         }
         
+        // Remove Barrier bars
+        for (BarrierBarData barrierBarData : barrierBars) {
+            if (barrierBarData.barrierBar != null) {
+                getGameScene().removeUINode(barrierBarData.barrierBar);
+            }
+        }
+        
         // Remove lines
+
         if (blueLine != null) {
             getGameScene().removeUINode(blueLine);
         }
         if (greenLine != null) {
             getGameScene().removeUINode(greenLine);
         }
+        if (purpleLine != null) {
+            getGameScene().removeUINode(purpleLine);
+        }
         if (redLine != null) {
             getGameScene().removeUINode(redLine);
         }
         if (yellowLine != null) {
             getGameScene().removeUINode(yellowLine);
+        }
+        if (orangeLine != null) {
+            getGameScene().removeUINode(orangeLine);
         }
         
         // Remove skill boxes
@@ -855,6 +1160,11 @@ public class  BattleUI {
             if (rageBarData.rageBar != null) rageBarData.rageBar.setVisible(true);
         }
         
+        // Show Barrier bars
+        for (BarrierBarData barrierBarData : barrierBars) {
+            if (barrierBarData.barrierBar != null) barrierBarData.barrierBar.setVisible(true);
+        }
+        
         // Show lines
         Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
         for (Line line : allLines) {
@@ -885,6 +1195,10 @@ public class  BattleUI {
     public void setRedLine(Line redLine) { this.redLine = redLine; }
     public void setYellowLine(Line yellowLine) { this.yellowLine = yellowLine; }
     public void setOrangeLine(Line orangeLine) { this.orangeLine = orangeLine; }
+    
+    public void setHideTalents(boolean hideTalents) {
+        this.hideTalents = hideTalents;
+    }
     
     /**
      * Updates the Burning Rage bar for a character
@@ -937,6 +1251,65 @@ public class  BattleUI {
         for (BurningRageBarData rageBarData : burningRageBars) {
             if (rageBarData.characterSlot == slot) {
                 return rageBarData;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Updates the Barrier bar for a character
+     * @param slot The character slot to update
+     */
+    public void updateBarrierBar(Observer.characterSlot slot) {
+        if (slot == null) return;
+        
+        // Find the barrier bar data for this character
+        BarrierBarData barrierBarData = findBarrierBarData(slot);
+        if (barrierBarData == null) return;
+        
+        // Get the barrier effect
+        characters.BuffDebuff barrierEffect = null;
+        if (slot.getActiveEffects() != null) {
+            for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+                if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
+                    barrierEffect = effect;
+                    break;
+                }
+            }
+        }
+        
+        if (barrierEffect == null || barrierEffect.getStack() <= 0) {
+            // Hide the barrier bar if no barrier
+            barrierBarData.barrierBar.setVisible(false);
+            return;
+        }
+        
+        // Show the barrier bar
+        barrierBarData.barrierBar.setVisible(true);
+        
+        // Calculate barrier bar length based on barrier amount relative to max HP
+        float maxHp = slot.getCharacter().getHp();
+        float barrierAmount = barrierEffect.getStack();
+        float barrierRatio = Math.min(1.0f, barrierAmount / maxHp); // Cap at 100% of max HP
+        
+    // Set barrier bar width
+    double barrierBarWidth = healthBarWidth * barrierRatio;
+    barrierBarData.barrierBar.setWidth(barrierBarWidth);
+    
+    // Position the barrier bar at the left edge of the health bar (draw from left to right)
+    double healthBarX = barrierBarData.baseX;
+    barrierBarData.barrierBar.setTranslateX(healthBarX);
+    }
+    
+    /**
+     * Finds the barrier bar data for a specific character slot
+     * @param slot The character slot
+     * @return The corresponding barrier bar data, or null if not found
+     */
+    private BarrierBarData findBarrierBarData(Observer.characterSlot slot) {
+        for (BarrierBarData barrierBarData : barrierBars) {
+            if (barrierBarData.characterSlot == slot) {
+                return barrierBarData;
             }
         }
         return null;

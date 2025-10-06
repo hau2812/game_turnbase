@@ -15,8 +15,26 @@ import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class testing extends GameApplication {
 
+    // ===== BATTLE CONFIGURATION ======================================================================================
+    // Change these values to configure your battle settings
+    private static final boolean HIDE_TALENTS = true;  // Set to true to hide talent text, false to show
+    
+    // Available heroes to choose from (you can select multiple)
+    private static final String[] AVAILABLE_HEROES = {
+        "Flamita",
+        "Hero",
+        "Hero2",
+        "Pieberry"
+    };
+    
+    // Selected heroes for battle (choose which ones to use)
+    private static final String[] SELECTED_HEROES = {
+        //"Flamita",
+        "Hero2",
+        "Pieberry"
 
-
+    };
+    // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
     private BattleSystem battleSystem;
     private BattleUI battleUI;
@@ -39,6 +57,10 @@ public class testing extends GameApplication {
         
         // Initialize battle system (but don't start it yet)
         battleSystem = new BattleSystem();
+        
+        // Configure battle settings
+        battleSystem.configureBattle(HIDE_TALENTS, SELECTED_HEROES);
+        
         battleUI = new BattleUI(battleSystem);
         battleSystem.setBattleUI(battleUI);
         battleSystem.setOnBattleWon(() -> {
@@ -79,7 +101,8 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            System.out.println(battleSystem.getHeroSlot().getCharacter().getUniqueValueAsFloat("BerserkerRage"));
+            System.out.println(battleSystem.getHeroSlot().getActiveEffects());
+            System.out.println(battleSystem.getHeroSlot().getBaseCharacter());
         });
         
         // M key to return to map mode from battle

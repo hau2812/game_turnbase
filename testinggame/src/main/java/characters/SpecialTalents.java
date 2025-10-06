@@ -25,11 +25,34 @@ public class SpecialTalents {
         character character = slot.getCharacter();
         float actualDamage = damageAmount;
         
+        // Barrier - absorb damage with barrier stacks instead of HP
+        if (slot.getActiveEffects() != null) {
+            for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+                if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
+                    float barrierAmount = effect.getStack(); // Barrier amount equals stack count
+                    float damageToBarrier = Math.min(actualDamage, barrierAmount);
+                    
+                    // Reduce barrier stacks by damage amount
+                    effect.setStack((int)(barrierAmount - damageToBarrier));
+                    actualDamage -= damageToBarrier;
+                    
+                    System.out.println(character.getName() + "'s Barrier absorbed " + damageToBarrier + " damage! Barrier: " + (int)barrierAmount + " -> " + effect.getStack());
+                    
+                    // Remove barrier effect if stacks reach 0
+                    if (effect.getStack() <= 0) {
+                        slot.getActiveEffects().remove(effect);
+                        System.out.println(character.getName() + "'s Barrier is broken!");
+                    }
+                    break; // Only process one barrier effect
+                }
+            }
+        }
+
         // Mana Shield - absorb damage with MP instead of HP
         if (character.getUniqueValue(MANA_SHIELD) != null) {
             float manaShieldAmount = character.getUniqueValueAsFloat(MANA_SHIELD);
             if (manaShieldAmount > 0 && slot.getCurrentMp() > 0) {
-                float mpToUse = Math.min(damageAmount, slot.getCurrentMp())/2;
+                float mpToUse = Math.min(actualDamage, slot.getCurrentMp())/2;
                 slot.setCurrentMp(slot.getCurrentMp() - mpToUse);
                 actualDamage -= mpToUse;
                 System.out.println(character.getName() + " used " + mpToUse + " MP to absorb damage!");
@@ -141,6 +164,9 @@ public class SpecialTalents {
     public static void onTurnStart(characterSlot slot) {
         character character = slot.getCharacter();
         
+        // Process buff/debuff effects first
+        processBuffDebuffEffects(slot);
+        
         // Regeneration - heal a small amount each turn
         if (character.getUniqueValue(REGENERATION) != null) {
             float regenAmount = character.getUniqueValueAsFloat(REGENERATION);
@@ -168,11 +194,158 @@ public class SpecialTalents {
     }
     
     /**
+     * Process buff/debuff effects at the start of turn (apply effects but don't reduce duration yet)
+     */
+    public static void processBuffDebuffEffects(characterSlot slot) {
+        if (slot.getActiveEffects() == null || slot.getActiveEffects().isEmpty()) {
+            return;
+        }
+        
+        // Process each active effect
+        for (int i = slot.getActiveEffects().size() - 1; i >= 0; i--) {
+            BuffDebuff effect = slot.getActiveEffects().get(i);
+            
+            // Apply stat modifications
+            applyStatModifications(slot, effect);
+            
+            // Process damage over time effects
+            if (effect.getEffects().equals("DOT")) {
+                float dotDamage = effect.getTotalValue();
+                slot.setCurrentHp(Math.max(0, slot.getCurrentHp() - dotDamage));
+                System.out.println(slot.getCharacter().getName() + " takes " + dotDamage + " damage from " + effect.getName() + "!");
+            }
+            
+            // Process healing over time effects
+            if (effect.getEffects().equals("HOT")) {
+                float hotHealing = effect.getTotalValue();
+                float newHp = Math.min(slot.getCharacter().getHp(), slot.getCurrentHp() + hotHealing);
+                slot.setCurrentHp(newHp);
+                System.out.println(slot.getCharacter().getName() + " heals " + hotHealing + " HP from " + effect.getName() + "!");
+            }
+            
+            // Note: Duration reduction moved to processBuffDebuffDurationReduction()
+        }
+    }
+    
+    /**
+     * Reduce duration of buff/debuff effects at the end of turn
+     */
+    public static void processBuffDebuffDurationReduction(characterSlot slot) {
+        if (slot.getActiveEffects() == null || slot.getActiveEffects().isEmpty()) {
+            return;
+        }
+        
+        // Process each active effect
+        for (int i = slot.getActiveEffects().size() - 1; i >= 0; i--) {
+            BuffDebuff effect = slot.getActiveEffects().get(i);
+            
+            // Reduce duration
+            effect.reduceDuration();
+            
+            // Remove expired effects
+            if (effect.isExpired()) {
+                slot.getActiveEffects().remove(i);
+                System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect expired!");
+            }
+        }
+    }
+    
+    /**
+     * Process effects at the end of turn (reduce duration)
+     */
+    public static void onTurnEnd(characterSlot slot) {
+        // Reduce duration of buff/debuff effects
+        processBuffDebuffDurationReduction(slot);
+    }
+    
+    /**
+     * Apply stat modifications from buff/debuff effects
+     */
+    public static void applyStatModifications(characterSlot slot, BuffDebuff effect) {
+        character character = slot.getCharacter();
+        character baseCharacter = slot.getBaseCharacter();
+        
+        // Reset character stats to base character stats
+        character.setAtk(baseCharacter.getAtk());
+        character.setDef(baseCharacter.getDef());
+        character.setSpd(baseCharacter.getSpd());
+        
+        // Apply all active effects
+        for (BuffDebuff activeEffect : slot.getActiveEffects()) {
+            if (activeEffect.getEffects().equals("ATK")) {
+                character.setAtk(character.getAtk() * activeEffect.getTotalValue());
+            } else if (activeEffect.getEffects().equals("DEF")) {
+                character.setDef(character.getDef() * activeEffect.getTotalValue());
+            } else if (activeEffect.getEffects().equals("SPD")) {
+                character.setSpd(character.getSpd() * activeEffect.getTotalValue());
+            }
+        }
+    }
+    
+    /**
+     * Apply a buff/debuff effect to a character
+     */
+    public static void applyBuffDebuff(characterSlot slot, BuffDebuff effect) {
+        if (slot.getActiveEffects() == null) {
+            slot.setActiveEffects(new java.util.ArrayList<>());
+        }
+        
+        // Check if character already has this effect
+        BuffDebuff existingEffect = null;
+        for (BuffDebuff activeEffect : slot.getActiveEffects()) {
+            if (activeEffect.getName().equals(effect.getName())) {
+                existingEffect = activeEffect;
+                break;
+            }
+        }
+        
+        if (existingEffect != null) {
+            // Character already has this effect
+            if (existingEffect.canStack()) {
+                // Add a stack
+                existingEffect.addStack(effect.getStack());
+                System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect stacked! Stacks: " + existingEffect.getStack());
+            } //else {
+                // Overwrite duration
+                existingEffect.setDuration(effect.getDuration());
+                System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect duration refreshed!");
+            //}
+        } else {
+            // Add new effect
+            slot.getActiveEffects().add(effect);
+            System.out.println(slot.getCharacter().getName() + " gained " + effect.getName() + " effect!");
+        }
+        
+        // Apply stat modifications immediately
+        applyStatModifications(slot, effect);
+    }
+    
+    /**
+     * Remove a specific buff/debuff effect from a character
+     */
+    public static void removeBuffDebuff(characterSlot slot, String effectName) {
+        if (slot.getActiveEffects() == null) {
+            return;
+        }
+        
+        for (int i = slot.getActiveEffects().size() - 1; i >= 0; i--) {
+            BuffDebuff effect = slot.getActiveEffects().get(i);
+            if (effect.getName().equals(effectName)) {
+                slot.getActiveEffects().remove(i);
+                System.out.println(slot.getCharacter().getName() + "'s " + effectName + " effect was removed!");
+                // Reapply stat modifications after removal
+                applyStatModifications(slot, null);
+                break;
+            }
+        }
+    }
+    
+    /**
      * Create a character with berserker talent
      */
     public static character createBerserker(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
-        uniqueValues.add(new Characters.uniqueValue(BERSERKER_RAGE, "0"));
+        //uniqueValues.add(new Characters.uniqueValue(BERSERKER_RAGE, "0"));
         
         return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
     }
