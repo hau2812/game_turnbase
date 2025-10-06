@@ -157,6 +157,10 @@ public interface Characters {
     public class CharacterRegistry {
         private static final Map<String, Characters.character> registry = new HashMap<>();
 
+        private static void register(Characters.character character) {
+            registry.put(character.getName(), character);
+        }
+
         public static Characters.character getByName(String name) {
             return registry.get(name);
         }
@@ -166,10 +170,8 @@ public interface Characters {
         }
 
         public static void init() {
-            // Example: create a Hero character
-
-            // Create Hero with berserker talent using utility method
-            Characters.character hero = characters.SpecialTalents.createBerserker(
+            // Create and register Hero with berserker talent using utility method
+            register(characters.SpecialTalents.createBerserker(
                     1,
                     "Hero",
                     100,  // atk
@@ -179,8 +181,9 @@ public interface Characters {
                     15,  // spd
                     300, // hp
                     200   // mp
-            );
-            // Create Hero2 with mana shield talent using utility method
+            ));
+            
+            // Create and register Hero2 with mana shield talent using utility method
             Characters.character hero2 = characters.SpecialTalents.createMage(
                     4,
                     "Hero2",
@@ -193,9 +196,11 @@ public interface Characters {
                     500   // mp
             );
             hero2.setUniqueValue("Regeneration","25");
-            //hero2.setUniqueValue("Burning rage","0");
+            hero2.setUniqueValue("MpRegeneration","25");
+            register(hero2);
 
-            Characters.character enemy = new Characters.character(
+            // Create and register Enemy
+            register(new Characters.character(
                     2,
                     "Enemy",
                     50,  // atk
@@ -206,9 +211,10 @@ public interface Characters {
                     2000, // hp
                     50,  // mp
                     new ArrayList<>()
-            );
+            ));
 
-            Characters.character enemy2 = new Characters.character(
+            // Create and register Enemy2
+            register(new Characters.character(
                     3,
                     "Enemy2",
                     50,  // atk
@@ -219,9 +225,10 @@ public interface Characters {
                     2000, // hp
                     50,  // mp
                     new ArrayList<>()
-
-            );
-            Characters.character hero3 = new Characters.character(
+            ));
+            
+            // Create and register Hero3 (Flamita) with Burning Rage
+            register(new Characters.character(
                     5,
                     "Flamita",
                     50,  // atk
@@ -234,16 +241,23 @@ public interface Characters {
                     new ArrayList<uniqueValue>() {{
                         add(new uniqueValue("Burning rage", "0"));
                     }}
-            );
+            ));
             
-
-
-            // Register the character
-            registry.put(hero.getName(), hero);
-            registry.put(hero2.getName(), hero2);
-            registry.put(hero3.getName(), hero3);
-            registry.put(enemy.getName(), enemy);
-            registry.put(enemy2.getName(), enemy2);
+            // Create and register Hero4 (Pieberry)
+            register(new Characters.character(
+                    6,
+                    "Pieberry",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    500,   // mp
+                    new ArrayList<>(){{
+                        add(new uniqueValue("MpRegeneration", "100"));
+                    }}
+            ));
         }
     }
 }

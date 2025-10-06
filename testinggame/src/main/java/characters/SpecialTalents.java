@@ -14,6 +14,7 @@ public class SpecialTalents {
     public static final String MANA_SHIELD = "MANA_SHIELD";
     public static final String CRITICAL_STRIKE = "CriticalStrike";
     public static final String REGENERATION = "Regeneration";
+    public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
     
     /**
@@ -32,6 +33,32 @@ public class SpecialTalents {
                 slot.setCurrentMp(slot.getCurrentMp() - mpToUse);
                 actualDamage -= mpToUse;
                 System.out.println(character.getName() + " used " + mpToUse + " MP to absorb damage!");
+            }
+        }
+
+        // Burning Rage Protection - prevents HP from dropping below 1
+        if (character.getUniqueValue(BURNING_RAGE) != null) {
+            float currentHp = slot.getCurrentHp();
+            float currentRage = getCurrentBurningRage(slot);
+            
+            // Check if this damage would reduce HP to 0 or below
+            if (currentHp - actualDamage <= 0 && currentRage > 0) {
+                float damageToHp = currentHp - 1; // Maximum damage to HP (leave 1 HP)
+                float damageToRage = actualDamage - damageToHp; // Remaining damage goes to rage
+                
+                if (damageToRage <= currentRage) {
+                    // Damage is less than or equal to burning rage
+                    // HP stays at 1, rage absorbs the excess damage
+                    actualDamage = damageToHp; // Only apply damage that reduces HP to 1
+                    float rageConsumed = damageToRage;
+                    character.addToUniqueValue(BURNING_RAGE,-rageConsumed);
+                    System.out.println(character.getName() + " used " + rageConsumed + " Burning Rage to prevent death! HP: " + currentHp + " -> 1");
+                } else {
+                    // Damage is greater than burning rage
+                    // HP goes to 0, all rage is consumed
+                    actualDamage = damageToHp + currentRage; // Apply damage that reduces HP to 1 + all rage
+                    System.out.println(character.getName() + " used all " + currentRage + " Burning Rage but still died!");
+                }
             }
         }
         
@@ -53,7 +80,11 @@ public class SpecialTalents {
         
         // Burning Rage - increases by 1 for each 1 HP lost
         if (character.getUniqueValue(BURNING_RAGE) != null) {
-            character.addToUniqueValue(BURNING_RAGE, damageAmount);
+            if(slot.currentHp>0) {
+                character.addToUniqueValue(BURNING_RAGE, damageAmount);
+            }else{
+                character.setUniqueValue(BURNING_RAGE,"0");
+            }
             if(character.getUniqueValueAsFloat(BURNING_RAGE) > character.getHp() ){
                 character.getUniqueValue(BURNING_RAGE).setValue(character.hp+"");
             }
@@ -119,6 +150,21 @@ public class SpecialTalents {
                 System.out.println(character.getName() + " regenerated " + regenAmount + " HP!");
             }
         }
+        
+        // MP Regeneration - restore MP each turn, capped at max MP
+        if (character.getUniqueValue(MP_REGENERATION) != null) {
+            float mpRegenAmount = character.getUniqueValueAsFloat(MP_REGENERATION);
+            if (mpRegenAmount > 0) {
+                float currentMp = slot.getCurrentMp();
+                float maxMp = character.getMp();
+                float newMp = Math.min(maxMp, currentMp + mpRegenAmount);
+                slot.setCurrentMp(newMp);
+                float actualRegen = newMp - currentMp;
+                if (actualRegen > 0) {
+                    System.out.println(character.getName() + " regenerated " + actualRegen + " MP!");
+                }
+            }
+        }
     }
     
     /**
@@ -167,6 +213,17 @@ public class SpecialTalents {
     public static character createBurningRageCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         uniqueValues.add(new Characters.uniqueValue(BURNING_RAGE, "0")); // Start with 0 rage
+        
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+    }
+    
+    /**
+     * Create a character with MP regeneration talent
+     * @param mpRegenAmount Amount of MP regenerated per turn
+     */
+    public static character createMpRegenCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float mpRegenAmount) {
+        java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
+        uniqueValues.add(new Characters.uniqueValue(MP_REGENERATION, String.valueOf(mpRegenAmount)));
         
         return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
     }

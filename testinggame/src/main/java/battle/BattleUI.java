@@ -81,6 +81,7 @@ public class  BattleUI {
     private Rectangle skill1Box;
     private Rectangle skill2Box;
     private Rectangle skill3Box;
+    private Rectangle skill4Box;
     
     // Layout constants
     private double barX = 300;
@@ -551,18 +552,27 @@ public class  BattleUI {
             if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
             getGameScene().removeUINode(skill3Box);
         }
+        if (skill4Box != null) {
+            Object ud = skill4Box.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(skill4Box);
+        }
 
-        Ability.skill s1 = hero.getSkills().size() > 0 ? hero.getSkills().get(0) : null;
-        Ability.skill s2 = hero.getSkills().size() > 1 ? hero.getSkills().get(1) : null;
-        Ability.skill s3 = hero.getSkills().size() > 2 ? hero.getSkills().get(2) : null;
+
+        Ability.skill s1 = hero.getSkills().size() > 0 ? hero.getSkills().get(0) : Ability.SkillRegistry.getByName("N/A");
+        Ability.skill s2 = hero.getSkills().size() > 1 ? hero.getSkills().get(1) : Ability.SkillRegistry.getByName("N/A");
+        Ability.skill s3 = hero.getSkills().size() > 2 ? hero.getSkills().get(2) : Ability.SkillRegistry.getByName("N/A");
+        Ability.skill s4 = hero.getSkills().size() > 3 ? hero.getSkills().get(3) : Ability.SkillRegistry.getByName("N/A");
         skill1Box = createSkillBox(hero, s1, 50, 500, Color.LIGHTBLUE, null);
         skill2Box = createSkillBox(hero, s2, 100, 500, Color.CYAN, null);
         skill3Box = createSkillBox(hero, s3, 150, 500, Color.DARKBLUE, null);
+        skill4Box = createSkillBox(hero, s4, 200, 500, Color.PURPLE, null);
 
         // Visually disable boxes if MP insufficient
         updateSkillAffordabilityVisual(skill1Box, hero, s1);
         updateSkillAffordabilityVisual(skill2Box, hero, s2);
         updateSkillAffordabilityVisual(skill3Box, hero, s3);
+        updateSkillAffordabilityVisual(skill4Box, hero, s4);
     }
     
     private Rectangle createSkillBox(Observer.characterSlot attacker, Ability.skill skill,
@@ -573,14 +583,19 @@ public class  BattleUI {
         box.setTranslateY(y);
 
         String detailText;
-        if (skill == null) {
-            detailText = "not available";
+        if (skill == null || skill.getName().equals("N/A")) {
+            detailText = "No skill assigned";
         } else {
             detailText = skill.getName() + "\n" +
                     "Damage: " + (int)(attacker.getCharacter().getAtk() * skill.getAtkScale()) + "\n" +
-                    "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())+ "\n" +
-                    "Mp Cost: " + (int)(skill.getMpCost())
-            ;
+                    "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())+ "\n";
+            
+            // Show Rage Required if skill has rage cost, otherwise show MP Cost
+            if (skill.getBurningRageRequired() > 0) {
+                detailText += "Rage Required: " + (int)(skill.getBurningRageRequired());
+            } else {
+                detailText += "Mp Cost: " + (int)(skill.getMpCost());
+            }
         }
         Text skillDetail = new Text(detailText);
         skillDetail.setFont(new Font(14));
@@ -603,9 +618,9 @@ public class  BattleUI {
 
         // On click -> use skill
         box.setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY && !battleSystem.isMoving()) {
-                if (skill == null) {
-                    return; // not available
+            if (e.getButton() == MouseButton.PRIMARY && !battleSystem.isMoving() && !battleSystem.isEnemyActionTime()) {
+                if (skill == null || skill.getName().equals("N/A")) {
+                    return; // not available or N/A skill
                 }
                 Observer.characterSlot resolvedTarget;
                 if (skill.getTarget().equals("Self")) {
@@ -656,7 +671,7 @@ public class  BattleUI {
     }
     
     private void updateSkillAffordabilityVisual(Rectangle box, Observer.characterSlot hero, Ability.skill skill) {
-        boolean available = skill != null;
+        boolean available = skill != null && !skill.getName().equals("N/A");
         boolean hasEnoughMp = available && hero.getCurrentMp() >= skill.getMpCost();
         boolean hasEnoughRage = available && characters.SpecialTalents.hasEnoughBurningRage(hero, skill.getBurningRageRequired());
         boolean affordable = hasEnoughMp && hasEnoughRage;
@@ -742,6 +757,7 @@ public class  BattleUI {
         if (skill1Box != null) skill1Box.setVisible(false);
         if (skill2Box != null) skill2Box.setVisible(false);
         if (skill3Box != null) skill3Box.setVisible(false);
+        if (skill4Box != null) skill4Box.setVisible(false);
     }
     
     public void clearAllBattleUI() {
@@ -802,6 +818,9 @@ public class  BattleUI {
         if (skill3Box != null) {
             getGameScene().removeUINode(skill3Box);
         }
+        if (skill4Box != null) {
+            getGameScene().removeUINode(skill4Box);
+        }
         
         // Clear health bars and Burning Rage bars lists
         healthBars.clear();
@@ -815,6 +834,7 @@ public class  BattleUI {
         skill1Box = null;
         skill2Box = null;
         skill3Box = null;
+        skill4Box = null;
         
     }
 
@@ -845,6 +865,7 @@ public class  BattleUI {
         if (skill1Box != null) skill1Box.setVisible(true);
         if (skill2Box != null) skill2Box.setVisible(true);
         if (skill3Box != null) skill3Box.setVisible(true);
+        if (skill4Box != null) skill4Box.setVisible(true);
     }
     
     // Getters for BattleSystem

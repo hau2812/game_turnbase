@@ -74,14 +74,31 @@ public interface Observer {
         }
         
         /**
+         * Helper function to add a skill to the skills list, using N/A if skill name is null
+         * @param skills The skills list to add to
+         * @param skillName The skill name (null will use N/A)
+         * @param characterName Character name for error reporting
+         */
+        private static void addSkillToList(ArrayList<Ability.skill> skills, String skillName, String characterName) {
+            String actualSkillName = (skillName != null) ? skillName : "N/A";
+            Ability.skill skill = Ability.SkillRegistry.getByName(actualSkillName);
+            if (skill != null) {
+                skills.add(skill);
+            } else {
+                System.err.println("Skill '" + actualSkillName + "' not found for character '" + characterName + "'");
+            }
+        }
+
+        /**
          * Helper function to create and register a character slot with skills
          * @param characterName The name of the character (must exist in CharacterRegistry)
-         * @param skill1 First skill name
-         * @param skill2 Second skill name  
-         * @param skill3 Third skill name
+         * @param skill1 First skill name (null will use N/A)
+         * @param skill2 Second skill name (null will use N/A)
+         * @param skill3 Third skill name (null will use N/A)
+         * @param skill4 Fourth skill name (null will use N/A)
          * @return The created character slot
          */
-        public static characterSlot createCharacterSlot(String characterName, String skill1, String skill2, String skill3) {
+        public static characterSlot createCharacterSlot(String characterName, String skill1, String skill2, String skill3, String skill4) {
             // Get the character from registry
             Characters.character character = Characters.CharacterRegistry.getByName(characterName);
             if (character == null) {
@@ -89,32 +106,12 @@ public interface Observer {
                 return null;
             }
             
-            // Create skills list
+            // Create skills list using helper function
             ArrayList<Ability.skill> skills = new ArrayList<>();
-            if (skill1 != null) {
-                Ability.skill skill = Ability.SkillRegistry.getByName(skill1);
-                if (skill != null) {
-                    skills.add(skill);
-                } else {
-                    System.err.println("Skill '" + skill1 + "' not found for character '" + characterName + "'");
-                }
-            }
-            if (skill2 != null) {
-                Ability.skill skill = Ability.SkillRegistry.getByName(skill2);
-                if (skill != null) {
-                    skills.add(skill);
-                } else {
-                    System.err.println("Skill '" + skill2 + "' not found for character '" + characterName + "'");
-                }
-            }
-            if (skill3 != null) {
-                Ability.skill skill = Ability.SkillRegistry.getByName(skill3);
-                if (skill != null) {
-                    skills.add(skill);
-                } else {
-                    System.err.println("Skill '" + skill3 + "' not found for character '" + characterName + "'");
-                }
-            }
+            addSkillToList(skills, skill1, characterName);
+            addSkillToList(skills, skill2, characterName);
+            addSkillToList(skills, skill3, characterName);
+            addSkillToList(skills, skill4, characterName);
             
             // Create character slot
             characterSlot slot = new characterSlot(
@@ -139,11 +136,13 @@ public interface Observer {
             Characters.CharacterRegistry.init();
 
             //Hero 1
-            characterSlot heroSlot = createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack");
+            characterSlot heroSlot = createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack", null);
             // Hero 2
-            characterSlot hero2Slot = createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal");
+            characterSlot hero2Slot = createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal", null);
             // Hero 3
-            characterSlot hero3Slot = createCharacterSlot("Flamita", "Rage Strike", "Rage Heal", "Rage Burst");
+            characterSlot hero3Slot = createCharacterSlot("Flamita", "Rage Strike", "Burning slash", "Rage Heal", "Rage Burst");
+            // Hero 4
+            characterSlot hero4Slot = createCharacterSlot("Pieberry", "Charge attack", "5-Orb Flame", "7-Fork Lightning", "Ecarr Vertel");
 
 
 

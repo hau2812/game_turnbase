@@ -8,6 +8,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 
+import java.util.Objects;
 import java.util.Random;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
@@ -31,6 +32,7 @@ public class BattleSystem {
     // Combat state
     private boolean moving = false;
     private boolean autoEnemy = true;
+    private boolean enemyActionTime = false;
     private Line turnOf = null;
     
     // Speed settings
@@ -167,11 +169,11 @@ public class BattleSystem {
         Observer.CharacterSlotRegistry.init();
 
         // Hero slots
-        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Hero2");}
+        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Pieberry");}
 
-        if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero");}
+        if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
 
-        if(heroSlot3 == null) {heroSlot3 = Observer.CharacterSlotRegistry.getByName("Flamita");}
+        //if(heroSlot3 == null) {heroSlot3 = Observer.CharacterSlotRegistry.getByName("Flamita");}
 
         // Enemy slots
         //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
@@ -218,7 +220,9 @@ public class BattleSystem {
                 return; // not enough MP
             }
             if (true) {
-                attacker.setCurrentMp(attacker.getCurrentMp() - mpCost);
+                if(!Objects.equals(skill.getName(), "Ecarr Vertel")) {
+                    attacker.setCurrentMp(attacker.getCurrentMp() - mpCost);
+                }
                 if(attacker.getCurrentMp() > attacker.getCharacterAfter().getMp()) {
                     attacker.setCurrentMp(attacker.getCharacterAfter().getMp());
                 }
@@ -242,8 +246,9 @@ public class BattleSystem {
             burnBonus = calculateDamageWithRage(rageConsumed, skill, attacker);
         }
         double talentBonus = calculateDamageWithTalentBonus(skill, attacker);
-        double finalDmg = baseDamage+burnBonus+talentBonus;
-        // Calculate final damage with Burning Rage bonuses and talent bonuses
+        double specialDmgBonus = calculateSpecialDmgBonus(attacker, skill);
+        double finalDmg = baseDamage+burnBonus+talentBonus+specialDmgBonus;
+        // Calculate final damage with Burning Rage bonuses, talent bonuses, and special skill bonuses
         applyDamage(target, finalDmg);
 
         // Push line back for any character
@@ -253,6 +258,22 @@ public class BattleSystem {
         }
     }
     
+    /**
+     * Execute enemy turn with action time protection
+     * @param enemy The enemy character slot to execute turn for
+     */
+    private void executeEnemyTurn(Observer.characterSlot enemy) {
+        if (enemy == null || enemy.getCurrentHp() <= 0) {
+            return;
+        }
+        
+        enemyActionTime = true; // Prevent hero skill usage during enemy action
+        runOnce(() -> {
+            enemyTurn(enemy);
+            enemyActionTime = false; // Re-enable hero skill usage after enemy action
+        }, Duration.seconds(0.25));
+    }
+
     private void enemyTurn(Observer.characterSlot actingEnemy) {
         Random random = new Random();
         if (actingEnemy == null || actingEnemy.getCurrentHp() <= 0) {
@@ -317,18 +338,15 @@ public class BattleSystem {
             if(autoEnemy) {
                 // Enemy 1 turn
                 if (line == battleUI.getRedLine() && enemySlot.getCurrentHp() > 0) {
-
-                    runOnce(() -> enemyTurn(enemySlot), Duration.seconds(0.25));
+                    executeEnemyTurn(enemySlot);
                 }
                 // Enemy 2 turn
                 else if (line == battleUI.getYellowLine() && enemySlot2 != null && enemySlot2.getCurrentHp() > 0) {
-
-                    runOnce(() -> enemyTurn(enemySlot2), Duration.seconds(0.25));
+                    executeEnemyTurn(enemySlot2);
                 }
                 // Enemy 3 turn
                 else if (line == battleUI.getOrangeLine() && enemySlot3 != null && enemySlot3.getCurrentHp() > 0) {
-
-                    runOnce(() -> enemyTurn(enemySlot3), Duration.seconds(0.25));
+                    executeEnemyTurn(enemySlot3);
                 }
                 else if (line == battleUI.getBlueLine() || (line == battleUI.getGreenLine() && heroSlot2 != null) || (line == battleUI.getPurpleLine() && heroSlot3 != null)) {
                     // When a hero's line reaches, render that hero's skills
@@ -422,6 +440,7 @@ public class BattleSystem {
     public void setSelectedEnemyTarget(Observer.characterSlot target) { this.selectedEnemyTarget = target; }
     public void setMoving(boolean moving) { this.moving = moving; }
     public boolean isMoving() { return moving; }
+    public boolean isEnemyActionTime() { return enemyActionTime; }
     public Line getTurnOf() { return turnOf; }
     
     public void setMapEnemies(Observer.characterSlot enemy1, Observer.characterSlot enemy2, Observer.characterSlot enemy3) {
@@ -476,7 +495,7 @@ public class BattleSystem {
             }
         }
     }
-    
+//------------------------------------------------BURNING RAGE------------------------------------------------------------------
     /**
      * Handle all Burning Rage interactions for a skill
      * @param attacker The character using the skill
@@ -537,7 +556,7 @@ public class BattleSystem {
                 System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage for " + dmg + " damage!");
             } else {
                 // Other rage skills: add rage as bonus damage
-                dmg += rageConsumed * 0.5f; // 50% of rage consumed as bonus damage
+                dmg += rageConsumed;
                 System.out.println(attacker.getCharacter().getName() + " consumed " + rageConsumed + " rage for +" + (rageConsumed * 0.5f) + " bonus damage!");
             }
         }
@@ -553,4 +572,48 @@ public class BattleSystem {
         }
         return dmg;
     }
+
+//------------------------------------------------BURNING RAGE------------------------------------------------------------------
+
+    /**
+     * Calculate special damage bonus for special skills
+     * @param attacker The character using the skill
+     * @param skill The skill being used
+     * @return Special damage bonus amount
+     */
+    private float calculateSpecialDmgBonus(Observer.characterSlot attacker, Ability.skill skill) {
+        float specialDmgBonus = 0;
+        
+        // Check if this is a special skill
+        if (skill.getName().equals("Ecarr Vertel")) {
+            // Ecarr Vertel: Reduce HP to 1 and MP to 0, add reduced amounts to damage bonus
+            float currentHp = attacker.getCurrentHp();
+            float currentMp = attacker.getCurrentMp();
+            
+            // Calculate how much HP and MP will be reduced
+            float hpReduction = Math.max(0, currentHp - 1);
+            float mpReduction = currentMp; // Reduce all MP to 0
+            
+            // Add the reduced amounts to special damage bonus
+            specialDmgBonus = hpReduction + mpReduction;
+            
+            // Apply the HP and MP reduction
+            attacker.setCurrentHp(1); // Set HP to 1
+            attacker.setCurrentMp(0); // Set MP to 0
+            
+            System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + 
+                             "! HP: " + currentHp + " -> 1, MP: " + currentMp + " -> 0, " +
+                             "Special Damage Bonus: +" + specialDmgBonus);
+            battleUI.refreshAllCharacterUI();
+        }
+        
+        // Add more special skills here in the future
+        // else if (skill.getName().equals("Another Special Skill")) {
+        //     // Handle other special skills
+        // }
+        
+        return specialDmgBonus;
+    }
+
+//------------------------------------------------SPECIAL SKILLS------------------------------------------------------------------
 }

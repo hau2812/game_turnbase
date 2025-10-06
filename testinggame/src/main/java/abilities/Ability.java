@@ -184,6 +184,18 @@ public interface Ability {
 
         public static void init() {
             register(new Ability.skill(
+                    0,
+                    "N/A",
+                    "N/A",
+                    "N/A",
+                    "N/A",
+                    0.0f,
+                    0.0f,
+                    0,
+                    0
+
+            ));
+            register(new Ability.skill(
                     1,
                     "Slash",
                     "A basic sword attack.",
@@ -244,12 +256,15 @@ public interface Ability {
             register(new Ability.skill(
                     6,
                     "Burning slash",
-                    "an attack that gain burning rage",
+                    "an attack that consuming burning rage to deal massive damage",
                     "Physical",
                     "Single Enemy",
-                    1.0f,
+                    1f,
                     1.2f,
                     0,
+                    0,
+                    50,
+                    50,
                     0
             ));
             
@@ -257,7 +272,7 @@ public interface Ability {
             register(new Ability.skill(
                     7,
                     "Rage Strike",
-                    "Powerful attack that consumes Burning Rage for massive damage",
+                    "Powerful attack that gain Burning Rage",
                     "Physical",
                     "Single Enemy",
                     1.0f,
@@ -279,7 +294,7 @@ public interface Ability {
                     1.0f,
                     0,
                     0,
-                    0,     // No minimum rage required (handled specially)
+                    200,
                     999,   // Consumes all Burning Rage (999 = all)
                     0      // Gains 0 Burning Rage
             ));
@@ -312,6 +327,39 @@ public interface Ability {
                     0,     // No Burning Rage required
                     0,     // Consumes 0 Burning Rage
                     25     // Gains 25 Burning Rage
+            ));
+            register(new Ability.skill(
+                    11,
+                    "5-Orb Flame",
+                    "Medium flame spell circle from another world",
+                    "Magic",
+                    "Single Enemy",
+                    2.0f,
+                    1.0f,
+                    150,
+                    0
+            ));
+            register(new Ability.skill(
+                    12,
+                    "7-Fork Lightning",
+                    "High weight spell circle from another world",
+                    "Magic",
+                    "Single Enemy",
+                    3.0f,
+                    1.0f,
+                    300,
+                    0
+            ));
+            register(new Ability.skill(
+                    13,
+                    "Ecarr Vertel",
+                    "An incinerating spell that utilizes all of your physical and mental strength to create an explosion",
+                    "Magic",
+                    "Single Enemy",
+                    2.0f,
+                    1.0f,
+                    200,
+                    0
             ));
         }
     }
