@@ -66,8 +66,10 @@ public class  BattleUI {
     // Lines
     private Line blueLine;
     private Line greenLine;
+    private Line purpleLine;
     private Line redLine;
     private Line yellowLine;
+    private Line orangeLine;
     
     // Health bars - using list-based approach
     private java.util.List<HealthBarData> healthBars = new java.util.ArrayList<>();
@@ -93,6 +95,112 @@ public class  BattleUI {
     
     public BattleUI(BattleSystem battleSystem) {
         this.battleSystem = battleSystem;
+    }
+    
+    // ===================== HELPER FUNCTIONS =====================
+    
+    /**
+     * Check if a character slot is a hero
+     */
+    private boolean isHero(Observer.characterSlot slot) {
+        return slot == battleSystem.getHeroSlot() || 
+               slot == battleSystem.getHeroSlot2() || 
+               slot == battleSystem.getHeroSlot3();
+    }
+    
+    /**
+     * Check if a character slot is an enemy
+     */
+    private boolean isEnemy(Observer.characterSlot slot) {
+        return slot == battleSystem.getEnemySlot() || 
+               slot == battleSystem.getEnemySlot2() || 
+               slot == battleSystem.getEnemySlot3();
+    }
+    
+    /**
+     * Get all hero slots as an array
+     */
+    private Observer.characterSlot[] getAllHeroes() {
+        return new Observer.characterSlot[]{
+            battleSystem.getHeroSlot(), 
+            battleSystem.getHeroSlot2(), 
+            battleSystem.getHeroSlot3()
+        };
+    }
+    
+    /**
+     * Get all enemy slots as an array
+     */
+    private Observer.characterSlot[] getAllEnemies() {
+        return new Observer.characterSlot[]{
+            battleSystem.getEnemySlot(), 
+            battleSystem.getEnemySlot2(), 
+            battleSystem.getEnemySlot3()
+        };
+    }
+    
+    /**
+     * Get all character slots as an array
+     */
+    private Observer.characterSlot[] getAllCharacters() {
+        return new Observer.characterSlot[]{
+            battleSystem.getHeroSlot(), 
+            battleSystem.getHeroSlot2(), 
+            battleSystem.getHeroSlot3(),
+            battleSystem.getEnemySlot(), 
+            battleSystem.getEnemySlot2(), 
+            battleSystem.getEnemySlot3()
+        };
+    }
+    
+    /**
+     * Line data structure for creating lines
+     */
+    private static class LineData {
+        public Observer.characterSlot character;
+        public Line line;
+        public Color color;
+        public double position;
+        
+        public LineData(Observer.characterSlot character, Line line, Color color, double position) {
+            this.character = character;
+            this.line = line;
+            this.color = color;
+            this.position = position;
+        }
+    }
+    
+    /**
+     * Create a single line for a character
+     */
+    private Line createSingleLine(Observer.characterSlot character, Color color, double position) {
+        if (character == null || character.getCurrentHp() <= 0) {
+            return null;
+        }
+        
+        Line line = new Line();
+        line.setStroke(color);
+        line.setStrokeWidth(3);
+        line.setStartX(barX + barWidth / position);
+        line.setEndX(barX + barWidth / position);
+        line.setStartY(barY);
+        line.setEndY(barY + barHeight);
+        
+        return line;
+    }
+    
+    /**
+     * Get all line data for all characters
+     */
+    private LineData[] getAllLineData() {
+        return new LineData[]{
+            new LineData(battleSystem.getHeroSlot(), blueLine, Color.BLUE, 1.75),
+            new LineData(battleSystem.getHeroSlot2(), greenLine, Color.LIMEGREEN, 1.9),
+            new LineData(battleSystem.getHeroSlot3(), purpleLine, Color.PURPLE, 2.1),
+            new LineData(battleSystem.getEnemySlot(), redLine, Color.RED, 1.5),
+            new LineData(battleSystem.getEnemySlot2(), yellowLine, Color.YELLOW, 1.33),
+            new LineData(battleSystem.getEnemySlot3(), orangeLine, Color.ORANGE, 1.2)
+        };
     }
     
     public void initializeUI() {
@@ -129,19 +237,14 @@ public class  BattleUI {
      */
     public void refreshAllCharacterUI() {
         // Update health and MP bars for all characters
-        if (battleSystem.getHeroSlot() != null) {
-            updateHealthUI(battleSystem.getHeroSlot());
-            updateMpUI(battleSystem.getHeroSlot());
-        }
-        if (battleSystem.getHeroSlot2() != null) {
-            updateHealthUI(battleSystem.getHeroSlot2());
-            updateMpUI(battleSystem.getHeroSlot2());
-        }
-        if (battleSystem.getEnemySlot() != null) {
-            updateHealthUI(battleSystem.getEnemySlot());
-        }
-        if (battleSystem.getEnemySlot2() != null) {
-            updateHealthUI(battleSystem.getEnemySlot2());
+        Observer.characterSlot[] allCharacters = getAllCharacters();
+        for (Observer.characterSlot character : allCharacters) {
+            if (character != null) {
+                updateHealthUI(character);
+                if (isHero(character)) {
+                    updateMpUI(character);
+                }
+            }
         }
     }
     
@@ -154,76 +257,32 @@ public class  BattleUI {
     }
     
     private void createLines() {
-        // Blue line (Hero 1) - only if hero exists and has HP > 0
-        if (battleSystem.getHeroSlot() != null && battleSystem.getHeroSlot().getCurrentHp() > 0) {
-        blueLine = new Line();
-        blueLine.setStroke(Color.BLUE);
-        blueLine.setStrokeWidth(3);
-        blueLine.setStartX(barX + barWidth / 1.75);
-        blueLine.setEndX(barX + barWidth / 1.75);
-        blueLine.setStartY(barY);
-        blueLine.setEndY(barY + barHeight);
-        }
-
-        // Green line (Hero 2) - only if hero exists and has HP > 0
-        if (battleSystem.getHeroSlot2() != null && battleSystem.getHeroSlot2().getCurrentHp() > 0) {
-            greenLine = new Line();
-            greenLine.setStroke(Color.LIMEGREEN);
-            greenLine.setStrokeWidth(3);
-            greenLine.setStartX(barX + barWidth / 1.9);
-            greenLine.setEndX(barX + barWidth / 1.9);
-            greenLine.setStartY(barY);
-            greenLine.setEndY(barY + barHeight);
-        }
-
-        // Red line (Enemy 1) - only if enemy exists and has HP > 0
-        if (battleSystem.getEnemySlot() != null && battleSystem.getEnemySlot().getCurrentHp() > 0) {
-        redLine = new Line();
-        redLine.setStroke(Color.RED);
-        redLine.setStrokeWidth(3);
-        redLine.setStartX(barX + barWidth/1.5);
-        redLine.setEndX(barX + barWidth/1.5);
-        redLine.setStartY(barY);
-        redLine.setEndY(barY + barHeight);
-        }
-
-        // Yellow line (Enemy 2) - only if enemy exists and has HP > 0
-        if (battleSystem.getEnemySlot2() != null && battleSystem.getEnemySlot2().getCurrentHp() > 0) {
-            yellowLine = new Line();
-            yellowLine.setStroke(Color.YELLOW);
-            yellowLine.setStrokeWidth(3);
-            yellowLine.setStartX(barX + barWidth/1.33);
-            yellowLine.setEndX(barX + barWidth/1.33);
-            yellowLine.setStartY(barY);
-            yellowLine.setEndY(barY + barHeight);
-        }
+        // Create all lines using helper function
+        blueLine = createSingleLine(battleSystem.getHeroSlot(), Color.BLUE, 1.75);
+        greenLine = createSingleLine(battleSystem.getHeroSlot2(), Color.LIMEGREEN, 1.9);
+        purpleLine = createSingleLine(battleSystem.getHeroSlot3(), Color.PURPLE, 2.1);
+        redLine = createSingleLine(battleSystem.getEnemySlot(), Color.RED, 1.5);
+        yellowLine = createSingleLine(battleSystem.getEnemySlot2(), Color.YELLOW, 1.33);
+        orangeLine = createSingleLine(battleSystem.getEnemySlot3(), Color.ORANGE, 1.2);
 
         // Add lines to scene - only if they were created
-        if (blueLine != null) {
-        getGameScene().addUINode(blueLine);
-        }
-        if (greenLine != null) {
-            getGameScene().addUINode(greenLine);
-        }
-        if (redLine != null) {
-        getGameScene().addUINode(redLine);
-        }
-        if (yellowLine != null) {
-            getGameScene().addUINode(yellowLine);
+        Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
+        for (Line line : allLines) {
+            if (line != null) {
+                getGameScene().addUINode(line);
+            }
         }
 
         // Set lines to character slots - only if characters exist and have HP > 0
-        if (battleSystem.getHeroSlot() != null && battleSystem.getHeroSlot().getCurrentHp() > 0) {
-        battleSystem.getHeroSlot().setLine(blueLine);
-        }
-        if (battleSystem.getHeroSlot2() != null && battleSystem.getHeroSlot2().getCurrentHp() > 0) {
-            battleSystem.getHeroSlot2().setLine(greenLine);
-        }
-        if (battleSystem.getEnemySlot() != null && battleSystem.getEnemySlot().getCurrentHp() > 0) {
-        battleSystem.getEnemySlot().setLine(redLine);
-        }
-        if (battleSystem.getEnemySlot2() != null && battleSystem.getEnemySlot2().getCurrentHp() > 0) {
-            battleSystem.getEnemySlot2().setLine(yellowLine);
+        Observer.characterSlot[] allCharacters = getAllCharacters();
+        Line[] allLineRefs = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
+        
+        for (int i = 0; i < allCharacters.length; i++) {
+            Observer.characterSlot character = allCharacters[i];
+            Line line = allLineRefs[i];
+            if (character != null && character.getCurrentHp() > 0 && line != null) {
+                character.setLine(line);
+            }
         }
     }
     
@@ -232,24 +291,21 @@ public class  BattleUI {
         healthBars.clear();
         
         // Define character slots and their positions/colors
-        Observer.characterSlot[] allSlots = {
-            battleSystem.getHeroSlot(),
-            battleSystem.getHeroSlot2(),
-            battleSystem.getEnemySlot(),
-            battleSystem.getEnemySlot2()
-        };
+        Observer.characterSlot[] allSlots = getAllCharacters();
         
         // Position data: [healthX, healthY, mpX, mpY]
         double[][] positions = {
             {50, 300, 50, 325},   // Hero (blue)
             {50, 350, 50, 375},   // Hero2 (green)
+            {50, 400, 50, 425},   // Hero3 (purple)
             {550, 300, 550, 325}, // Enemy (red)
-            {550, 350, 550, 375}  // Enemy2 (crimson)
+            {550, 350, 550, 375}, // Enemy2 (yellow)
+            {550, 400, 550, 425}  // Enemy3 (orange)
         };
         
         // Health bar colors
-        Color[] healthColors = {Color.BLUE, Color.LIMEGREEN, Color.RED, Color.CRIMSON};
-        Color[] mpColors = {Color.DODGERBLUE, Color.MEDIUMSEAGREEN, Color.DODGERBLUE, Color.DODGERBLUE};
+        Color[] healthColors = {Color.BLUE, Color.LIMEGREEN, Color.PURPLE, Color.RED, Color.YELLOW, Color.ORANGE};
+        Color[] mpColors = {Color.DODGERBLUE, Color.MEDIUMSEAGREEN, Color.MEDIUMPURPLE, Color.DODGERBLUE, Color.DODGERBLUE, Color.DODGERBLUE};
         
         // Create health bars for all existing characters
         for (int i = 0; i < allSlots.length; i++) {
@@ -277,7 +333,7 @@ public class  BattleUI {
             // Create MP border and bar (only for heroes)
             Rectangle mpBorder = null;
             Rectangle mpBar = null;
-            if (i < 2) { // Only heroes have MP
+            if (i < 3) { // Only heroes have MP (Hero1, Hero2, Hero3)
                 mpBorder = new Rectangle(healthBarWidth, 10, Color.TRANSPARENT);
                 mpBorder.setStroke(Color.BLACK);
                 mpBorder.setStrokeWidth(1);
@@ -339,7 +395,7 @@ public class  BattleUI {
             // Create HP text
             Text hpText = new Text("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
             hpText.setFont(new Font(16));
-            hpText.setFill(slot == battleSystem.getHeroSlot() || slot == battleSystem.getHeroSlot2() ? Color.WHITE : Color.BLACK);
+            hpText.setFill(isHero(slot) ? Color.WHITE : Color.BLACK);
             hpText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
             hpText.setTranslateY(healthBarData.healthBorder.getTranslateY() + healthBarHeight - 5);
             healthBarData.hpText = hpText;
@@ -409,8 +465,8 @@ public class  BattleUI {
             // Update highlighting for all health bars
             for (HealthBarData healthBarData : healthBars) {
                 Observer.characterSlot slot = healthBarData.characterSlot;
-                boolean isEnemy = (slot == battleSystem.getEnemySlot() || slot == battleSystem.getEnemySlot2());
-                boolean isAlly = (slot == battleSystem.getHeroSlot() || slot == battleSystem.getHeroSlot2());
+                boolean isEnemy = isEnemy(slot);
+                boolean isAlly = isHero(slot);
                 
                 if (isEnemy) {
                     boolean isSelected = battleSystem.getSelectedEnemyTarget() == slot;
@@ -427,8 +483,8 @@ public class  BattleUI {
         // Set up click handlers for all health bars
         for (HealthBarData healthBarData : healthBars) {
             Observer.characterSlot slot = healthBarData.characterSlot;
-            boolean isEnemy = (slot == battleSystem.getEnemySlot() || slot == battleSystem.getEnemySlot2());
-            boolean isAlly = (slot == battleSystem.getHeroSlot() || slot == battleSystem.getHeroSlot2());
+            boolean isEnemy = isEnemy(slot);
+            boolean isAlly = isHero(slot);
             
             // Set up click handlers for health bar, border, and HP text
             if (healthBarData.healthBar != null) {
@@ -576,7 +632,7 @@ public class  BattleUI {
                     resolvedTarget = target != null ? target : battleSystem.getSelectedTarget();
                 }
                 // Enforce affordability for heroes before calling useSkill
-                if (attacker == battleSystem.getHeroSlot() || attacker == battleSystem.getHeroSlot2()) {
+                if (isHero(attacker)) {
                     // Check MP affordability
                     if (attacker.getCurrentMp() < skill.getMpCost()) {
                         return; // Not enough MP
@@ -677,10 +733,10 @@ public class  BattleUI {
         }
         
         // Hide lines
-        if (blueLine != null) blueLine.setVisible(false);
-        if (greenLine != null) greenLine.setVisible(false);
-        if (redLine != null) redLine.setVisible(false);
-        if (yellowLine != null) yellowLine.setVisible(false);
+        Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
+        for (Line line : allLines) {
+            if (line != null) line.setVisible(false);
+        }
         
         // Hide skill boxes
         if (skill1Box != null) skill1Box.setVisible(false);
@@ -780,10 +836,10 @@ public class  BattleUI {
         }
         
         // Show lines
-        if (blueLine != null) blueLine.setVisible(true);
-        if (greenLine != null) greenLine.setVisible(true);
-        if (redLine != null) redLine.setVisible(true);
-        if (yellowLine != null) yellowLine.setVisible(true);
+        Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
+        for (Line line : allLines) {
+            if (line != null) line.setVisible(true);
+        }
         
         // Show skill boxes
         if (skill1Box != null) skill1Box.setVisible(true);
@@ -794,16 +850,20 @@ public class  BattleUI {
     // Getters for BattleSystem
     public Line getBlueLine() { return blueLine; }
     public Line getGreenLine() { return greenLine; }
+    public Line getPurpleLine() { return purpleLine; }
     public Line getRedLine() { return redLine; }
     public Line getYellowLine() { return yellowLine; }
+    public Line getOrangeLine() { return orangeLine; }
     public double getBarX() { return barX; }
     public double getBarWidth() { return barWidth; }
     
     // Setters for line management
     public void setBlueLine(Line blueLine) { this.blueLine = blueLine; }
     public void setGreenLine(Line greenLine) { this.greenLine = greenLine; }
+    public void setPurpleLine(Line purpleLine) { this.purpleLine = purpleLine; }
     public void setRedLine(Line redLine) { this.redLine = redLine; }
     public void setYellowLine(Line yellowLine) { this.yellowLine = yellowLine; }
+    public void setOrangeLine(Line orangeLine) { this.orangeLine = orangeLine; }
     
     /**
      * Updates the Burning Rage bar for a character

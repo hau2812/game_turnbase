@@ -19,8 +19,10 @@ public class BattleSystem {
     // Character slots
     private Observer.characterSlot heroSlot;
     private Observer.characterSlot heroSlot2;
+    private Observer.characterSlot heroSlot3;
     private Observer.characterSlot enemySlot;
     private Observer.characterSlot enemySlot2;
+    private Observer.characterSlot enemySlot3;
     private Observer.characterSlot selectedTarget;
     private Observer.characterSlot selectedAllyTarget;
     private Observer.characterSlot selectedEnemyTarget;
@@ -37,6 +39,8 @@ public class BattleSystem {
     private double redLineSpeed = lineSpeed;
     private double yellowLineSpeed = lineSpeed;
     private double greenLineSpeed = lineSpeed;
+    private double purpleLineSpeed = lineSpeed;
+    private double orangeLineSpeed = lineSpeed;
     
     // UI reference (will be injected)
     private BattleUI battleUI;
@@ -48,6 +52,104 @@ public class BattleSystem {
     private boolean battleLoopActive = false;
     
     public BattleSystem() {
+    }
+    
+    // ===================== HELPER FUNCTIONS =====================
+    
+    /**
+     * Check if a character slot is a hero
+     */
+    private boolean isHero(Observer.characterSlot slot) {
+        return slot == heroSlot || slot == heroSlot2 || slot == heroSlot3;
+    }
+    
+    /**
+     * Check if a character slot is an enemy
+     */
+    private boolean isEnemy(Observer.characterSlot slot) {
+        return slot == enemySlot || slot == enemySlot2 || slot == enemySlot3;
+    }
+    
+    /**
+     * Get all hero slots as an array
+     */
+    private Observer.characterSlot[] getAllHeroes() {
+        return new Observer.characterSlot[]{heroSlot, heroSlot2, heroSlot3};
+    }
+    
+    /**
+     * Get all enemy slots as an array
+     */
+    private Observer.characterSlot[] getAllEnemies() {
+        return new Observer.characterSlot[]{enemySlot, enemySlot2, enemySlot3};
+    }
+    
+    /**
+     * Get all character slots as an array
+     */
+    private Observer.characterSlot[] getAllCharacters() {
+        return new Observer.characterSlot[]{heroSlot, heroSlot2, heroSlot3, enemySlot, enemySlot2, enemySlot3};
+    }
+    
+    /**
+     * Get the corresponding line for a character slot
+     */
+    private Line getLineForCharacter(Observer.characterSlot slot) {
+        if (slot == heroSlot) return battleUI.getBlueLine();
+        if (slot == heroSlot2) return battleUI.getGreenLine();
+        if (slot == heroSlot3) return battleUI.getPurpleLine();
+        if (slot == enemySlot) return battleUI.getRedLine();
+        if (slot == enemySlot2) return battleUI.getYellowLine();
+        if (slot == enemySlot3) return battleUI.getOrangeLine();
+        return null;
+    }
+    
+    /**
+     * Get the corresponding speed for a character slot
+     */
+    private double getSpeedForCharacter(Observer.characterSlot slot) {
+        if (slot == heroSlot) return blueLineSpeed;
+        if (slot == heroSlot2) return greenLineSpeed;
+        if (slot == heroSlot3) return purpleLineSpeed;
+        if (slot == enemySlot) return redLineSpeed;
+        if (slot == enemySlot2) return yellowLineSpeed;
+        if (slot == enemySlot3) return orangeLineSpeed;
+        return lineSpeed;
+    }
+    
+    /**
+     * Push a character's line back by the specified amount
+     */
+    private void pushCharacterLine(Observer.characterSlot character, double pushAmount) {
+        Line characterLine = getLineForCharacter(character);
+        if (characterLine != null) {
+            double barX = battleUI.getBarX();
+            double barWidth = battleUI.getBarWidth();
+            double newX = Math.min(barX + barWidth, characterLine.getStartX() + pushAmount);
+            characterLine.setStartX(newX);
+            characterLine.setEndX(newX);
+        }
+    }
+    
+    /**
+     * Get a random alive hero as target
+     */
+    private Observer.characterSlot getRandomAliveHero() {
+        Observer.characterSlot[] heroes = getAllHeroes();
+        java.util.List<Observer.characterSlot> aliveHeroes = new java.util.ArrayList<>();
+        
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                aliveHeroes.add(hero);
+            }
+        }
+        
+        if (aliveHeroes.isEmpty()) {
+            return null;
+        }
+        
+        Random random = new Random();
+        return aliveHeroes.get(random.nextInt(aliveHeroes.size()));
     }
     
     public void setBattleUI(BattleUI battleUI) {
@@ -65,9 +167,11 @@ public class BattleSystem {
         Observer.CharacterSlotRegistry.init();
 
         // Hero slots
-        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Flamita");}
+        if(heroSlot == null) {heroSlot = Observer.CharacterSlotRegistry.getByName("Hero2");}
 
-        //if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero2");}
+        if(heroSlot2 == null) {heroSlot2 = Observer.CharacterSlotRegistry.getByName("Hero");}
+
+        if(heroSlot3 == null) {heroSlot3 = Observer.CharacterSlotRegistry.getByName("Flamita");}
 
         // Enemy slots
         //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
@@ -108,7 +212,7 @@ public class BattleSystem {
         }
         
         // Check MP for heroes and deduct if needed
-        if (attacker == heroSlot || attacker == heroSlot2) {
+        if (isHero(attacker)) {
             float mpCost = skill.getMpCost();
             if (mpCost > 0 && attacker.getCurrentMp() < mpCost) {
                 return; // not enough MP
@@ -142,28 +246,10 @@ public class BattleSystem {
         // Calculate final damage with Burning Rage bonuses and talent bonuses
         applyDamage(target, finalDmg);
 
-        // Push line back (if attacker is hero)
-        if (attacker == heroSlot || attacker == heroSlot2) {
+        // Push line back for any character
+        if (isHero(attacker) || isEnemy(attacker)) {
             double push = attacker.getCharacter().getAV() * skill.getAVScale();
-            Line heroLine = attacker == heroSlot ? battleUI.getBlueLine() : battleUI.getGreenLine();
-            if (heroLine != null) {
-                double barX = battleUI.getBarX();
-                double barWidth = battleUI.getBarWidth();
-                double newX = Math.min(barX + barWidth, heroLine.getStartX() + push);
-                heroLine.setStartX(newX);
-                heroLine.setEndX(newX);
-            }
-        } else if (attacker == enemySlot || attacker == enemySlot2) {
-            // Enemy pushes red line
-            double push = attacker.getCharacter().getAV() * skill.getAVScale();
-            Line enemyLine = attacker == enemySlot ? battleUI.getRedLine() : battleUI.getYellowLine();
-            if (enemyLine != null) {
-                double barX = battleUI.getBarX();
-                double barWidth = battleUI.getBarWidth();
-                double newX = Math.min(barX + barWidth, enemyLine.getStartX() + push);
-                enemyLine.setStartX(newX);
-                enemyLine.setEndX(newX);
-            }
+            pushCharacterLine(attacker, push);
         }
     }
     
@@ -187,16 +273,8 @@ public class BattleSystem {
         if (chosenSkill.getAtkScale() < 0) {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
         } else {
-            boolean hero1Alive = heroSlot.getCurrentHp() > 0;
-            boolean hero2Alive = heroSlot2 != null && heroSlot2.getCurrentHp() > 0;
-            Observer.characterSlot targetHero;
-            if (hero1Alive && hero2Alive) {
-                targetHero = random.nextBoolean() ? heroSlot : heroSlot2;
-            } else if (hero1Alive) {
-                targetHero = heroSlot;
-            } else if (hero2Alive) {
-                targetHero = heroSlot2;
-            } else {
+            Observer.characterSlot targetHero = getRandomAliveHero();
+            if (targetHero == null) {
                 // No heroes alive, shouldn't happen but handle gracefully
                 return;
             }
@@ -206,20 +284,23 @@ public class BattleSystem {
     }
     
     private void updateLines() {
-        if (!moving) {
+        if (!moving || battleUI == null) {
             return;
         }
 
-        if (battleUI != null) {
-            moveLine(battleUI.getBlueLine(), blueLineSpeed);
-            if (battleUI.getRedLine() != null && enemySlot.getCurrentHp() > 0) {
-                moveLine(battleUI.getRedLine(), redLineSpeed);
-            }
-            if (battleUI.getYellowLine() != null && enemySlot2 != null && enemySlot2.getCurrentHp() > 0) {
-                moveLine(battleUI.getYellowLine(), yellowLineSpeed);
-            }
-            if (battleUI.getGreenLine() != null && heroSlot2 != null) {
-                moveLine(battleUI.getGreenLine(), greenLineSpeed);
+        // Update all character lines
+        Observer.characterSlot[] allCharacters = getAllCharacters();
+        for (Observer.characterSlot character : allCharacters) {
+            if (character != null) {
+                Line characterLine = getLineForCharacter(character);
+                if (characterLine != null) {
+                    // For enemies, only move if they're alive
+                    if (isEnemy(character) && character.getCurrentHp() <= 0) {
+                        continue;
+                    }
+                    double speed = getSpeedForCharacter(character);
+                    moveLine(characterLine, speed);
+                }
             }
         }
     }
@@ -244,10 +325,21 @@ public class BattleSystem {
 
                     runOnce(() -> enemyTurn(enemySlot2), Duration.seconds(0.25));
                 }
-                else if (line == battleUI.getBlueLine() || (line == battleUI.getGreenLine() && heroSlot2 != null)) {
+                // Enemy 3 turn
+                else if (line == battleUI.getOrangeLine() && enemySlot3 != null && enemySlot3.getCurrentHp() > 0) {
+
+                    runOnce(() -> enemyTurn(enemySlot3), Duration.seconds(0.25));
+                }
+                else if (line == battleUI.getBlueLine() || (line == battleUI.getGreenLine() && heroSlot2 != null) || (line == battleUI.getPurpleLine() && heroSlot3 != null)) {
                     // When a hero's line reaches, render that hero's skills
 
-                    currentActingHero = (line == battleUI.getBlueLine()) ? heroSlot : heroSlot2;
+                    if (line == battleUI.getBlueLine()) {
+                        currentActingHero = heroSlot;
+                    } else if (line == battleUI.getGreenLine()) {
+                        currentActingHero = heroSlot2;
+                    } else if (line == battleUI.getPurpleLine()) {
+                        currentActingHero = heroSlot3;
+                    }
                     characters.SpecialTalents.onTurnStart(currentActingHero);
                     battleUI.refreshAllCharacterUI();
                     if (currentActingHero != null && battleUI != null) {
@@ -316,8 +408,10 @@ public class BattleSystem {
     // Getters for external access
     public Observer.characterSlot getHeroSlot() { return heroSlot; }
     public Observer.characterSlot getHeroSlot2() { return heroSlot2; }
+    public Observer.characterSlot getHeroSlot3() { return heroSlot3; }
     public Observer.characterSlot getEnemySlot() { return enemySlot; }
     public Observer.characterSlot getEnemySlot2() { return enemySlot2; }
+    public Observer.characterSlot getEnemySlot3() { return enemySlot3; }
     public Observer.characterSlot getSelectedTarget() { return selectedTarget; }
     public Observer.characterSlot getSelectedAllyTarget() { return selectedAllyTarget; }
     public Observer.characterSlot getSelectedEnemyTarget() { return selectedEnemyTarget; }
@@ -330,10 +424,11 @@ public class BattleSystem {
     public boolean isMoving() { return moving; }
     public Line getTurnOf() { return turnOf; }
     
-    public void setMapEnemies(Observer.characterSlot enemy1, Observer.characterSlot enemy2) {
+    public void setMapEnemies(Observer.characterSlot enemy1, Observer.characterSlot enemy2, Observer.characterSlot enemy3) {
         // Clear old enemy data first
         this.enemySlot = null;
         this.enemySlot2 = null;
+        this.enemySlot3 = null;
         
         // Update enemy slots with map enemies
         if (enemy1 != null) {
@@ -341,6 +436,9 @@ public class BattleSystem {
         }
         if (enemy2 != null) {
             this.enemySlot2 = enemy2;
+        }
+        if (enemy3 != null) {
+            this.enemySlot3 = enemy3;
         }
         
         // Update selected target to first enemy
@@ -352,6 +450,7 @@ public class BattleSystem {
         // Clear all enemy data
         this.enemySlot = null;
         this.enemySlot2 = null;
+        this.enemySlot3 = null;
         this.selectedTarget = null;
         this.selectedAllyTarget = null;
         this.selectedEnemyTarget = null;
@@ -360,10 +459,17 @@ public class BattleSystem {
     
     private void checkVictoryCondition() {
         // Check if all enemies are defeated
-        boolean enemy1Defeated = enemySlot == null || enemySlot.getCurrentHp() <= 0;
-        boolean enemy2Defeated = enemySlot2 == null || enemySlot2.getCurrentHp() <= 0;
+        Observer.characterSlot[] enemies = getAllEnemies();
+        boolean allEnemiesDefeated = true;
         
-        if (enemy1Defeated && enemy2Defeated) {
+        for (Observer.characterSlot enemy : enemies) {
+            if (enemy != null && enemy.getCurrentHp() > 0) {
+                allEnemiesDefeated = false;
+                break;
+            }
+        }
+        
+        if (allEnemiesDefeated) {
             System.out.println("Victory! All enemies defeated!");
             if (onBattleWon != null) {
                 onBattleWon.run();

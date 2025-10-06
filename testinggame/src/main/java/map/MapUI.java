@@ -481,15 +481,19 @@ public class MapUI {
         // Set up battle system with map enemies
         Observer.characterSlot enemy1 = mapEnemies.get(0);
         Observer.characterSlot enemy2 = mapEnemies.size() > 1 ? mapEnemies.get(1) : null;
+        Observer.characterSlot enemy3 = mapEnemies.size() > 2 ? mapEnemies.get(2) : null;
         
         System.out.println("Setting up battle with: " + enemy1.getCharacter().getName());
         if (enemy2 != null) {
             System.out.println("And: " + enemy2.getCharacter().getName());
         }
+        if (enemy3 != null) {
+            System.out.println("And: " + enemy3.getCharacter().getName());
+        }
         
         // Update battle system with map enemies
         if (battleSystem != null) {
-            battleSystem.setMapEnemies(enemy1, enemy2);
+            battleSystem.setMapEnemies(enemy1, enemy2, enemy3);
         }
     }
     

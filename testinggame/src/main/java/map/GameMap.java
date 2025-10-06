@@ -56,6 +56,7 @@ public class GameMap {
                                      MapNode.NodeType.BATTLE, 150, 280);
         battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
         battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
         path.addNode(battle1);
 
         MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
@@ -235,6 +236,7 @@ public class GameMap {
         // Battle node
         MapNode battle1 = new MapNode("village_battle1", "Bandits", "Bọn cướp", 
                                      MapNode.NodeType.BATTLE, 200, 360);
+        battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
         battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
         battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
         path.addNode(battle1);
