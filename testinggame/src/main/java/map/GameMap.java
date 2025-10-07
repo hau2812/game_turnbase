@@ -38,7 +38,7 @@ public class GameMap {
                               MapNode.NodeType.BOSS, 400, 100);
         // Add boss enemy
         Characters.character boss = createBossCharacter();
-        bossNode.addEnemy(createEnemySlotWithSkills(boss));
+        //bossNode.addEnemy(createEnemySlotWithSkills(boss));
 
         paths.add(forestPath);
         paths.add(mountainPath);
@@ -51,17 +51,19 @@ public class GameMap {
                                    MapNode.NodeType.START, 100, 300);
         path.addNode(start);
 
+
+
         // Battle nodes
         MapNode battle1 = new MapNode("forest_battle1", "Wolf Pack", "Đàn sói hoang dã", 
                                      MapNode.NodeType.BATTLE, 150, 280);
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 25)));
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 25),1,0,0,0));
+        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50),1,0,0,0));
         //battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
         path.addNode(battle1);
 
         MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
                                      MapNode.NodeType.BATTLE, 200, 260);
-        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 75)));
+        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 75),1,0,0,0));
         path.addNode(battle2);
 
         // Event node
@@ -97,8 +99,21 @@ public class GameMap {
             (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 5, 800, 50, new ArrayList<>()
         );
         forestGuardian.setUniqueValue("Regeneration","200");
-        finalBattle.addEnemy(createEnemySlotWithSkills(forestGuardian));
+        finalBattle.addEnemy(createEnemySlotWithSkills(forestGuardian,1,0,0,0));
         path.addNode(finalBattle);
+
+
+        //testing
+        MapNode testing = new MapNode("forest_final", "Forest Guardian", "Thủ hộ rừng",
+                MapNode.NodeType.BATTLE, 300, 270);
+        Characters.character coruptedFlamita = new Characters.character(
+                (int)(Math.random() * 1000), "Flamita ?", 100, 30, 20, 10, 5, 1000, 0, new ArrayList<>()
+        );
+        coruptedFlamita.setUniqueValue("Burning rage","0");
+        coruptedFlamita.setUniqueValue("Guts","1");
+        testing.addEnemy(createEnemySlotWithSkills(coruptedFlamita,6,7,8,9));
+        path.addNode(testing);
+        //testing
     }
 
     private void initializeMountainPath(MapPath path) {
@@ -190,7 +205,7 @@ public class GameMap {
         // One battle
         MapNode battle1 = new MapNode("mountain_battle1", "Mountain Troll", "Troll núi", 
                                      MapNode.NodeType.BATTLE, 250, 140);
-        battle1.addEnemy(createEnemySlotWithSkills(createMountainEnemy("Mountain Troll", 600, 350)));
+        //battle1.addEnemy(createEnemySlotWithSkills(createMountainEnemy("Mountain Troll", 600, 350)));
         path.addNode(battle1);
 
         // Final event
@@ -236,9 +251,9 @@ public class GameMap {
         // Battle node
         MapNode battle1 = new MapNode("village_battle1", "Bandits", "Bọn cướp", 
                                      MapNode.NodeType.BATTLE, 200, 360);
-        battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
-        battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
-        battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
+        //battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
+        //battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
+        //battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
         path.addNode(battle1);
 
         // Rest node
@@ -249,7 +264,7 @@ public class GameMap {
         // Final battle
         MapNode finalBattle = new MapNode("village_final", "Bandit Leader", "Thủ lĩnh cướp", 
                                          MapNode.NodeType.BATTLE, 300, 320);
-        finalBattle.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit Leader", 700, 400)));
+        //finalBattle.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit Leader", 700, 400)));
         path.addNode(finalBattle);
     }
 
@@ -279,24 +294,30 @@ public class GameMap {
     }
     
     // Helper method to create character slots with skills for map enemies
-    private Observer.characterSlot createEnemySlotWithSkills(Characters.character character) {
+    private Observer.characterSlot createEnemySlotWithSkills(Characters.character character,int skill1, int skill2, int skill3, int skill4) {
         // Initialize skills registry if not already done
         Ability.SkillRegistry.init();
-        
+
         // Create skills list with skills 1, 2, 3
         ArrayList<Ability.skill> enemySkills = new ArrayList<>();
-        enemySkills.add(Ability.SkillRegistry.getById(4)); // Slash
-        //enemySkills.add(Ability.SkillRegistry.getById(2)); // Fireball
-        //enemySkills.add(Ability.SkillRegistry.getById(3)); // Heal
-        
+        if(skill1 != 0){
+            enemySkills.add(Ability.SkillRegistry.getById(skill1));
+        }if(skill2 != 0){
+            enemySkills.add(Ability.SkillRegistry.getById(skill2));
+        }if(skill3 != 0){
+            enemySkills.add(Ability.SkillRegistry.getById(skill3));
+        }if(skill4 != 0){
+            enemySkills.add(Ability.SkillRegistry.getById(skill4));
+        }
+
         // Create character slot
         return new Observer.characterSlot(
-            character.getId(),
-            character,
-            character,
-            enemySkills,
-            character.getHp(),
-            character.getMp()
+                character.getId(),
+                character,
+                character,
+                enemySkills,
+                character.getHp(),
+                character.getMp()
         );
     }
 

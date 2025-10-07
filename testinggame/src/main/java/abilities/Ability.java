@@ -269,11 +269,6 @@ public interface Ability {
                     0
 
             ));
-                Ability.skill slash = getByName("Slash");
-                if (slash != null) {
-                    slash.addEffect("Burn", 2, 1);        // Burn for 2 turns, 1 stack
-                    slash.addEffect("Weakness", 1, 1);    // Weakness for 1 turn, 1 stack
-                }
             register(new Ability.skill(
                     2,
                     "Fireball",
@@ -298,7 +293,7 @@ public interface Ability {
                     3,
                     "Heal",
                     "Restore a small amount of HP.",
-                    "Support",
+                    "Heal",
                     "Ally",
                     -1.5f,
                     1.0f,
@@ -381,7 +376,7 @@ public interface Ability {
                     9,
                     "Rage Heal",
                     "Convert Burning Rage into healing for self",
-                    "Support",
+                    "Heal",
                     "Self",
                     0.0f, // Healing
                     1.0f,
@@ -453,7 +448,7 @@ public interface Ability {
                     14,
                     "Barrier",
                     "Creates a protective barrier that absorbs damage",
-                    "Magic",
+                    "Heal",
                     "Ally",
                     0.0f,
                     1.0f,

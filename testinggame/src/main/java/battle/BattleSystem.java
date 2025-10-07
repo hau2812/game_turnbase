@@ -1,11 +1,15 @@
 package battle;
 
 import abilities.Ability;
+import audio.AudioManager;
 import characters.BuffDebuff;
+import characters.Characters;
 import characters.Observer;
 import javafx.scene.shape.Line;
 import javafx.util.Duration;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
@@ -49,10 +53,14 @@ public class BattleSystem {
     // Callback for battle end
     private Runnable onBattleWon;
     
+    // Audio system
+    public static AudioManager audioManager;
+    
     // Flag to control battle loop
     private boolean battleLoopActive = false;
     
     public BattleSystem() {
+        this.audioManager = AudioManager.getInstance();
     }
     
     // ===================== HELPER FUNCTIONS =====================
@@ -190,12 +198,43 @@ public class BattleSystem {
     public void setOnBattleWon(Runnable callback) {
         this.onBattleWon = callback;
     }
-    
+
+    private static final Map<String, Runnable> SPECIAL_MUSIC = Map.of(
+            "Flamita ?", () -> audioManager.playFlamitaMusic()
+            //"Glaciera", () -> audioManager.playGlacieraMusic(),
+            //"Electra", () -> audioManager.playElectraMusic()
+    );
+    public void playBattleMusic() {
+//        if(true){
+//            return;
+//        }
+        for (Observer.characterSlot enemy : getAllEnemies()) {
+
+            if (enemy!=null) {
+                String name = enemy.getCharacter().getName();
+                Runnable action = SPECIAL_MUSIC.get(name);
+                if (action != null) {
+                    action.run();
+                    return; // Stop after first match
+                }
+            }else{
+                break;
+            }
+
+        }
+        audioManager.playBattleMusic();
+    }
+
     public void initializeBattle() {
+
+        // Start battle music
+        playBattleMusic();
         // Configure which characters to create
         
         // Init registry
         Observer.CharacterSlotRegistry.init();
+        
+
 
         // Hero slots - use configured heroes
         if(heroSlot == null && selectedHeroes.length > 0) {
@@ -219,12 +258,14 @@ public class BattleSystem {
 
         // Set current acting hero
         currentActingHero = heroSlot;
+
+
     }
     
     public void startBattleLoop() {
         // Stop any existing battle loop first
         stopBattleLoop();
-        
+
         // Start new battle loop
         battleLoopActive = true;
         startBattleLoopRecursive();
@@ -246,6 +287,15 @@ public class BattleSystem {
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
         if(attacker.getLine() != turnOf) {
             return;
+        }
+        
+        // Play skill sound effect based on skill type
+        if (skill.getType().equals("Physical")) {
+            audioManager.playSwordSlash();
+        } else if (skill.getType().equals("Magic")) {
+            audioManager.playMagicCast();
+        } else if (skill.getType().equals("Heal")) {
+            audioManager.playHealCast();
         }
         
         // Check MP for heroes and deduct if needed
@@ -354,7 +404,7 @@ public class BattleSystem {
         Ability.skill chosenSkill = actingEnemy.getSkills()
                 .get(random.nextInt(actingEnemy.getSkills().size()));
         // Pick random living hero as target if offensive
-        if (chosenSkill.getAtkScale() < 0) {
+        if (chosenSkill.getAtkScale() < 0||chosenSkill.getTarget().equals("Self")) {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
         } else {
             Observer.characterSlot targetHero = getRandomAliveHero();
@@ -444,6 +494,8 @@ public class BattleSystem {
         // Calculate actual damage after special talents (like mana shield)
         if (amount > 0) { // Damage taken
             actualAmount = characters.SpecialTalents.calculateActualDamage(slot, (float)amount);
+            // Play damage sound effect
+            audioManager.playDamageTaken();
         }
 
         // Apply the actual damage/healing to HP
@@ -529,7 +581,7 @@ public class BattleSystem {
         if (enemy3 != null) {
             this.enemySlot3 = enemy3;
         }
-        
+
         // Update selected target to first enemy
         this.selectedTarget = enemy1;
         this.selectedEnemyTarget = enemy1;
@@ -560,6 +612,8 @@ public class BattleSystem {
         
         if (allEnemiesDefeated) {
             System.out.println("Victory! All enemies defeated!");
+            // Play victory music
+            audioManager.playVictoryMusic();
             if (onBattleWon != null) {
                 onBattleWon.run();
             }
@@ -611,11 +665,17 @@ public class BattleSystem {
         // Special damage calculation for Burning Rage skills
         if (rageConsumed > 0) {
             if (skill.getName().equals("Rage Heal")) {
-                // Rage Heal: healing = rage * (rage / (rage + currentHP))
-                float currentHp = attacker.getCurrentHp();
-                float healingAmount = rageConsumed * (rageConsumed / (rageConsumed + currentHp));
-                dmg = -healingAmount; // Negative damage = healing
-                System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage to heal for " + healingAmount + " HP!");
+                if(attacker.getCharacter().getName().equals("Flamita ?")) {
+                    float healingAmount = (float) (rageConsumed * 0.9);
+                    dmg = -healingAmount; // Negative damage = healing
+                    System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage to heal for " + healingAmount + " HP!");
+                }else {
+                    // Rage Heal: healing = rage * (rage / (rage + currentHP))
+                    float currentHp = attacker.getCurrentHp();
+                    float healingAmount = rageConsumed * (rageConsumed / (rageConsumed + currentHp));
+                    dmg = -healingAmount; // Negative damage = healing
+                    System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage to heal for " + healingAmount + " HP!");
+                }
             } else if (skill.getName().equals("Rage Burst")) {
                 float currentHp = Math.max(100, attacker.getCurrentHp());
                 float maxHp = attacker.getCharacter().getHp();
@@ -627,7 +687,7 @@ public class BattleSystem {
             } else {
                 // Other rage skills: add rage as bonus damage
                 dmg += rageConsumed;
-                System.out.println(attacker.getCharacter().getName() + " consumed " + rageConsumed + " rage for +" + (rageConsumed * 0.5f) + " bonus damage!");
+                System.out.println(attacker.getCharacter().getName() + " consumed " + rageConsumed + " rage for +" + rageConsumed+ " bonus damage!");
             }
         }
         return dmg;

@@ -16,6 +16,7 @@ public class SpecialTalents {
     public static final String REGENERATION = "Regeneration";
     public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
+    public static final String GUTS = "Guts";
     
     /**
      * Calculate actual damage after special talent effects (like mana shield)
@@ -57,6 +58,20 @@ public class SpecialTalents {
                 actualDamage -= mpToUse;
                 System.out.println(character.getName() + " used " + mpToUse + " MP to absorb damage!");
             }
+        }
+        if (character.getUniqueValue(GUTS) != null && character.getUniqueValueAsFloat(GUTS) > 0 && slot.getCurrentHp() < damageAmount) {
+            actualDamage = slot.currentHp-1;
+            character.addToUniqueValue(GUTS,-1);
+            System.out.println(character.getName() + " don't let the battle end " + (int)character.getUniqueValueAsFloat(GUTS) + " time remaining!");
+        //--Boss Flamita special--------------------------------------------------------------------------------------
+            if(character.getName().equals("Flamita ?")){
+                actualDamage = 0;
+                slot.setCurrentHp(character.getHp()/2);
+                if(character.getUniqueValueAsFloat(BURNING_RAGE) < character.getHp()/2){
+                    character.setUniqueValue(BURNING_RAGE,character.getHp()/2 +"");
+                }
+            }
+        //--Boss Flamita special--------------------------------------------------------------------------------------
         }
 
         // Burning Rage Protection - prevents HP from dropping below 1
@@ -211,6 +226,7 @@ public class SpecialTalents {
             // Process damage over time effects
             if (effect.getEffects().equals("DOT")) {
                 float dotDamage = effect.getTotalValue();
+                dotDamage = calculateActualDamage(slot, dotDamage);
                 slot.setCurrentHp(Math.max(0, slot.getCurrentHp() - dotDamage));
                 System.out.println(slot.getCharacter().getName() + " takes " + dotDamage + " damage from " + effect.getName() + "!");
             }

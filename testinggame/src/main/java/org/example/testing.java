@@ -1,5 +1,6 @@
 package org.example;
 
+import audio.AudioManager;
 import battle.BattleSystem;
 import battle.BattleUI;
 import com.almasb.fxgl.app.GameApplication;
@@ -10,6 +11,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import map.GameMap;
 import map.MapUI;
+import ui.AudioSettingsUI;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
@@ -44,6 +46,10 @@ public class testing extends GameApplication {
     private MapUI mapUI;
     private boolean inMapMode = false;
     
+    // Audio system
+    private AudioManager audioManager;
+    private AudioSettingsUI audioSettingsUI;
+    
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setWidth(800);
@@ -54,6 +60,14 @@ public class testing extends GameApplication {
     @Override
     protected void initGame() {
         getGameScene().setBackgroundColor(Color.LIGHTGRAY);
+        
+        // Initialize audio system
+        audioManager = AudioManager.getInstance();
+        audioSettingsUI = new AudioSettingsUI();
+        audioSettingsUI.getContainer().setTranslateX(200);
+        audioSettingsUI.getContainer().setTranslateY(100);
+        getGameScene().addUINode(audioSettingsUI.getContainer());
+        audioSettingsUI.hide(); // Start hidden
         
         // Initialize battle system (but don't start it yet)
         battleSystem = new BattleSystem();
@@ -80,14 +94,12 @@ public class testing extends GameApplication {
         // Start with map mode
         inMapMode = true;
         mapUI.showPathSelection();
+        
+        // Start menu music
+        audioManager.playMenuMusic();
 
         // Add instruction text
-        Text instructionText = new Text("Chọn đường đi của bạn! Nhấn N để thoát khỏi Map");
-        instructionText.setFont(new Font(14));
-        instructionText.setFill(Color.DARKBLUE);
-        instructionText.setTranslateX(250);
-        instructionText.setTranslateY(580);
-        getGameScene().addUINode(instructionText);
+
     }
 
     @Override
@@ -110,6 +122,11 @@ public class testing extends GameApplication {
             if (!inMapMode) {
                 enterMapMode();
             }
+        });
+        
+        // F1 key to toggle audio settings
+        onKeyDown(KeyCode.F1, () -> {
+            audioSettingsUI.toggle();
         });
     }
 
@@ -157,24 +174,24 @@ public class testing extends GameApplication {
     }
 
     private void exitMapMode() {
-        inMapMode = false;
-        
-        // Hide map UI
-        mapUI.hide();
-        
-        // Initialize battle if not already done
-        if (!battleSystem.isMoving()) {
-            battleSystem.initializeBattle();
-            battleUI.initializeUI();
-            battleSystem.startBattleLoop();
-            battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
-            battleSystem.setMoving(true);
-
-        } else {
-            // Show combat UI elements again
-            battleUI.showAllCombatUI();
-            battleSystem.setMoving(true); // Resume combat
-        }
+//        inMapMode = false;
+//
+//        // Hide map UI
+//        mapUI.hide();
+//
+//        // Initialize battle if not already done
+//        if (!battleSystem.isMoving()) {
+//            battleSystem.initializeBattle();
+//            battleUI.initializeUI();
+//            battleSystem.startBattleLoop();
+//            battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
+//            battleSystem.setMoving(true);
+//
+//        } else {
+//            // Show combat UI elements again
+//            battleUI.showAllCombatUI();
+//            battleSystem.setMoving(true); // Resume combat
+//        }
     }
     
     private void handleBattleVictory() {

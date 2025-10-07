@@ -1,6 +1,7 @@
 package battle;
 
 import abilities.Ability;
+import audio.AudioManager;
 import characters.Observer;
 import com.almasb.fxgl.app.GameApplication;
 import javafx.scene.input.MouseButton;
@@ -115,9 +116,12 @@ public class  BattleUI {
     private BattleSystem battleSystem;
     // Hide talents text setting (Burning Rage bars still show)
     boolean hideTalents = true;
+    // Audio system
+    private AudioManager audioManager;
     
     public BattleUI(BattleSystem battleSystem) {
         this.battleSystem = battleSystem;
+        this.audioManager = AudioManager.getInstance();
     }
     
     // ===================== HELPER FUNCTIONS =====================
@@ -768,6 +772,7 @@ public class  BattleUI {
             // Set up click handlers for health bar, border, and HP text
             if (healthBarData.healthBar != null) {
                 healthBarData.healthBar.setOnMouseClicked(e -> {
+                    audioManager.playButtonClick();
                     if (isEnemy) {
                         battleSystem.setSelectedEnemyTarget(slot);
                         battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
@@ -781,6 +786,7 @@ public class  BattleUI {
             
             if (healthBarData.healthBorder != null) {
                 healthBarData.healthBorder.setOnMouseClicked(e -> {
+                    audioManager.playButtonClick();
                     if (isEnemy) {
                         battleSystem.setSelectedEnemyTarget(slot);
                         battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
@@ -900,6 +906,8 @@ public class  BattleUI {
                 if (skill == null || skill.getName().equals("N/A")) {
                     return; // not available or N/A skill
                 }
+                // Play skill selection sound
+                audioManager.playButtonClick();
                 Observer.characterSlot resolvedTarget;
                 if (skill.getTarget().equals("Self")) {
                     // For self-targeting skills, always target the attacker

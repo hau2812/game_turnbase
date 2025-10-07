@@ -1,5 +1,6 @@
 package map;
 
+import audio.AudioManager;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -27,6 +28,7 @@ public class MapUI {
     private List<Text> nodeLabels;
     private List<Observer.characterSlot> currentBattleEnemies;
     private Runnable onBattleModeRequested;
+    private AudioManager audioManager;
 
 
     public MapUI(GameMap gameMap) {
@@ -38,6 +40,7 @@ public class MapUI {
         this.nodeLabels = new ArrayList<>();
         this.pathSelected = false;
         this.currentBattleEnemies = new ArrayList<>();
+        this.audioManager = AudioManager.getInstance();
     }
     
     public void setBattleSystem(BattleSystem battleSystem) {
@@ -51,6 +54,8 @@ public class MapUI {
     public void showPathSelection() {
         clearUI();
         createPathSelectionUI();
+        // Start map exploration music
+        audioManager.playMapMusic();
     }
 
     public void showSelectedPath() {
@@ -133,6 +138,7 @@ public class MapUI {
 
         // Click handler
         button.setOnMouseClicked(e -> {
+            audioManager.playButtonClick();
             gameMap.setSelectedPath(path);
             showSelectedPath();
         });
@@ -260,6 +266,7 @@ public class MapUI {
         // Click handler for current node
         if (nodeIndex == currentIndex && !node.isCompleted()) {
             nodeCircle.setOnMouseClicked(e -> {
+                audioManager.playButtonClick();
                 activateNode(node);
             });
             
@@ -309,6 +316,7 @@ public class MapUI {
 
 
         backButton.setOnMouseClicked(e -> {
+            audioManager.playButtonClick();
             gameMap.setSelectedPath(null);
             showPathSelection();
         });
@@ -338,11 +346,13 @@ public class MapUI {
                 // Start battle with enemies in this node
                 System.out.println("Starting battle at: " + node.getName());
                 if (battleSystem != null && !node.getEnemies().isEmpty()) {
+
                     // Set up battle with map enemies
                     setupBattleWithMapEnemies(node);
-                    
+
                     // Automatically switch to battle mode
                     switchToBattleMode();
+
                 }
                 break;
             case SHOP:
