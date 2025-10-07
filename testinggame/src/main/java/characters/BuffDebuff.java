@@ -85,7 +85,7 @@ public class BuffDebuff {
         // SPD Buffs
         register(new BuffDebuff("Haste", "Buff", 3, "SPD", 1.4f, 1, 2, "Skill"));
         register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 1.6f, 1, 1, "Skill"));
-        
+        register(new BuffDebuff("Gathering", "Buff", 10, "SPD", 20.0f, 1, 1, "Skill"));
         // ATK Debuffs
         register(new BuffDebuff("Weakness", "Debuff", 3, "ATK", 0.9f, 1, 5, "Skill"));
         register(new BuffDebuff("Cripple", "Debuff", 2, "ATK", 0.6f, 1, 1, "Skill"));
@@ -101,6 +101,8 @@ public class BuffDebuff {
         // Special Effects
         register(new BuffDebuff("Poison", "Debuff", 5, "DOT", 10f, 1, 3, "Skill"));
         register(new BuffDebuff("Burn", "Debuff", 3, "DOT", 15f, 1, 5, "Skill"));
+        register(new BuffDebuff("Void burn", "Debuff", 2, "DOT", 5f, 1, 99, "Skill"));
+
         register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 20f, 1, 2, "Skill"));
         register(new BuffDebuff("Mana Shield", "Buff", 3, "MP_COST", 0.5f, 1, 1, "Skill"));
         register(new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill"));

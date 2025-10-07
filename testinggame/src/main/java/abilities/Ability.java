@@ -455,12 +455,56 @@ public interface Ability {
                     50,
                     0
             ));
-            
             // Add Barrier effect to the Barrier skill
             Ability.skill barrier = getByName("Barrier");
             if (barrier != null) {
                 barrier.addEffect("Barrier", 3, 100);  // 50 barrier points for 3 turns
             }
+
+            register(new Ability.skill(
+                    15,
+                    "Calling void",
+                    "A quick attack that infect Void Burn",
+                    "Magic",
+                    "Enemy",
+                    0.1f,
+                    1.0f,
+                    -10,
+                    0
+            ));
+            Ability.skill callingVoid = getByName("Calling void");
+            if (callingVoid != null) {
+                callingVoid.addEffect("Void burn", 3, 1);  // 50 barrier points for 3 turns
+            }
+
+            register(new Ability.skill(
+                    16,
+                    "Void step",
+                    "You can't catch her",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    1.0f,
+                    40,
+                    0
+            ));
+            Ability.skill voidStep = getByName("Void step");
+            if (voidStep != null) {
+                voidStep.addEffect("Gathering", 10, 1);
+                voidStep.addEffect("Weakness", 10, 5);
+            }
+
+            register(new Ability.skill(
+                    17,
+                    "Eternal darkness",
+                    "All shall be gone with the void",
+                    "Magic",
+                    "All enemy",
+                    0.0f,
+                    2.0f,
+                    0,
+                    0
+            ));
         }
     }
 

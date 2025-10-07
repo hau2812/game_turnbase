@@ -51,7 +51,29 @@ public class GameMap {
                                    MapNode.NodeType.START, 100, 300);
         path.addNode(start);
 
+        //Flamita Boss Fight
+//        MapNode testing = new MapNode("?", "Internal Burning", "?",
+//                MapNode.NodeType.BATTLE, 300, 270);
+//        Characters.character coruptedFlamita = new Characters.character(
+//                (int)(Math.random() * 1000), "Flamita ?", 100, 30, 20, 10, 5, 1000, 0, new ArrayList<>()
+//        );
+//        coruptedFlamita.setUniqueValue("Burning rage","0");
+//        coruptedFlamita.setUniqueValue("Guts","1");
+//        testing.addEnemy(createEnemySlotWithSkills(coruptedFlamita,6,7,8,9));
+//        path.addNode(testing);
+        //Flamita Boss Fight
 
+        //Mabel Boss Fight
+        MapNode testing = new MapNode("?", "?", "?",
+                MapNode.NodeType.BATTLE, 300, 270);
+        Characters.character mabel = new Characters.character(
+                (int)(Math.random() * 1000), "Mabel", 100, 30, 20, 10, 15, 5000, 40, new ArrayList<>()
+        );
+        Observer.characterSlot mabelSlot = createEnemySlotWithSkills(mabel,15,16,17,0);
+        mabelSlot.setCurrentMp(20);
+        testing.addEnemy(mabelSlot);
+        path.addNode(testing);
+        //Mabel Boss Fight
 
         // Battle nodes
         MapNode battle1 = new MapNode("forest_battle1", "Wolf Pack", "Đàn sói hoang dã", 
@@ -103,17 +125,7 @@ public class GameMap {
         path.addNode(finalBattle);
 
 
-        //testing
-        MapNode testing = new MapNode("forest_final", "Forest Guardian", "Thủ hộ rừng",
-                MapNode.NodeType.BATTLE, 300, 270);
-        Characters.character coruptedFlamita = new Characters.character(
-                (int)(Math.random() * 1000), "Flamita ?", 100, 30, 20, 10, 5, 1000, 0, new ArrayList<>()
-        );
-        coruptedFlamita.setUniqueValue("Burning rage","0");
-        coruptedFlamita.setUniqueValue("Guts","1");
-        testing.addEnemy(createEnemySlotWithSkills(coruptedFlamita,6,7,8,9));
-        path.addNode(testing);
-        //testing
+
     }
 
     private void initializeMountainPath(MapPath path) {
@@ -271,19 +283,19 @@ public class GameMap {
     // Helper methods to create enemies
     private Characters.character createForestEnemy(String name, int hp, int atk) {
         return new Characters.character(
-            (int)(Math.random() * 1000), name, atk, 30, 20, 10, 15, hp, 50, new ArrayList<>()
+            (int)(Math.random() * 1000), name, atk, 30, 20, 10, 15, hp, 0, new ArrayList<>()
         );
     }
 
     private Characters.character createMountainEnemy(String name, int hp, int atk) {
         return new Characters.character(
-            (int)(Math.random() * 1000), name, atk, 40, 30, 15, 12, hp, 80, new ArrayList<>()
+            (int)(Math.random() * 1000), name, atk, 40, 30, 15, 12, hp, 0, new ArrayList<>()
         );
     }
 
     private Characters.character createVillageEnemy(String name, int hp, int atk) {
         return new Characters.character(
-            (int)(Math.random() * 1000), name, atk, 25, 15, 8, 18, hp, 40, new ArrayList<>()
+            (int)(Math.random() * 1000), name, atk, 25, 15, 8, 18, hp, 0, new ArrayList<>()
         );
     }
 
@@ -297,7 +309,7 @@ public class GameMap {
     private Observer.characterSlot createEnemySlotWithSkills(Characters.character character,int skill1, int skill2, int skill3, int skill4) {
         // Initialize skills registry if not already done
         Ability.SkillRegistry.init();
-
+        Characters.character baseCharacter = new Characters.character(character);
         // Create skills list with skills 1, 2, 3
         ArrayList<Ability.skill> enemySkills = new ArrayList<>();
         if(skill1 != 0){
@@ -314,7 +326,7 @@ public class GameMap {
         return new Observer.characterSlot(
                 character.getId(),
                 character,
-                character,
+                baseCharacter,
                 enemySkills,
                 character.getHp(),
                 character.getMp()

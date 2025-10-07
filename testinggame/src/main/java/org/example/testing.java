@@ -113,8 +113,8 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            System.out.println(battleSystem.getHeroSlot().getActiveEffects());
-            System.out.println(battleSystem.getHeroSlot().getBaseCharacter());
+            System.out.println(battleSystem.getEnemySlot().getCurrentMp());
+
         });
         
         // M key to return to map mode from battle

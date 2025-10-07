@@ -93,6 +93,7 @@ public interface Characters {
 
         public float getAV() { return AV; }
         public void setAV(float AV) { this.AV = AV; }
+        public void updateAV(){this.AV = 1000/spd;}
 
         public float getHp() { return hp; }
         public void setHp(float hp) { this.hp = hp; }

@@ -8,10 +8,7 @@ import characters.Observer;
 import javafx.scene.shape.Line;
 import javafx.util.Duration;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
@@ -161,6 +158,22 @@ public class BattleSystem {
         return aliveHeroes.get(random.nextInt(aliveHeroes.size()));
     }
     
+    /**
+     * Check if any hero has Void burn debuff with specified minimum stacks
+     */
+    private boolean hasHeroWithVoidBurn(int minStacks) {
+        for (Observer.characterSlot hero : getAllHeroes()) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                for (characters.BuffDebuff debuff : hero.getActiveEffects()) {
+                    if ("Void burn".equals(debuff.getName()) && debuff.getStack() >= minStacks) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
     public void setBattleUI(BattleUI battleUI) {
         this.battleUI = battleUI;
         // Pass hideTalents setting to BattleUI
@@ -200,8 +213,8 @@ public class BattleSystem {
     }
 
     private static final Map<String, Runnable> SPECIAL_MUSIC = Map.of(
-            "Flamita ?", () -> audioManager.playFlamitaMusic()
-            //"Glaciera", () -> audioManager.playGlacieraMusic(),
+            "Flamita ?", () -> audioManager.playFlamitaMusic(),
+            "Mabel", () -> audioManager.playMabelMusic()
             //"Electra", () -> audioManager.playElectraMusic()
     );
     public void playBattleMusic() {
@@ -299,12 +312,13 @@ public class BattleSystem {
         }
         
         // Check MP for heroes and deduct if needed
-        if (isHero(attacker)) {
+        if (true) {
             float mpCost = skill.getMpCost();
             if (mpCost > 0 && attacker.getCurrentMp() < mpCost) {
                 return; // not enough MP
             }
             if (true) {
+                //Reduce Mp
                 if(!Objects.equals(skill.getName(), "Ecarr Vertel")) {
                 attacker.setCurrentMp(attacker.getCurrentMp() - mpCost);
                 }
@@ -401,8 +415,44 @@ public class BattleSystem {
         if (battleUI != null) {
             battleUI.updateHealthUI(actingEnemy);
         }
-        Ability.skill chosenSkill = actingEnemy.getSkills()
-                .get(random.nextInt(actingEnemy.getSkills().size()));
+        
+        // Filter skills based on MP availability
+        ArrayList<Ability.skill> availableSkills = new ArrayList<>();
+        
+        // If enemy has MP > 0, filter skills by MP cost
+        if (actingEnemy.getCharacter().getMp() > 0) {
+            for (Ability.skill skill : actingEnemy.getSkills()) {
+                // Special condition for Eternal darkness skill
+                if (skill.getName().equals("Eternal darkness")) {
+                    if (hasHeroWithVoidBurn(10)) {
+                        availableSkills.add(skill);
+                    }
+                } else {
+                    // Normal MP cost check for other skills
+                    float mpCost = skill.getMpCost();
+                    if (mpCost <= 0 || actingEnemy.getCurrentMp() >= mpCost) {
+                        availableSkills.add(skill);
+                    }
+                }
+            }
+        } else {
+            // If enemy has no MP, only skills with negative or zero MP cost are available
+            for (Ability.skill skill : actingEnemy.getSkills()) {
+                if (skill.getMpCost() <= 0) {
+                    availableSkills.add(skill);
+                }
+            }
+        }
+        
+        // If no skills are available, skip turn
+        if (availableSkills.isEmpty()) {
+            moving = true;
+            return;
+        }
+        
+        // Choose random skill from available skills
+        Ability.skill chosenSkill = availableSkills.get(random.nextInt(availableSkills.size()));
+        
         // Pick random living hero as target if offensive
         if (chosenSkill.getAtkScale() < 0||chosenSkill.getTarget().equals("Self")) {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
@@ -415,6 +465,12 @@ public class BattleSystem {
             useSkill(actingEnemy, targetHero, chosenSkill);
         }
         moving = true;
+//        System.out.println("SPD: "+actingEnemy.getCharacter().getSpd());
+//        System.out.println("AV: "+actingEnemy.getCharacter().getAV());
+//        System.out.println("MP: "+actingEnemy.getCurrentMp());
+//        System.out.println(actingEnemy.getCharacter());
+//        System.out.println(actingEnemy.getBaseCharacter());
+//        System.out.println(actingEnemy.getActiveEffects());
     }
     
     private void updateLines() {
@@ -735,6 +791,28 @@ public class BattleSystem {
                              "! HP: " + currentHp + " -> 1, MP: " + currentMp + " -> 0, " +
                              "Special Damage Bonus: +" + specialDmgBonus);
             battleUI.refreshAllCharacterUI();
+        }
+        else if (skill.getName().equals("Eternal darkness")) {
+            for(Observer.characterSlot hero : getAllHeroes()){
+                if (hero != null && hero.getCurrentHp() > 0) {
+                    characters.BuffDebuff voidBurn = hero.getBuffDebuffByName("Void burn");
+                    if (voidBurn != null) {
+                        // Apply damage equal to Void burn's total value
+                        float dmg = voidBurn.getTotalValue()*voidBurn.getDuration();
+                        applyDamage(hero, dmg);
+                        
+                        // Remove the Void burn debuff after applying damage
+                        characters.SpecialTalents.removeBuffDebuff(hero, "Void burn");
+                        
+                        System.out.println("Eternal darkness consumed " + voidBurn.getStack() +" Burn last for "+ voidBurn.getDuration()+ " Void burn stacks for " + dmg + " damage on " + hero.getCharacter().getName() + "!");
+                        
+                        // Update UI to reflect changes
+                        if (battleUI != null) {
+                            battleUI.updateHealthUI(hero);
+                        }
+                    }
+                }
+            }
         }
         
         // Add more special skills here in the future

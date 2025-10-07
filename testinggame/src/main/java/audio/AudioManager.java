@@ -16,6 +16,7 @@ public class AudioManager {
     // Music tracks
     private static final String BATTLE_MUSIC = "battle_theme.mp3";
     private static final String Flamita_BOSS_MUSIC = "flamita_boss_theme.mp3";
+    private static final String Mabel_BOSS_MUSIC = "mabel_boss_theme.mp3";
     private static final String MAP_MUSIC = "map_exploration.mp3";
     private static final String VICTORY_MUSIC = "victory_theme.mp3";
     private static final String MENU_MUSIC = "menu_theme.mp3";
@@ -64,6 +65,7 @@ public class AudioManager {
             loadMusic(VICTORY_MUSIC);
             loadMusic(MENU_MUSIC);
             loadMusic(Flamita_BOSS_MUSIC);
+            loadMusic(Mabel_BOSS_MUSIC);
             // Load sound effects
             loadSound(SWORD_SLASH);
             loadSound(MAGIC_CAST);
@@ -192,6 +194,9 @@ public class AudioManager {
 
     public void playFlamitaMusic() {
         playMusic(Flamita_BOSS_MUSIC, true);
+    }
+    public void playMabelMusic() {
+        playMusic(Mabel_BOSS_MUSIC, true);
     }
     
     public void playMapMusic() {

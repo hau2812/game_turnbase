@@ -213,13 +213,14 @@ public class SpecialTalents {
      */
     public static void processBuffDebuffEffects(characterSlot slot) {
         if (slot.getActiveEffects() == null || slot.getActiveEffects().isEmpty()) {
+            resetStatModification(slot);
             return;
         }
         
         // Process each active effect
         for (int i = slot.getActiveEffects().size() - 1; i >= 0; i--) {
             BuffDebuff effect = slot.getActiveEffects().get(i);
-            
+
             // Apply stat modifications
             applyStatModifications(slot, effect);
             
@@ -237,6 +238,10 @@ public class SpecialTalents {
                 float newHp = Math.min(slot.getCharacter().getHp(), slot.getCurrentHp() + hotHealing);
                 slot.setCurrentHp(newHp);
                 System.out.println(slot.getCharacter().getName() + " heals " + hotHealing + " HP from " + effect.getName() + "!");
+            }
+
+            if(effect.getName().equals("Gathering")) {
+                slot.setCurrentMp(0);
             }
             
             // Note: Duration reduction moved to processBuffDebuffDurationReduction()
@@ -277,6 +282,14 @@ public class SpecialTalents {
     /**
      * Apply stat modifications from buff/debuff effects
      */
+    public static void resetStatModification(characterSlot slot) {
+        character character = slot.getCharacter();
+        character baseCharacter = slot.getBaseCharacter();
+        character.setAtk(baseCharacter.getAtk());
+        character.setDef(baseCharacter.getDef());
+        character.setSpd(baseCharacter.getSpd());
+        character.updateAV();
+    }
     public static void applyStatModifications(characterSlot slot, BuffDebuff effect) {
         character character = slot.getCharacter();
         character baseCharacter = slot.getBaseCharacter();
@@ -285,7 +298,7 @@ public class SpecialTalents {
         character.setAtk(baseCharacter.getAtk());
         character.setDef(baseCharacter.getDef());
         character.setSpd(baseCharacter.getSpd());
-        
+        character.updateAV();
         // Apply all active effects
         for (BuffDebuff activeEffect : slot.getActiveEffects()) {
             if (activeEffect.getEffects().equals("ATK")) {
@@ -294,6 +307,7 @@ public class SpecialTalents {
                 character.setDef(character.getDef() * activeEffect.getTotalValue());
             } else if (activeEffect.getEffects().equals("SPD")) {
                 character.setSpd(character.getSpd() * activeEffect.getTotalValue());
+                character.updateAV();
             }
         }
     }

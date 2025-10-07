@@ -61,6 +61,15 @@ public interface Observer {
                 currentHp = character.getHp();
             }
         }
+
+        public BuffDebuff getBuffDebuffByName(String name){
+            for (BuffDebuff effect : activeEffects) {
+                if (effect.getName().equals(name)) {
+                    return effect;
+                }
+            }
+            return null; // Return null if not found
+        }
     }
 
     // ===================== REGISTRY =====================
