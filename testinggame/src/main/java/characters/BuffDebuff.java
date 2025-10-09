@@ -103,7 +103,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Burn", "Debuff", 3, "DOT", 15f, 1, 5, "Skill"));
         register(new BuffDebuff("Void burn", "Debuff", 2, "DOT", 5f, 1, 99, "Skill"));
 
-        register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 20f, 1, 2, "Skill"));
+        register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 25f, 1, 2, "Skill"));
         register(new BuffDebuff("Mana Shield", "Buff", 3, "MP_COST", 0.5f, 1, 1, "Skill"));
         register(new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill"));
     }

@@ -7,6 +7,7 @@ import com.almasb.fxgl.app.GameApplication;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import ui.SimpleLine;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -313,7 +314,7 @@ public class  BattleUI {
             Observer.characterSlot character = allCharacters[i];
             Line line = allLineRefs[i];
             if (character != null && character.getCurrentHp() > 0 && line != null) {
-                character.setLine(line);
+                character.setLine(SimpleLine.fromFxLine(line));
             }
         }
     }
@@ -1203,6 +1204,30 @@ public class  BattleUI {
     public void setRedLine(Line redLine) { this.redLine = redLine; }
     public void setYellowLine(Line yellowLine) { this.yellowLine = yellowLine; }
     public void setOrangeLine(Line orangeLine) { this.orangeLine = orangeLine; }
+    
+    /**
+     * Set the line for a character slot to null
+     */
+    public void setLineForCharacter(Observer.characterSlot slot, Line line) {
+        if (slot == null) return;
+        
+        // Get the battle system to access character slots
+        if (battleSystem == null) return;
+        
+        if (slot == battleSystem.getHeroSlot()) {
+            setBlueLine(line);
+        } else if (slot == battleSystem.getHeroSlot2()) {
+            setGreenLine(line);
+        } else if (slot == battleSystem.getHeroSlot3()) {
+            setPurpleLine(line);
+        } else if (slot == battleSystem.getEnemySlot()) {
+            setRedLine(line);
+        } else if (slot == battleSystem.getEnemySlot2()) {
+            setYellowLine(line);
+        } else if (slot == battleSystem.getEnemySlot3()) {
+            setOrangeLine(line);
+        }
+    }
     
     public void setHideTalents(boolean hideTalents) {
         this.hideTalents = hideTalents;

@@ -5,9 +5,9 @@ import java.util.ArrayList;
 
 public class MapPath {
     public enum PathType {
-        FOREST("Forest Path", "Đường rừng - Nhiều quái thú, ít sự kiện"),
-        MOUNTAIN("Mountain Path", "Đường núi - Ít quái, nhiều sự kiện nguy hiểm"),
-        VILLAGE("Village Path", "Đường làng - Cân bằng, có shop và NPC");
+        FOREST("Forest Path", "Duong rung - Nhieu quai thu, it su kien"),
+        MOUNTAIN("Mountain Path", "Duong nui - It quai, nhieu su kien nguy hiem"),
+        VILLAGE("Village Path", "Duong lang - Can bang, co shop va NPC");
 
         private final String displayName;
         private final String description;

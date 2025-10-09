@@ -1,7 +1,7 @@
 package characters;
 
 import abilities.Ability;
-import javafx.scene.shape.Line;
+import ui.SimpleLine;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +18,7 @@ public interface Observer {
         ArrayList<BuffDebuff> activeEffects;   // active buffs/debuffs
         float currentHp;
         float currentMp;
-        Line line;
+        SimpleLine line;
 
         public characterSlot(int id, Characters.character character, Characters.character baseCharacter,
                              ArrayList<Ability.skill> skills, float currentHp, float currentMp) {
@@ -31,8 +31,8 @@ public interface Observer {
             this.currentMp = currentMp;
         }
 
-        public Line getLine() {return line;}
-        public void setLine(Line line) {this.line = line;}
+        public SimpleLine getLine() {return line;}
+        public void setLine(SimpleLine line) {this.line = line;}
 
         public ArrayList<Ability.skill> getSkills() { return skills; }
         public void setSkills(ArrayList<Ability.skill> skills) { this.skills = skills; }

@@ -297,7 +297,7 @@ public interface Ability {
                     "Ally",
                     -1.5f,
                     1.0f,
-                    300,
+                    200,
                     0
             ));
                 Ability.skill heal = getByName("Heal");
@@ -493,6 +493,18 @@ public interface Ability {
                 voidStep.addEffect("Gathering", 10, 1);
                 voidStep.addEffect("Weakness", 10, 5);
             }
+
+            register(new Ability.skill(
+                    17,
+                    "Eternal darkness",
+                    "All shall be gone with the void",
+                    "Magic",
+                    "All enemy",
+                    0.0f,
+                    2.0f,
+                    0,
+                    0
+            ));
 
             register(new Ability.skill(
                     17,

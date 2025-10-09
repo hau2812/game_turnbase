@@ -42,7 +42,7 @@ public abstract class MapEvent extends GameEvent {
 // Forest Events
 class ForestHealingEvent extends MapEvent {
     public ForestHealingEvent() {
-        super("Bạn tìm thấy một suối nước thiêng trong rừng. Nước suối có thể hồi phục sức khỏe.");
+        super("Ban tim thay mot suoi nuoc thieng trong rung. Nuoc suoi co the hoi phuc suc khoe.");
     }
     
     @Override
@@ -55,13 +55,13 @@ class ForestHealingEvent extends MapEvent {
         float healAmount = 200 + random.nextInt(300); // 200-500 HP
         healCharacter(hero1, healAmount);
         healCharacter(hero2, healAmount);
-        System.out.println("Cả hai hero được hồi " + (int)healAmount + " HP!");
+        System.out.println("Ca hai hero duoc hoi " + (int)healAmount + " HP!");
     }
 }
 
 class ForestTreasureEvent extends MapEvent {
     public ForestTreasureEvent() {
-        super("Bạn phát hiện một kho báu cũ ẩn dưới rễ cây. Có thể chứa vật phẩm quý giá.");
+        super("Ban phat hien mot kho bau cu an duoi re cay. Co the chua vat pham quy gia.");
     }
     
     @Override
@@ -79,19 +79,19 @@ class ForestTreasureEvent extends MapEvent {
                 healCharacter(hero2, 150);
                 restoreMp(hero1, 100);
                 restoreMp(hero2, 100);
-                System.out.println("Bạn tìm thấy thuốc hồi phục! +150 HP và +100 MP cho cả đội!");
+                System.out.println("Ban tim thay thuoc hoi phuc! +150 HP va +100 MP cho ca doi!");
                 break;
             case 1:
                 // Big heal
                 healCharacter(hero1, 400);
                 healCharacter(hero2, 400);
-                System.out.println("Bạn tìm thấy thuốc hồi phục mạnh! +400 HP cho cả đội!");
+                System.out.println("Ban tim thay thuoc hoi phuc manh! +400 HP cho ca doi!");
                 break;
             case 2:
                 // Trap damage
                 damageCharacter(hero1, 100);
                 damageCharacter(hero2, 100);
-                System.out.println("Đó là một cái bẫy! Cả đội mất 100 HP!");
+                System.out.println("Do la mot cai bay! Ca doi mat 100 HP!");
                 break;
         }
     }
@@ -100,7 +100,7 @@ class ForestTreasureEvent extends MapEvent {
 // Mountain Events
 class MountainRockslideEvent extends MapEvent {
     public MountainRockslideEvent() {
-        super("Lở đá từ trên cao! Bạn phải nhanh chóng tìm nơi trú ẩn.");
+        super("Lo da tu tren cao! Ban phai nhanh chong tim noi tru an.");
     }
     
     @Override
@@ -116,27 +116,27 @@ class MountainRockslideEvent extends MapEvent {
             float damage = 150 + random.nextInt(200); // 150-350 damage
             damageCharacter(hero1, damage);
             damageCharacter(hero2, damage);
-            System.out.println("Bạn không kịp trốn! Mất " + (int)damage + " HP!");
+            System.out.println("Ban khong kip tron! Mat " + (int)damage + " HP!");
         } else if (outcome < 7) {
             // Neutral outcome - minor damage
             float damage = 50 + random.nextInt(100); // 50-150 damage
             damageCharacter(hero1, damage);
             damageCharacter(hero2, damage);
-            System.out.println("Bạn trốn được phần lớn nhưng vẫn bị thương nhẹ. Mất " + (int)damage + " HP.");
+            System.out.println("Ban tron duoc phan lon nhung van bi thuong nhe. Mat " + (int)damage + " HP.");
         } else {
             // Good outcome - find treasure in the rubble
             healCharacter(hero1, 100);
             healCharacter(hero2, 100);
             restoreMp(hero1, 150);
             restoreMp(hero2, 150);
-            System.out.println("Bạn tìm thấy kho báu trong đống đá! +100 HP và +150 MP!");
+            System.out.println("Ban tim thay kho bau trong dong da! +100 HP va +150 MP!");
         }
     }
 }
 
 class MountainCaveEvent extends MapEvent {
     public MountainCaveEvent() {
-        super("Một hang động bí ẩn xuất hiện trước mặt. Bên trong có ánh sáng kỳ lạ.");
+        super("Mot hang dong bi an xuat hien truoc mat. Ben trong co anh sang ky la.");
     }
     
     @Override
@@ -154,25 +154,25 @@ class MountainCaveEvent extends MapEvent {
                 healCharacter(hero2, 300);
                 restoreMp(hero1, 200);
                 restoreMp(hero2, 200);
-                System.out.println("Tinh thể ma thuật tăng cường sức mạnh! +300 HP và +200 MP!");
+                System.out.println("Tinh the ma thuat tang cuong suc manh! +300 HP va +200 MP!");
                 break;
             case 1:
                 // Cursed cave - lose MP
                 hero1.setCurrentMp(Math.max(0, hero1.getCurrentMp() - 100));
                 hero2.setCurrentMp(Math.max(0, hero2.getCurrentMp() - 100));
-                System.out.println("Hang động bị nguyền rủa! Mất 100 MP!");
+                System.out.println("Hang dong bi nguyen rua! Mat 100 MP!");
                 break;
             case 2:
                 // Ancient wisdom - restore all MP
                 restoreMp(hero1, hero1.getCharacter().getMp());
                 restoreMp(hero2, hero2.getCharacter().getMp());
-                System.out.println("Tri thức cổ xưa phục hồi toàn bộ MP!");
+                System.out.println("Tri thuc co xua hoi phuc toan bo MP!");
                 break;
             case 3:
                 // Cave monster - take damage
                 damageCharacter(hero1, 200);
                 damageCharacter(hero2, 200);
-                System.out.println("Quái vật hang động tấn công! Mất 200 HP!");
+                System.out.println("Quai vat hang dong tan cong! Mat 200 HP!");
                 break;
         }
     }
@@ -180,7 +180,7 @@ class MountainCaveEvent extends MapEvent {
 
 class MountainSummitEvent extends MapEvent {
     public MountainSummitEvent() {
-        super("Bạn đã đến đỉnh núi thiêng. Các vị thần núi ban phước lành cho hành trình của bạn.");
+        super("Ban da den dinh nui thieng. Cac vi than nui ban phuoc lanh cho hanh trinh cua ban.");
     }
     
     @Override
@@ -199,14 +199,14 @@ class MountainSummitEvent extends MapEvent {
         restoreMp(hero1, mpAmount);
         restoreMp(hero2, mpAmount);
         
-        System.out.println("Phước lành của núi thiêng! +500 HP và +300 MP cho cả đội!");
+        System.out.println("Phuoc lanh cua nui thieng! +500 HP va +300 MP cho ca doi!");
     }
 }
 
 // Village Events
 class VillageShopEvent extends MapEvent {
     public VillageShopEvent() {
-        super("Cửa hàng làng có nhiều vật phẩm hữu ích. Chủ cửa hàng thân thiện với khách hàng.");
+        super("Cua hang lang co nhieu vat pham huu ich. Chu cua hang than thien voi khach hang.");
     }
     
     @Override
@@ -221,13 +221,13 @@ class VillageShopEvent extends MapEvent {
         healCharacter(hero2, 250);
         restoreMp(hero1, 150);
         restoreMp(hero2, 150);
-        System.out.println("Bạn mua thuốc hồi phục! +250 HP và +150 MP!");
+        System.out.println("Ban mua thuoc hoi phuc! +250 HP va +150 MP!");
     }
 }
 
 class VillageRestEvent extends MapEvent {
     public VillageRestEvent() {
-        super("Quán trọ ấm cúng với giường êm ái. Bạn có thể nghỉ ngơi và hồi phục sức lực.");
+        super("Quan tro am cung voi giuong em ai. Ban co the nghi ngoi va hoi phuc suc luc.");
     }
     
     @Override
@@ -242,13 +242,13 @@ class VillageRestEvent extends MapEvent {
         hero2.setCurrentHp(hero2.getCharacter().getHp());
         hero1.setCurrentMp(hero1.getCharacter().getMp());
         hero2.setCurrentMp(hero2.getCharacter().getMp());
-        System.out.println("Nghỉ ngơi hoàn toàn hồi phục HP và MP!");
+        System.out.println("Nghi ngoi hoan toan hoi phuc HP va MP!");
     }
 }
 
 class VillageNPCEvent extends MapEvent {
     public VillageNPCEvent() {
-        super("Một người dân làng có câu chuyện thú vị và có thể giúp đỡ bạn.");
+        super("Mot nguoi dan lang co cau chuyen thu vi va co the giup do ban.");
     }
     
     @Override
@@ -264,13 +264,13 @@ class VillageNPCEvent extends MapEvent {
                 // Helpful villager
                 healCharacter(hero1, 200);
                 healCharacter(hero2, 200);
-                System.out.println("Người dân tốt bụng cho thuốc! +200 HP!");
+                System.out.println("Nguoi dan tot bung cho thuoc! +200 HP!");
                 break;
             case 1:
                 // Wise elder
                 restoreMp(hero1, 200);
                 restoreMp(hero2, 200);
-                System.out.println("Người già khôn ngoan dạy phép thuật! +200 MP!");
+                System.out.println("Nguoi gia khon ngoan day phep thuat! +200 MP!");
                 break;
             case 2:
                 // Merchant
@@ -278,7 +278,7 @@ class VillageNPCEvent extends MapEvent {
                 healCharacter(hero2, 150);
                 restoreMp(hero1, 100);
                 restoreMp(hero2, 100);
-                System.out.println("Thương gia bán đồ giá rẻ! +150 HP và +100 MP!");
+                System.out.println("Thuong gia ban do gia re! +150 HP va +100 MP!");
                 break;
         }
     }

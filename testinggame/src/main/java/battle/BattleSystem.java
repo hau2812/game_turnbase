@@ -6,6 +6,7 @@ import characters.BuffDebuff;
 import characters.Characters;
 import characters.Observer;
 import javafx.scene.shape.Line;
+import ui.SimpleLine;
 import javafx.util.Duration;
 
 import java.util.*;
@@ -134,6 +135,17 @@ public class BattleSystem {
             double newX = Math.min(barX + barWidth, characterLine.getStartX() + pushAmount);
             characterLine.setStartX(newX);
             characterLine.setEndX(newX);
+        }
+    }
+
+    /**
+     * Remove the line for a character slot when they die
+     */
+    private void removeCharacterLine(Observer.characterSlot slot) {
+        Line characterLine = getLineForCharacter(slot);
+        if (characterLine != null) {
+            getGameScene().removeUINode(characterLine);
+            battleUI.setLineForCharacter(slot, null);
         }
     }
     
@@ -298,7 +310,9 @@ public class BattleSystem {
     }
     
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
-        if(attacker.getLine() != turnOf) {
+        SimpleLine attackerLine = attacker.getLine();
+        if(attackerLine == null || turnOf == null || 
+           attackerLine.getFxLine() != turnOf) {
             return;
         }
         
@@ -410,7 +424,14 @@ public class BattleSystem {
         
         // Apply turn-based effects (like regeneration)
         characters.SpecialTalents.onTurnStart(actingEnemy);
-        checkVictoryCondition();
+        if(actingEnemy.getCurrentHp()==0){
+            battleUI.updateHealthUI(actingEnemy);
+            removeCharacterLine(actingEnemy);
+            checkVictoryCondition();
+            moving = true;
+            return;
+        }
+
         // Update UI after turn-based effects
         if (battleUI != null) {
             battleUI.updateHealthUI(actingEnemy);
@@ -422,6 +443,9 @@ public class BattleSystem {
         // If enemy has MP > 0, filter skills by MP cost
         if (actingEnemy.getCharacter().getMp() > 0) {
             for (Ability.skill skill : actingEnemy.getSkills()) {
+                // Check if skill is not null
+                if (skill == null) continue;
+                
                 // Special condition for Eternal darkness skill
                 if (skill.getName().equals("Eternal darkness")) {
                     if (hasHeroWithVoidBurn(10)) {
@@ -438,20 +462,37 @@ public class BattleSystem {
         } else {
             // If enemy has no MP, only skills with negative or zero MP cost are available
             for (Ability.skill skill : actingEnemy.getSkills()) {
+                // Check if skill is not null
+                if (skill == null) continue;
+                
                 if (skill.getMpCost() <= 0) {
                     availableSkills.add(skill);
                 }
             }
         }
         
-        // If no skills are available, skip turn
+        // If no skills are available, try to give basic attack
         if (availableSkills.isEmpty()) {
+            // Fallback: try to give basic attack (Slash)
+            Ability.skill basicAttack = Ability.SkillRegistry.getById(1);
+            if (basicAttack != null) {
+                Observer.characterSlot targetHero = getRandomAliveHero();
+                if (targetHero != null) {
+                    useSkill(actingEnemy, targetHero, basicAttack);
+                }
+            }
             moving = true;
             return;
         }
         
         // Choose random skill from available skills
         Ability.skill chosenSkill = availableSkills.get(random.nextInt(availableSkills.size()));
+        
+        // Check if chosen skill is valid
+        if (chosenSkill == null) {
+            moving = true;
+            return;
+        }
         
         // Pick random living hero as target if offensive
         if (chosenSkill.getAtkScale() < 0||chosenSkill.getTarget().equals("Self")) {
@@ -460,6 +501,7 @@ public class BattleSystem {
             Observer.characterSlot targetHero = getRandomAliveHero();
             if (targetHero == null) {
                 // No heroes alive, shouldn't happen but handle gracefully
+                moving = true;
                 return;
             }
             useSkill(actingEnemy, targetHero, chosenSkill);
@@ -528,6 +570,11 @@ public class BattleSystem {
                         currentActingHero = heroSlot3;
                     }
                     characters.SpecialTalents.onTurnStart(currentActingHero);
+                    if(currentActingHero.getCurrentHp()==0){
+                        battleUI.updateHealthUI(currentActingHero);
+                        removeCharacterLine(currentActingHero);
+                        moving = true;
+                    }
                     battleUI.refreshAllCharacterUI();
                     if (currentActingHero != null && battleUI != null) {
                         battleUI.renderHeroSkillsFor(currentActingHero);
@@ -575,25 +622,7 @@ public class BattleSystem {
             
             // Remove line if character dies
             if (slot.getCurrentHp() <= 0) {
-                if (slot == enemySlot && battleUI.getRedLine() != null) {
-                    getGameScene().removeUINode(battleUI.getRedLine());
-                    battleUI.setRedLine(null);
-                } else if (slot == enemySlot2 && battleUI.getYellowLine() != null) {
-                    getGameScene().removeUINode(battleUI.getYellowLine());
-                    battleUI.setYellowLine(null);
-                } else if (slot == enemySlot3 && battleUI.getOrangeLine() != null) {
-                    getGameScene().removeUINode(battleUI.getOrangeLine());
-                    battleUI.setOrangeLine(null);
-                } else if (slot == heroSlot && battleUI.getBlueLine() != null) {
-                    getGameScene().removeUINode(battleUI.getBlueLine());
-                    battleUI.setBlueLine(null);
-                } else if (slot == heroSlot2 && battleUI.getGreenLine() != null) {
-                    getGameScene().removeUINode(battleUI.getGreenLine());
-                    battleUI.setGreenLine(null);
-                } else if (slot == heroSlot3 && battleUI.getPurpleLine() != null) {
-                    getGameScene().removeUINode(battleUI.getPurpleLine());
-                    battleUI.setPurpleLine(null);
-                }
+                removeCharacterLine(slot);
                 
                 // Check if all enemies are defeated
                 checkVictoryCondition();

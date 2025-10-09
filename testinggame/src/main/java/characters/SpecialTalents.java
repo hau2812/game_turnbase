@@ -1,5 +1,6 @@
 package characters;
 
+import battle.BattleSystem;
 import characters.Observer.characterSlot;
 import characters.Characters.character;
 
@@ -17,7 +18,8 @@ public class SpecialTalents {
     public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
     public static final String GUTS = "Guts";
-    
+    // Battle system reference
+    //private BattleSystem battleSystem;
     /**
      * Calculate actual damage after special talent effects (like mana shield)
      * Returns the amount of damage that should actually be applied to HP
@@ -181,7 +183,7 @@ public class SpecialTalents {
         
         // Process buff/debuff effects first
         processBuffDebuffEffects(slot);
-        
+
         // Regeneration - heal a small amount each turn
         if (character.getUniqueValue(REGENERATION) != null) {
             float regenAmount = character.getUniqueValueAsFloat(REGENERATION);

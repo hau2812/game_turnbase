@@ -113,7 +113,7 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            System.out.println(battleSystem.getEnemySlot().getCurrentMp());
+            System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
 
         });
         

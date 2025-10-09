@@ -11,7 +11,7 @@ public class GameMap {
     private MapPath selectedPath;
     private MapNode bossNode;
     private boolean mapCompleted;
-
+    int currentNodeNumber = 1;
     public GameMap() {
         this.paths = new ArrayList<>();
         this.mapCompleted = false;
@@ -23,281 +23,177 @@ public class GameMap {
         MapPath forestPath = new MapPath("forest", MapPath.PathType.FOREST);
         MapPath mountainPath = new MapPath("mountain", MapPath.PathType.MOUNTAIN);
         MapPath villagePath = new MapPath("village", MapPath.PathType.VILLAGE);
-
-        // Initialize Forest Path (nhiều battle, ít event)
-        initializeForestPath(forestPath);
-        
-        // Initialize Mountain Path (ít battle, nhiều event nguy hiểm)
-        initializeMountainPath(mountainPath);
-        
-        // Initialize Village Path (cân bằng, có shop)
-        initializeVillagePath(villagePath);
-
-        // Create Boss Node (chung cho tất cả paths)
-        bossNode = new MapNode("boss", "Dragon's Lair", "Hang của rồng boss cuối cùng", 
-                              MapNode.NodeType.BOSS, 400, 100);
-        // Add boss enemy
-        Characters.character boss = createBossCharacter();
-        //bossNode.addEnemy(createEnemySlotWithSkills(boss));
-
         paths.add(forestPath);
         paths.add(mountainPath);
         paths.add(villagePath);
-    }
 
-    private void initializeForestPath(MapPath path) {
-        // Start node
-        MapNode start = new MapNode("forest_start", "Forest Entrance", "Lối vào rừng sâu", 
-                                   MapNode.NodeType.START, 100, 300);
-        path.addNode(start);
+        //Custom boss
+        //addFlamitaBossFight("forest");
+        addMabelBossFight("forest");
+        // Initialize paths với random system
+        initializeRandomPath(forestPath);
+        initializeRandomPath(mountainPath);
+        initializeRandomPath(villagePath);
 
-        //Flamita Boss Fight
-//        MapNode testing = new MapNode("?", "Internal Burning", "?",
-//                MapNode.NodeType.BATTLE, 300, 270);
-//        Characters.character coruptedFlamita = new Characters.character(
-//                (int)(Math.random() * 1000), "Flamita ?", 100, 30, 20, 10, 5, 1000, 0, new ArrayList<>()
-//        );
-//        coruptedFlamita.setUniqueValue("Burning rage","0");
-//        coruptedFlamita.setUniqueValue("Guts","1");
-//        testing.addEnemy(createEnemySlotWithSkills(coruptedFlamita,6,7,8,9));
-//        path.addNode(testing);
-        //Flamita Boss Fight
-
-        //Mabel Boss Fight
-        MapNode testing = new MapNode("?", "?", "?",
-                MapNode.NodeType.BATTLE, 300, 270);
-        Characters.character mabel = new Characters.character(
-                (int)(Math.random() * 1000), "Mabel", 100, 30, 20, 10, 15, 5000, 40, new ArrayList<>()
-        );
-        Observer.characterSlot mabelSlot = createEnemySlotWithSkills(mabel,15,16,17,0);
-        mabelSlot.setCurrentMp(20);
-        testing.addEnemy(mabelSlot);
-        path.addNode(testing);
-        //Mabel Boss Fight
-
-        // Battle nodes
-        MapNode battle1 = new MapNode("forest_battle1", "Wolf Pack", "Đàn sói hoang dã", 
-                                     MapNode.NodeType.BATTLE, 150, 280);
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 25),1,0,0,0));
-        battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50),1,0,0,0));
-        //battle1.addEnemy(createEnemySlotWithSkills(createForestEnemy("Wolf", 300, 50)));
-        path.addNode(battle1);
-
-        MapNode battle2 = new MapNode("forest_battle2", "Bear Cave", "Hang gấu", 
-                                     MapNode.NodeType.BATTLE, 200, 260);
-        battle2.addEnemy(createEnemySlotWithSkills(createForestEnemy("Bear", 500, 75),1,0,0,0));
-        path.addNode(battle2);
-
-        // Event node
-        MapNode event1 = new MapNode("forest_event1", "Ancient Tree", "Cây cổ thụ bí ẩn", 
-                                    MapNode.NodeType.EVENT, 250, 240);
-        event1.setEvent(new event.MapEvent("Bạn tìm thấy một cây cổ thụ với trái cây kỳ lạ.") {
-            @Override
-            public void trigger() {
-                System.out.println(getDescription());
-            }
-            
-            @Override
-            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
-                // Forest healing event
-                float healAmount = 200 + (int)(Math.random() * 300);
-                if (hero1 != null && hero1.getCurrentHp() > 0) {
-                    hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + healAmount));
-                }
-                if (hero2 != null && hero2.getCurrentHp() > 0) {
-                    hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + healAmount));
-                }
-                System.out.println("Cả hai hero được hồi " + (int)healAmount + " HP!");
-            }
-        });
-        path.addNode(event1);
-
-        // Final battle before boss
-        MapNode finalBattle = new MapNode("forest_final", "Forest Guardian", "Thủ hộ rừng", 
-                                         MapNode.NodeType.BATTLE, 300, 220);
-
-        // Create Forest Guardian with custom speed of 5
-        Characters.character forestGuardian = new Characters.character(
-            (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 5, 800, 50, new ArrayList<>()
-        );
-        forestGuardian.setUniqueValue("Regeneration","200");
-        finalBattle.addEnemy(createEnemySlotWithSkills(forestGuardian,1,0,0,0));
-        path.addNode(finalBattle);
+        // Create Boss Node (chung cho tat ca paths) - CO DINH
+        bossNode = new MapNode("boss", "Dragon's Lair", "Hang cua rong boss cuoi cung", 
+                              MapNode.NodeType.BOSS, 400, 100);
+        // Add boss enemy - CO DINH
+        Characters.character boss = createBossCharacter();
+        // Boss co skills manh me
+        bossNode.addEnemy(createEnemySlotWithSkills(boss, 2, 12, 13, 0));
 
 
 
     }
 
-    private void initializeMountainPath(MapPath path) {
-        // Start node
-        MapNode start = new MapNode("mountain_start", "Mountain Base", "Chân núi", 
-                                   MapNode.NodeType.START, 100, 200);
+    /**
+     * Khởi tạo path với hệ thống random
+     */
+    private void initializeRandomPath(MapPath path) {
+        String pathName = path.getId().toLowerCase();
+        
+        // Start node - CO DINH
+        MapNode start = new MapNode(pathName + "_start", 
+                                   getPathStartName(path.getPathType()), 
+                                   getPathStartDescription(path.getPathType()), 
+                                   MapNode.NodeType.START, 100, getPathStartY(path.getPathType()));
         path.addNode(start);
 
-        // Event nodes (nhiều event nguy hiểm)
-        MapNode event1 = new MapNode("mountain_event1", "Rockslide", "Lở đá", 
-                                    MapNode.NodeType.EVENT, 150, 180);
-        event1.setEvent(new event.MapEvent("Lở đá từ trên cao! Bạn phải nhanh chóng tìm nơi trú ẩn.") {
-            @Override
-            public void trigger() {
-                System.out.println(getDescription());
-            }
-            
-            @Override
-            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
-                int outcome = (int)(Math.random() * 10);
-                if (outcome < 3) {
-                    float damage = 150 + (int)(Math.random() * 200);
-                    if (hero1 != null) hero1.setCurrentHp(Math.max(0, hero1.getCurrentHp() - damage));
-                    if (hero2 != null) hero2.setCurrentHp(Math.max(0, hero2.getCurrentHp() - damage));
-                    System.out.println("Bạn không kịp trốn! Mất " + (int)damage + " HP!");
-                } else if (outcome < 7) {
-                    float damage = 50 + (int)(Math.random() * 100);
-                    if (hero1 != null) hero1.setCurrentHp(Math.max(0, hero1.getCurrentHp() - damage));
-                    if (hero2 != null) hero2.setCurrentHp(Math.max(0, hero2.getCurrentHp() - damage));
-                    System.out.println("Bạn trốn được phần lớn nhưng vẫn bị thương nhẹ. Mất " + (int)damage + " HP.");
-                } else {
-                    if (hero1 != null) {
-                        hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + 100));
-                        hero1.setCurrentMp(Math.min(hero1.getCharacter().getMp(), hero1.getCurrentMp() + 150));
-                    }
-                    if (hero2 != null) {
-                        hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + 100));
-                        hero2.setCurrentMp(Math.min(hero2.getCharacter().getMp(), hero2.getCurrentMp() + 150));
-                    }
-                    System.out.println("Bạn tìm thấy kho báu trong đống đá! +100 HP và +150 MP!");
-                }
-            }
-        });
-        path.addNode(event1);
 
-        MapNode event2 = new MapNode("mountain_event2", "Mysterious Cave", "Hang động bí ẩn", 
-                                    MapNode.NodeType.EVENT, 200, 160);
-        event2.setEvent(new event.MapEvent("Một hang động bí ẩn xuất hiện trước mặt. Bên trong có ánh sáng kỳ lạ.") {
-            @Override
-            public void trigger() {
-                System.out.println(getDescription());
+
+        // Random nodes (4-6 nodes) - RANDOM
+        int nodeCount = 1 + (int)(Math.random() * 0); // 4-6 random nodes
+        for (int i = 1; i <= nodeCount; i++) {
+            MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
+            path.addNode(randomNode);
+            if(path.getId().equals("forest")) {
+                currentNodeNumber++;
             }
-            
-            @Override
-            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
-                int outcome = (int)(Math.random() * 4);
-                switch (outcome) {
-                    case 0:
+        }
+
+        // Final event/battle - CO DINH (nhung khac nhau cho moi path)
+        MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
+        path.addNode(finalNode);
+
+    }
+    
+    /**
+     * Tạo random node dựa trên path type
+     */
+    private MapNode createRandomNode(String pathName, int nodeNumber, MapPath.PathType pathType) {
+        RandomMapGenerator.RandomNodeType nodeType = RandomMapGenerator.getRandomNodeType(pathType);
+        
+        switch (nodeType) {
+            case BATTLE:
+                return RandomMapGenerator.createRandomBattleNode(pathName, nodeNumber, pathType, nodeNumber);
+            case EVENT:
+                return RandomMapGenerator.createRandomEventNode(pathName, nodeNumber, pathType);
+            case SHOP:
+                return RandomMapGenerator.createRandomShopNode(pathName, nodeNumber);
+            case REST:
+                return RandomMapGenerator.createRandomRestNode(pathName, nodeNumber);
+            default:
+                return RandomMapGenerator.createRandomBattleNode(pathName, nodeNumber, pathType, nodeNumber);
+        }
+    }
+    
+    /**
+     * Tạo final node cố định cho mỗi path
+     */
+    private MapNode createFixedFinalNode(String pathName, MapPath.PathType pathType) {
+        switch (pathType) {
+            case FOREST:
+                // Forest Guardian - CO DINH
+                MapNode forestFinal = new MapNode(pathName + "_final", "Forest Guardian", "Thu ho rung", 
+                                                 MapNode.NodeType.BATTLE, 100 + (currentNodeNumber * 50), 220);
+                currentNodeNumber++;
+                Characters.character forestGuardian = new Characters.character(
+                    (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 5, 800, 0, new ArrayList<>()
+                );
+                forestGuardian.setUniqueValue("Regeneration","200");
+                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,0,0,0));
+                return forestFinal;
+                // Forest Guardian - CO DINH
+
+
+            case MOUNTAIN:
+                // Mountain Summit Event - CO DINH
+                MapNode mountainFinal = new MapNode(pathName + "_final", "Summit Trial", "Thu thach dinh nui", 
+                                                   MapNode.NodeType.EVENT, 300, 120);
+                mountainFinal.setEvent(new event.MapEvent("Ban da den dinh nui thieng. Cac vi than nui ban phuoc lanh cho hanh trinh cua ban.") {
+                    @Override
+                    public void trigger() {
+                        System.out.println(getDescription());
+                    }
+                    
+                    @Override
+                    public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
+                        float healAmount = 500;
+                        float mpAmount = 300;
+                        
                         if (hero1 != null) {
-                            hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + 300));
-                            hero1.setCurrentMp(Math.min(hero1.getCharacter().getMp(), hero1.getCurrentMp() + 200));
+                            hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + healAmount));
+                            hero1.setCurrentMp(Math.min(hero1.getCharacter().getMp(), hero1.getCurrentMp() + mpAmount));
                         }
                         if (hero2 != null) {
-                            hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + 300));
-                            hero2.setCurrentMp(Math.min(hero2.getCharacter().getMp(), hero2.getCurrentMp() + 200));
+                            hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + healAmount));
+                            hero2.setCurrentMp(Math.min(hero2.getCharacter().getMp(), hero2.getCurrentMp() + mpAmount));
                         }
-                        System.out.println("Tinh thể ma thuật tăng cường sức mạnh! +300 HP và +200 MP!");
-                        break;
-                    case 1:
-                        if (hero1 != null) hero1.setCurrentMp(Math.max(0, hero1.getCurrentMp() - 100));
-                        if (hero2 != null) hero2.setCurrentMp(Math.max(0, hero2.getCurrentMp() - 100));
-                        System.out.println("Hang động bị nguyền rủa! Mất 100 MP!");
-                        break;
-                    case 2:
-                        if (hero1 != null) hero1.setCurrentMp(hero1.getCharacter().getMp());
-                        if (hero2 != null) hero2.setCurrentMp(hero2.getCharacter().getMp());
-                        System.out.println("Tri thức cổ xưa phục hồi toàn bộ MP!");
-                        break;
-                    case 3:
-                        if (hero1 != null) hero1.setCurrentHp(Math.max(0, hero1.getCurrentHp() - 200));
-                        if (hero2 != null) hero2.setCurrentHp(Math.max(0, hero2.getCurrentHp() - 200));
-                        System.out.println("Quái vật hang động tấn công! Mất 200 HP!");
-                        break;
-                }
-            }
-        });
-        path.addNode(event2);
-
-        // One battle
-        MapNode battle1 = new MapNode("mountain_battle1", "Mountain Troll", "Troll núi", 
-                                     MapNode.NodeType.BATTLE, 250, 140);
-        //battle1.addEnemy(createEnemySlotWithSkills(createMountainEnemy("Mountain Troll", 600, 350)));
-        path.addNode(battle1);
-
-        // Final event
-        MapNode finalEvent = new MapNode("mountain_final", "Summit Trial", "Thử thách đỉnh núi", 
-                                        MapNode.NodeType.EVENT, 300, 120);
-        finalEvent.setEvent(new event.MapEvent("Bạn đã đến đỉnh núi thiêng. Các vị thần núi ban phước lành cho hành trình của bạn.") {
-            @Override
-            public void trigger() {
-                System.out.println(getDescription());
-            }
-            
-            @Override
-            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
-                float healAmount = 500;
-                float mpAmount = 300;
+                        
+                        System.out.println("Phuoc lanh cua nui thieng! +500 HP va +300 MP cho ca doi!");
+                    }
+                });
+                return mountainFinal;
                 
-                if (hero1 != null) {
-                    hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + healAmount));
-                    hero1.setCurrentMp(Math.min(hero1.getCharacter().getMp(), hero1.getCurrentMp() + mpAmount));
-                }
-                if (hero2 != null) {
-                    hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + healAmount));
-                    hero2.setCurrentMp(Math.min(hero2.getCharacter().getMp(), hero2.getCurrentMp() + mpAmount));
-                }
+            case VILLAGE:
+                // Bandit Leader - CO DINH
+                MapNode villageFinal = new MapNode(pathName + "_final", "Bandit Leader", "Thu linh cuop", 
+                                                  MapNode.NodeType.BATTLE, 300, 320);
+                Characters.character banditLeader = new Characters.character(
+                    (int)(Math.random() * 1000), "Bandit Leader", 45, 25, 15, 8, 20, 700, 0, new ArrayList<>()
+                );
+                villageFinal.addEnemy(createEnemySlotWithSkills(banditLeader,1,4,0,0));
+                return villageFinal;
                 
-                System.out.println("Phước lành của núi thiêng! +500 HP và +300 MP cho cả đội!");
-            }
-        });
-        path.addNode(finalEvent);
+            default:
+                // Default final battle
+                return RandomMapGenerator.createRandomBattleNode(pathName, 999, pathType, 5);
+        }
+    }
+    
+    // Helper methods cho path initialization
+    private String getPathStartName(MapPath.PathType pathType) {
+        switch (pathType) {
+            case FOREST: return "Forest Entrance";
+            case MOUNTAIN: return "Mountain Base";
+            case VILLAGE: return "Village Outskirts";
+            default: return "Path Entrance";
+        }
+    }
+    
+    private String getPathStartDescription(MapPath.PathType pathType) {
+        switch (pathType) {
+            case FOREST: return "Loi vao rung sau";
+            case MOUNTAIN: return "Chan nui";
+            case VILLAGE: return "Ngoai o lang";
+            default: return "Diem khoi dau";
+        }
+    }
+    
+    private int getPathStartY(MapPath.PathType pathType) {
+        switch (pathType) {
+            case FOREST: return 300;
+            case MOUNTAIN: return 200;
+            case VILLAGE: return 400;
+            default: return 250;
+        }
     }
 
-    private void initializeVillagePath(MapPath path) {
-        // Start node
-        MapNode start = new MapNode("village_start", "Village Outskirts", "Ngoại ô làng", 
-                                   MapNode.NodeType.START, 100, 400);
-        path.addNode(start);
+    // Các method cũ đã được thay thế bởi initializeRandomPath()
+    // Giữ lại các helper methods để tạo enemy
 
-        // Shop node
-        MapNode shop = new MapNode("village_shop", "Village Shop", "Cửa hàng làng", 
-                                  MapNode.NodeType.SHOP, 150, 380);
-        path.addNode(shop);
-
-        // Battle node
-        MapNode battle1 = new MapNode("village_battle1", "Bandits", "Bọn cướp", 
-                                     MapNode.NodeType.BATTLE, 200, 360);
-        //battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
-        //battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
-        //battle1.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit", 350, 200)));
-        path.addNode(battle1);
-
-        // Rest node
-        MapNode rest = new MapNode("village_rest", "Village Inn", "Quán trọ", 
-                                  MapNode.NodeType.REST, 250, 340);
-        path.addNode(rest);
-
-        // Final battle
-        MapNode finalBattle = new MapNode("village_final", "Bandit Leader", "Thủ lĩnh cướp", 
-                                         MapNode.NodeType.BATTLE, 300, 320);
-        //finalBattle.addEnemy(createEnemySlotWithSkills(createVillageEnemy("Bandit Leader", 700, 400)));
-        path.addNode(finalBattle);
-    }
-
-    // Helper methods to create enemies
-    private Characters.character createForestEnemy(String name, int hp, int atk) {
-        return new Characters.character(
-            (int)(Math.random() * 1000), name, atk, 30, 20, 10, 15, hp, 0, new ArrayList<>()
-        );
-    }
-
-    private Characters.character createMountainEnemy(String name, int hp, int atk) {
-        return new Characters.character(
-            (int)(Math.random() * 1000), name, atk, 40, 30, 15, 12, hp, 0, new ArrayList<>()
-        );
-    }
-
-    private Characters.character createVillageEnemy(String name, int hp, int atk) {
-        return new Characters.character(
-            (int)(Math.random() * 1000), name, atk, 25, 15, 8, 18, hp, 0, new ArrayList<>()
-        );
-    }
+    // Helper methods to create enemies - giữ lại cho tương lai nếu cần
 
     private Characters.character createBossCharacter() {
         return new Characters.character(
@@ -305,21 +201,151 @@ public class GameMap {
         );
     }
     
+    /**
+     * Add a custom node to a specific path
+     * @param pathId The ID of the path to add the node to ("forest", "mountain", "village")
+     * @param nodeId Unique identifier for the node
+     * @param nodeName Display name of the node
+     * @param nodeDescription Description of the node
+     * @param nodeType Type of the node (BATTLE, EVENT, SHOP, REST, START, BOSS)
+     * @param x X coordinate for the node
+     * @param y Y coordinate for the node
+     * @param enemyCharacter Character to use as enemy (null if not a battle node)
+     * @param skillIds Array of skill IDs for the enemy (can be null if not a battle node)
+     * @return The created MapNode, or null if path not found
+     */
+    public MapNode addCustomNode(String pathId, String nodeId, String nodeName, String nodeDescription, 
+                                MapNode.NodeType nodeType, int x, int y, 
+                                Characters.character enemyCharacter, int[] skillIds) {
+        // Find the path
+        MapPath targetPath = null;
+        for (MapPath path : paths) {
+            if (path.getId().equalsIgnoreCase(pathId)) {
+                targetPath = path;
+                break;
+            }
+        }
+        
+        if (targetPath == null) {
+            System.out.println("Path with ID '" + pathId + "' not found!");
+            return null;
+        }
+        
+        // Create the custom node
+        MapNode customNode = new MapNode(nodeId, nodeName, nodeDescription, nodeType, x, y);
+        
+        // Add enemy if this is a battle node and enemy character is provided
+        if (nodeType == MapNode.NodeType.BATTLE && enemyCharacter != null && skillIds != null) {
+            // Convert int array to individual parameters for createEnemySlotWithSkills
+            int skill1 = skillIds.length > 0 ? skillIds[0] : 0;
+            int skill2 = skillIds.length > 1 ? skillIds[1] : 0;
+            int skill3 = skillIds.length > 2 ? skillIds[2] : 0;
+            int skill4 = skillIds.length > 3 ? skillIds[3] : 0;
+            
+            customNode.addEnemy(createEnemySlotWithSkills(enemyCharacter, skill1, skill2, skill3, skill4));
+        }
+        
+        // Add the node to the path
+        targetPath.addNode(customNode);
+        currentNodeNumber++;
+
+
+        
+        System.out.println("Added custom node '" + nodeName + "' to path '" + pathId + "'");
+        return customNode;
+    }
+    
+    /**
+     * Convenience method to add the Flamita Boss Fight node
+     * @param pathId The path to add the Flamita boss to
+     * @return The created MapNode
+     */
+    public MapNode addFlamitaBossFight(String pathId) {
+        // Create corrupted Flamita character
+        Characters.character corruptedFlamita = new Characters.character(
+                (int)(Math.random() * 1000), "Flamita ?", 100, 30, 20, 10, 5, 1000, 0, new ArrayList<>()
+        );
+        corruptedFlamita.setUniqueValue("Burning rage", "0");
+        corruptedFlamita.setUniqueValue("Guts", "1");
+        
+        // Skill IDs: 6, 7, 8, 9
+        int[] skillIds = {6, 7, 8, 9};
+        System.out.println(currentNodeNumber);
+        // Add the custom node
+        return addCustomNode(pathId, "flamita_boss", "?", "Internal Burning", 
+                           MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, corruptedFlamita, skillIds);
+    }
+    
+    /**
+     * Convenience method to add the Mabel Boss Fight node
+     * @param pathId The path to add the Mabel boss to
+     * @return The created MapNode
+     */
+    public MapNode addMabelBossFight(String pathId) {
+        // Create Mabel character
+        Characters.character mabel = new Characters.character(
+                (int)(Math.random() * 1000), "Mabel", 100, 30, 20, 10, 15, 5000, 40, new ArrayList<>()
+        );
+        
+        // Skill IDs: 15, 16, 17, 0
+        int[] skillIds = {15, 16, 17, 0};
+        
+        // Add the custom node
+        MapNode mabelNode = addCustomNode(pathId, "mabel_boss", "?", "?",
+                                        MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 370, mabel, skillIds);
+        
+        // Set custom MP for Mabel (as specified in your code)
+        if (mabelNode != null && mabelNode.getEnemies() != null && !mabelNode.getEnemies().isEmpty()) {
+            Observer.characterSlot mabelSlot = mabelNode.getEnemies().get(0);
+            mabelSlot.setCurrentMp(20);
+        }
+        
+        return mabelNode;
+    }
+    
+    /**
+     * Add a custom event node
+     * @param pathId The path to add the event to
+     * @param nodeId Unique identifier for the node
+     * @param nodeName Display name of the node
+     * @param nodeDescription Description of the node
+     * @param x X coordinate for the node
+     * @param y Y coordinate for the node
+     * @param event The MapEvent to associate with this node
+     * @return The created MapNode
+     */
+    public MapNode addCustomEventNode(String pathId, String nodeId, String nodeName, String nodeDescription,
+                                     int x, int y, event.MapEvent event) {
+        MapNode eventNode = addCustomNode(pathId, nodeId, nodeName, nodeDescription, 
+                                        MapNode.NodeType.EVENT, x, y, null, null);
+        if (eventNode != null && event != null) {
+            eventNode.setEvent(event);
+        }
+        return eventNode;
+    }
+    
     // Helper method to create character slots with skills for map enemies
     private Observer.characterSlot createEnemySlotWithSkills(Characters.character character,int skill1, int skill2, int skill3, int skill4) {
         // Initialize skills registry if not already done
         Ability.SkillRegistry.init();
         Characters.character baseCharacter = new Characters.character(character);
-        // Create skills list with skills 1, 2, 3
+        // Create skills list with skills 1, 2, 3, 4
         ArrayList<Ability.skill> enemySkills = new ArrayList<>();
         if(skill1 != 0){
-            enemySkills.add(Ability.SkillRegistry.getById(skill1));
-        }if(skill2 != 0){
-            enemySkills.add(Ability.SkillRegistry.getById(skill2));
-        }if(skill3 != 0){
-            enemySkills.add(Ability.SkillRegistry.getById(skill3));
-        }if(skill4 != 0){
-            enemySkills.add(Ability.SkillRegistry.getById(skill4));
+            Ability.skill skill = Ability.SkillRegistry.getById(skill1);
+            if(skill != null) enemySkills.add(skill);
+        }
+        if(skill2 != 0){
+            Ability.skill skill = Ability.SkillRegistry.getById(skill2);
+            if(skill != null) enemySkills.add(skill);
+        }
+        if(skill3 != 0){
+            Ability.skill skill = Ability.SkillRegistry.getById(skill3);
+            if(skill != null) enemySkills.add(skill);
+        }
+        if(skill4 != 0){
+            Ability.skill skill = Ability.SkillRegistry.getById(skill4);
+            if(skill != null) enemySkills.add(skill);
         }
 
         // Create character slot
