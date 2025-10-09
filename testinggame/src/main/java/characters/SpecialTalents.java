@@ -18,6 +18,7 @@ public class SpecialTalents {
     public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
     public static final String GUTS = "Guts";
+    //public static final String OUFUULINK = "Oufuu link";
     // Battle system reference
     //private BattleSystem battleSystem;
     /**
@@ -61,7 +62,7 @@ public class SpecialTalents {
                 System.out.println(character.getName() + " used " + mpToUse + " MP to absorb damage!");
             }
         }
-        if (character.getUniqueValue(GUTS) != null && character.getUniqueValueAsFloat(GUTS) > 0 && slot.getCurrentHp() < damageAmount) {
+        if (character.getUniqueValue(GUTS) != null && character.getUniqueValueAsFloat(GUTS) > 0 && slot.getCurrentHp() <= damageAmount) {
             actualDamage = slot.currentHp-1;
             character.addToUniqueValue(GUTS,-1);
             System.out.println(character.getName() + " don't let the battle end " + (int)character.getUniqueValueAsFloat(GUTS) + " time remaining!");
@@ -230,7 +231,13 @@ public class SpecialTalents {
             if (effect.getEffects().equals("DOT")) {
                 float dotDamage = effect.getTotalValue();
                 dotDamage = calculateActualDamage(slot, dotDamage);
-                slot.setCurrentHp(Math.max(0, slot.getCurrentHp() - dotDamage));
+
+
+                if(slot.getActiveEffects().get(0).getName().equals(GUTS)){
+                    slot.setCurrentHp(Math.max(1, slot.getCurrentHp() - dotDamage));
+                }else {
+                    slot.setCurrentHp(Math.max(0, slot.getCurrentHp() - dotDamage));
+                }
                 System.out.println(slot.getCharacter().getName() + " takes " + dotDamage + " damage from " + effect.getName() + "!");
             }
             
@@ -301,17 +308,22 @@ public class SpecialTalents {
         character.setDef(baseCharacter.getDef());
         character.setSpd(baseCharacter.getSpd());
         character.updateAV();
+        float totalAtk = 1;
+        float totalDef = 1;
+        float totalSpd = 1;
         // Apply all active effects
         for (BuffDebuff activeEffect : slot.getActiveEffects()) {
             if (activeEffect.getEffects().equals("ATK")) {
-                character.setAtk(character.getAtk() * activeEffect.getTotalValue());
+                totalAtk+=activeEffect.getTotalValue();
             } else if (activeEffect.getEffects().equals("DEF")) {
-                character.setDef(character.getDef() * activeEffect.getTotalValue());
+                totalDef+=activeEffect.getTotalValue();
             } else if (activeEffect.getEffects().equals("SPD")) {
-                character.setSpd(character.getSpd() * activeEffect.getTotalValue());
-                character.updateAV();
+                totalSpd+=activeEffect.getTotalValue();
             }
         }
+        character.setAtk(character.getAtk()*totalAtk);
+        character.setAtk(character.getAtk()*totalDef);
+        character.setAtk(character.getAtk()*totalSpd);
     }
     
     /**

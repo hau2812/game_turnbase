@@ -517,6 +517,57 @@ public interface Ability {
                     0,
                     0
             ));
+
+            register(new Ability.skill(
+                    18,
+                    "Family united",
+                    "Increase stat for Oufuu daddy",
+                    "Heal",
+                    "Ally",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            Ability.skill familyUnited = getByName("Family united");
+            if (familyUnited != null) {
+                familyUnited.addEffect("Oufuu atk up", 999, 1);
+            }
+            register(new Ability.skill(
+                    19,
+                    "Head bump",
+                    "It's trying...",
+                    "Physical",
+                    "Enemy",
+                    1.0f,
+                    1.0f,
+                    10,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    20,
+                    "HEAD BUMP!!!",
+                    "Watch and learn",
+                    "Physical",
+                    "Enemy",
+                    1.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    21,
+                    "Daddy fury",
+                    "Why the small one matter",
+                    "Physical",
+                    "Aoe enemy",
+                    2.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
         }
     }
 

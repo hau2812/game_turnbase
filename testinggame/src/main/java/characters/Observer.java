@@ -70,6 +70,14 @@ public interface Observer {
             }
             return null; // Return null if not found
         }
+
+        public float getFloatBuffDebuffByName(String name){
+            BuffDebuff buff = getBuffDebuffByName(name);
+            if(buff!=null){
+                return buff.getStack();
+            }
+            return 0;
+        }
     }
 
     // ===================== REGISTRY =====================

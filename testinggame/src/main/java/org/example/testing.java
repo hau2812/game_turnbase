@@ -31,7 +31,7 @@ public class testing extends GameApplication {
     
     // Selected heroes for battle (choose which ones to use)
     private static final String[] SELECTED_HEROES = {
-        //"Flamita",
+        "Flamita",
         "Hero2",
         "Pieberry"
 
@@ -113,7 +113,9 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
+            //System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
+            System.out.println(battleSystem.getEnemySlot2().getCharacter().toString());
+
 
         });
         

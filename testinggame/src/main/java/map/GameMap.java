@@ -28,8 +28,10 @@ public class GameMap {
         paths.add(villagePath);
 
         //Custom boss
+        //addOufuuBossFight("forest");
         //addFlamitaBossFight("forest");
-        addMabelBossFight("forest");
+        //addMabelBossFight("forest");
+
         // Initialize paths với random system
         initializeRandomPath(forestPath);
         initializeRandomPath(mountainPath);
@@ -210,13 +212,13 @@ public class GameMap {
      * @param nodeType Type of the node (BATTLE, EVENT, SHOP, REST, START, BOSS)
      * @param x X coordinate for the node
      * @param y Y coordinate for the node
-     * @param enemyCharacter Character to use as enemy (null if not a battle node)
-     * @param skillIds Array of skill IDs for the enemy (can be null if not a battle node)
+     * @param enemyCharacters Array of up to 3 characters to use as enemies (null if not a battle node)
+     * @param skillIds Array of skill ID arrays for each enemy (can be null if not a battle node)
      * @return The created MapNode, or null if path not found
      */
     public MapNode addCustomNode(String pathId, String nodeId, String nodeName, String nodeDescription, 
                                 MapNode.NodeType nodeType, int x, int y, 
-                                Characters.character enemyCharacter, int[] skillIds) {
+                                Characters.character[] enemyCharacters, int[][] skillIds) {
         // Find the path
         MapPath targetPath = null;
         for (MapPath path : paths) {
@@ -234,15 +236,21 @@ public class GameMap {
         // Create the custom node
         MapNode customNode = new MapNode(nodeId, nodeName, nodeDescription, nodeType, x, y);
         
-        // Add enemy if this is a battle node and enemy character is provided
-        if (nodeType == MapNode.NodeType.BATTLE && enemyCharacter != null && skillIds != null) {
-            // Convert int array to individual parameters for createEnemySlotWithSkills
-            int skill1 = skillIds.length > 0 ? skillIds[0] : 0;
-            int skill2 = skillIds.length > 1 ? skillIds[1] : 0;
-            int skill3 = skillIds.length > 2 ? skillIds[2] : 0;
-            int skill4 = skillIds.length > 3 ? skillIds[3] : 0;
-            
-            customNode.addEnemy(createEnemySlotWithSkills(enemyCharacter, skill1, skill2, skill3, skill4));
+        // Add enemies if this is a battle node and enemy characters are provided
+        if (nodeType == MapNode.NodeType.BATTLE && enemyCharacters != null && skillIds != null) {
+            // Add up to 3 enemies
+            int maxEnemies = Math.min(3, Math.min(enemyCharacters.length, skillIds.length));
+            for (int i = 0; i < maxEnemies; i++) {
+                if (enemyCharacters[i] != null && skillIds[i] != null) {
+                    // Convert int array to individual parameters for createEnemySlotWithSkills
+                    int skill1 = skillIds[i].length > 0 ? skillIds[i][0] : 0;
+                    int skill2 = skillIds[i].length > 1 ? skillIds[i][1] : 0;
+                    int skill3 = skillIds[i].length > 2 ? skillIds[i][2] : 0;
+                    int skill4 = skillIds[i].length > 3 ? skillIds[i][3] : 0;
+                    
+                    customNode.addEnemy(createEnemySlotWithSkills(enemyCharacters[i], skill1, skill2, skill3, skill4));
+                }
+            }
         }
         
         // Add the node to the path
@@ -269,11 +277,12 @@ public class GameMap {
         corruptedFlamita.setUniqueValue("Guts", "1");
         
         // Skill IDs: 6, 7, 8, 9
-        int[] skillIds = {6, 7, 8, 9};
+        Characters.character[] enemies = {corruptedFlamita};
+        int[][] skillIds = {{6, 7, 8, 9}};
         System.out.println(currentNodeNumber);
         // Add the custom node
         return addCustomNode(pathId, "flamita_boss", "?", "Internal Burning", 
-                           MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, corruptedFlamita, skillIds);
+                           MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
     }
     
     /**
@@ -288,11 +297,12 @@ public class GameMap {
         );
         
         // Skill IDs: 15, 16, 17, 0
-        int[] skillIds = {15, 16, 17, 0};
+        Characters.character[] enemies = {mabel};
+        int[][] skillIds = {{15, 16, 17, 0}};
         
         // Add the custom node
         MapNode mabelNode = addCustomNode(pathId, "mabel_boss", "?", "?",
-                                        MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 370, mabel, skillIds);
+                                        MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 370, enemies, skillIds);
         
         // Set custom MP for Mabel (as specified in your code)
         if (mabelNode != null && mabelNode.getEnemies() != null && !mabelNode.getEnemies().isEmpty()) {
@@ -301,6 +311,32 @@ public class GameMap {
         }
         
         return mabelNode;
+    }
+
+    public MapNode addOufuuBossFight(String pathId) {
+        // Create Oufuu daddy character
+        Characters.character oufuuDad = new Characters.character(
+                (int)(Math.random() * 1000), "Oufuu daddy", 50, 50, 30, 15, 20, 3000, 100, new ArrayList<>()
+        );
+        
+        // Create 2 Oufuu characters
+        Characters.character oufuu1 = new Characters.character(
+                (int)(Math.random() * 1000), "Oufuu", 30, 25, 15, 8, 12, 200, 50, new ArrayList<>()
+        );
+        Characters.character oufuu2 = new Characters.character(
+                (int)(Math.random() * 1000), "Oufuu", 30, 25, 15, 8, 12, 200, 50, new ArrayList<>()
+        );
+        oufuu1.setUniqueValue("Guts","999");
+        oufuu2.setUniqueValue("Guts","999");
+        // Create arrays for enemies and their skill IDs (all set to 0 as requested)
+        Characters.character[] enemies = {oufuu1, oufuuDad, oufuu2};
+        int[][] skillIds = {{18, 19, 0, 0}, {20, 21, 0, 0}, {18, 19, 0, 0}};
+
+        // Add the custom node
+        MapNode oufuuNode = addCustomNode(pathId, "oufuu_boss", "Oufuu Family", "A dangerous family of Oufuu creatures",
+                MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 370, enemies, skillIds);
+
+        return oufuuNode;
     }
     
     /**

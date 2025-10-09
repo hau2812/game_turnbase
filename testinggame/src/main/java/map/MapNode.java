@@ -25,7 +25,6 @@ public class MapNode {
     private boolean completed;
     private int positionX;
     private int positionY;
-
     public MapNode(String id, String name, String description, NodeType type, int x, int y) {
         this.id = id;
         this.name = name;

@@ -622,12 +622,12 @@ public class  BattleUI {
         
         switch (effects) {
             case "ATK":
-                if (totalValue > 1.0f) {
+                if (totalValue > 0f) {
                     String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "+" + (int)((totalValue - 1.0f) * 100) + "% ATK" + stackInfo;
+                    return "+" + (int)((totalValue) * 100) + "% ATK" + stackInfo;
                 } else {
                     String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "-" + (int)((1.0f - totalValue) * 100) + "% ATK" + stackInfo;
+                    return (int)((totalValue) * 100) + "% ATK" + stackInfo;
                 }
             case "DEF":
                 if (totalValue > 1.0f) {

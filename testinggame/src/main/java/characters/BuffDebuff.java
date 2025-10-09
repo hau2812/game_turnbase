@@ -75,19 +75,20 @@ public class BuffDebuff {
     // Initialize predefined BuffDebuff effects
     public static void init() {
         // ATK Buffs
-        register(new BuffDebuff("Strength Boost", "Buff", 3, "ATK", 1.2f, 1, 3, "Skill"));
-        register(new BuffDebuff("Berserker Rage", "Buff", 2, "ATK", 1.5f, 1, 1, "Skill"));
-        
+        register(new BuffDebuff("Strength Boost", "Buff", 3, "ATK", 0.2f, 1, 3, "Skill"));
+        register(new BuffDebuff("Berserker Rage", "Buff", 2, "ATK", 0.5f, 1, 1, "Skill"));
+        register(new BuffDebuff("Oufuu atk up", "Buff", 999, "ATK", 1.0f, 1, 2, "Skill"));
+
         // DEF Buffs
-        register(new BuffDebuff("Iron Skin", "Buff", 4, "DEF", 1.3f, 1, 2, "Skill"));
-        register(new BuffDebuff("Shield", "Buff", 2, "DEF", 1.8f, 1, 1, "Skill"));
+        register(new BuffDebuff("Iron Skin", "Buff", 4, "DEF", 0.3f, 1, 2, "Skill"));
+        register(new BuffDebuff("Shield", "Buff", 2, "DEF", 0.8f, 1, 1, "Skill"));
         
         // SPD Buffs
-        register(new BuffDebuff("Haste", "Buff", 3, "SPD", 1.4f, 1, 2, "Skill"));
-        register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 1.6f, 1, 1, "Skill"));
+        register(new BuffDebuff("Haste", "Buff", 3, "SPD", 0.4f, 1, 2, "Skill"));
+        register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 0.6f, 1, 1, "Skill"));
         register(new BuffDebuff("Gathering", "Buff", 10, "SPD", 20.0f, 1, 1, "Skill"));
         // ATK Debuffs
-        register(new BuffDebuff("Weakness", "Debuff", 3, "ATK", 0.9f, 1, 5, "Skill"));
+        register(new BuffDebuff("Weakness", "Debuff", 3, "ATK", -0.1f, 1, 5, "Skill"));
         register(new BuffDebuff("Cripple", "Debuff", 2, "ATK", 0.6f, 1, 1, "Skill"));
         
         // DEF Debuffs
@@ -134,11 +135,7 @@ public class BuffDebuff {
     
     // Method to get the total effect value (value * stack)
     public float getTotalValue() {
-        if(value <= 1) {
-            return (float) Math.pow(value, stack);
-        }else{
-            return (float) value * stack;
-        }
+        return (float) value * stack;
     }
     
     @Override

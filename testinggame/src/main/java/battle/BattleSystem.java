@@ -451,7 +451,17 @@ public class BattleSystem {
                     if (hasHeroWithVoidBurn(10)) {
                         availableSkills.add(skill);
                     }
-                } else {
+                }else if(skill.getName().equals("Family united")){
+                    if ((int)actingEnemy.getCurrentHp() == 1) {
+                        availableSkills.add(skill);
+                    }
+
+                }else if(skill.getName().equals("Daddy fury")){
+                    if((int)actingEnemy.getFloatBuffDebuffByName("Oufuu atk up")>=2){
+                        availableSkills.add(skill);
+
+                    }
+                }else {
                     // Normal MP cost check for other skills
                     float mpCost = skill.getMpCost();
                     if (mpCost <= 0 || actingEnemy.getCurrentMp() >= mpCost) {
@@ -497,7 +507,20 @@ public class BattleSystem {
         // Pick random living hero as target if offensive
         if (chosenSkill.getAtkScale() < 0||chosenSkill.getTarget().equals("Self")) {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
-        } else {
+        }else if(chosenSkill.getName().equals("Family united")){
+            useSkill(actingEnemy, enemySlot2, chosenSkill);
+        }else if(chosenSkill.getTarget().equals("Aoe enemy")){
+            for(Observer.characterSlot hero : getAllHeroes()){
+                if(hero!=null){
+                    System.out.println("OK!!");
+                    useSkill(actingEnemy, hero, chosenSkill);
+                    actingEnemy.getActiveEffects().remove(actingEnemy.getBuffDebuffByName("Oufuu atk up"));
+                    enemySlot.setCurrentHp(enemySlot.getCharacter().getHp());
+                    enemySlot3.setCurrentHp(enemySlot.getCharacter().getHp());
+                    battleUI.refreshAllCharacterUI();
+                }
+            }
+        }else {
             Observer.characterSlot targetHero = getRandomAliveHero();
             if (targetHero == null) {
                 // No heroes alive, shouldn't happen but handle gracefully
@@ -519,7 +542,13 @@ public class BattleSystem {
         if (!moving || battleUI == null) {
             return;
         }
-
+        if(enemySlot2!=null) {
+            if (enemySlot2.getCharacter().getName().equals("Oufuu daddy") && (int) enemySlot2.getCurrentHp() == 0) {
+                enemySlot.setCurrentHp(0);
+                enemySlot3.setCurrentHp(0);
+                checkVictoryCondition();
+            }
+        }
         // Update all character lines
         Observer.characterSlot[] allCharacters = getAllCharacters();
         for (Observer.characterSlot character : allCharacters) {
@@ -842,6 +871,9 @@ public class BattleSystem {
                     }
                 }
             }
+        } else if (skill.getName().equals("Head bump")){
+            attacker.setCurrentHp(Math.max(1,attacker.getCurrentHp()-100));
+            battleUI.updateHealthUI(attacker);
         }
         
         // Add more special skills here in the future
