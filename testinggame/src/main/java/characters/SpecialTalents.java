@@ -1,6 +1,7 @@
 package characters;
 
 import battle.BattleSystem;
+import battle.BattleUI;
 import characters.Observer.characterSlot;
 import characters.Characters.character;
 
@@ -18,6 +19,18 @@ public class SpecialTalents {
     public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
     public static final String GUTS = "Guts";
+    
+    // Static reference to BattleUI for use in static methods
+    private static BattleUI battleUI;
+    
+    /**
+     * Set the BattleUI reference for use in static methods
+     * @param ui The BattleUI instance to use
+     */
+    public static void setBattleUI(BattleUI ui) {
+        battleUI = ui;
+    }
+    
     //public static final String OUFUULINK = "Oufuu link";
     // Battle system reference
     //private BattleSystem battleSystem;
@@ -264,6 +277,11 @@ public class SpecialTalents {
         if (slot.getActiveEffects() == null || slot.getActiveEffects().isEmpty()) {
             return;
         }
+        if(slot.containsBuffDebuff("Conserve")){
+            applyBuffDebuff(slot,BuffDebuff.getByName("Judgment").copy());
+            battleUI.updateBarrierBar(slot);
+            return;
+        }
         
         // Process each active effect
         for (int i = slot.getActiveEffects().size() - 1; i >= 0; i--) {
@@ -275,6 +293,10 @@ public class SpecialTalents {
             // Remove expired effects
             if (effect.isExpired()) {
                 slot.getActiveEffects().remove(i);
+                // Update UI if battleUI is available
+                if (battleUI != null) {
+                    battleUI.updateBarrierBar(slot);
+                }
                 System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect expired!");
             }
         }
@@ -301,13 +323,8 @@ public class SpecialTalents {
     }
     public static void applyStatModifications(characterSlot slot, BuffDebuff effect) {
         character character = slot.getCharacter();
-        character baseCharacter = slot.getBaseCharacter();
-        
         // Reset character stats to base character stats
-        character.setAtk(baseCharacter.getAtk());
-        character.setDef(baseCharacter.getDef());
-        character.setSpd(baseCharacter.getSpd());
-        character.updateAV();
+        resetStatModification(slot);
         float totalAtk = 1;
         float totalDef = 1;
         float totalSpd = 1;
@@ -322,8 +339,9 @@ public class SpecialTalents {
             }
         }
         character.setAtk(character.getAtk()*totalAtk);
-        character.setAtk(character.getAtk()*totalDef);
-        character.setAtk(character.getAtk()*totalSpd);
+        character.setDef(character.getDef()*totalDef);
+        character.setSpd(character.getSpd()*totalSpd);
+        character.updateAV();
     }
     
     /**

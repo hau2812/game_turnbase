@@ -458,7 +458,7 @@ public interface Ability {
             // Add Barrier effect to the Barrier skill
             Ability.skill barrier = getByName("Barrier");
             if (barrier != null) {
-                barrier.addEffect("Barrier", 3, 100);  // 50 barrier points for 3 turns
+                barrier.addEffect("Barrier", 3, 100);
             }
 
             register(new Ability.skill(
@@ -568,6 +568,71 @@ public interface Ability {
                     0,
                     0
             ));
+
+            register(new Ability.skill(
+                    22,
+                    "Light attack",
+                    "A quick slash that you didn't saw that coming",
+                    "Physical",
+                    "Enemy",
+                    0.5f,
+                    0.5f,
+                    0,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    23,
+                    "Energy charge",
+                    "When will you try to do something",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    0.5f,
+                    0,
+                    0
+            ));
+            Ability.skill energyCharge = getByName("Energy charge");
+            if (energyCharge != null) {
+                energyCharge.addEffect("Charging", 3, 1);
+            }
+
+            register(new Ability.skill(
+                    24,
+                    "Let me absorb you",
+                    "That why no one want to work with her",
+                    "Heal",
+                    "Ally",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    25,
+                    "Absolute teleportation",
+                    "An extended version... for only the one",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    0.0f,
+                    15,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    26,
+                    "Judgment cut",
+                    "You shall die",
+                    "Physical",
+                    "Aoe enemy",
+                    0.0f,
+                    0.0f,
+                    0,
+                    0
+            ));
+
         }
     }
 

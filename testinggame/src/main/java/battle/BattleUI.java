@@ -16,6 +16,7 @@ import javafx.scene.text.TextAlignment;
 import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class  BattleUI {
+
     
     /**
      * Helper class to hold Burning Rage bar data
@@ -98,6 +99,10 @@ public class  BattleUI {
     
     // Barrier bars (light blue bars that show barrier points)
     private java.util.List<BarrierBarData> barrierBars = new java.util.ArrayList<>();
+    
+    // TimeStop bar (white bar that shows time stop duration)
+    private Rectangle timeStopBar;
+    private double timeStopBarMaxWidth;
     
     // Skill boxes
     private Rectangle skill1Box;
@@ -630,20 +635,20 @@ public class  BattleUI {
                     return (int)((totalValue) * 100) + "% ATK" + stackInfo;
                 }
             case "DEF":
-                if (totalValue > 1.0f) {
+                if (totalValue > 0f) {
                     String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "+" + (int)((totalValue - 1.0f) * 100) + "% DEF" + stackInfo;
+                    return "+" + (int)((totalValue) * 100) + "% DEF" + stackInfo;
                 } else {
                     String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "-" + (int)((1.0f - totalValue) * 100) + "% DEF" + stackInfo;
+                    return (int)((totalValue) * 100) + "% DEF" + stackInfo;
                 }
             case "SPD":
-                if (totalValue > 1.0f) {
+                if (totalValue > 0f) {
                     String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "+" + (int)((totalValue - 1.0f) * 100) + "% SPD" + stackInfo;
+                    return "+" + (int)((totalValue) * 100) + "% SPD" + stackInfo;
                 } else {
                     String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "-" + (int)((1.0f - totalValue) * 100) + "% SPD" + stackInfo;
+                    return (int)((totalValue) * 100) + "% SPD" + stackInfo;
                 }
             case "DOT":
                 String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
@@ -920,7 +925,7 @@ public class  BattleUI {
                         // Fallback to attacker if no ally is selected
                         resolvedTarget = attacker;
                     }
-                } else if (skill.getTarget().equals("Single Enemy")) {
+                } else if (skill.getTarget().equals("Single Enemy")||skill.getTarget().equals("Enemy")) {
                     // For enemy-targeting skills, use the selected enemy target
                     resolvedTarget = battleSystem.getSelectedEnemyTarget();
                     if (resolvedTarget == null) {
@@ -946,6 +951,14 @@ public class  BattleUI {
                 }
                 battleSystem.setMoving(true);
                 battleSystem.useSkill(attacker, resolvedTarget, skill);
+                //Recover Mp for Ina
+                if(battleSystem.hasIna()){
+                    Observer.characterSlot Ina = battleSystem.getSlotByName("Ina");
+                    if(Ina.getBuffDebuffByName("Conserve")==null&&Ina.getCurrentHp()>0) {
+                        Ina.regenerateMp(1);
+                        updateMpUI(Ina);
+                    }
+                }
 
             }
         });
@@ -1346,5 +1359,69 @@ public class  BattleUI {
             }
         }
         return null;
+    }
+    
+    /**
+     * Creates the timeStop bar (white bar positioned on top of black bar, with character lines above it)
+     */
+    public void createTimeStopBar() {
+        // Remove existing timeStop bar if it exists
+        removeTimeStopBar();
+        
+        // Create white timeStop bar positioned on top of black bar
+        timeStopBar = new Rectangle(barWidth, barHeight, Color.WHITE);
+        timeStopBar.setTranslateX(barX);
+        timeStopBar.setTranslateY(barY); // Same Y as black bar to cover it
+        timeStopBarMaxWidth = barWidth;
+        
+        getGameScene().addUINode(timeStopBar);
+        
+        // Re-add character lines after timeStop bar to ensure they appear on top
+        reAddCharacterLines();
+    }
+    
+    /**
+     * Updates the timeStop bar width based on remaining timeStop duration
+     * @param remainingTimeStop The remaining timeStop duration
+     */
+    public void updateTimeStopBar(float remainingTimeStop) {
+        if (timeStopBar == null) return;
+        
+        // Calculate current width based on remaining timeStop relative to max width
+        float timeStopRatio = Math.max(0, remainingTimeStop / (float)barWidth);
+        double currentWidth = timeStopBarMaxWidth * timeStopRatio;
+        
+        timeStopBar.setWidth(currentWidth);
+    }
+    
+    /**
+     * Removes the timeStop bar from the UI
+     */
+    public void removeTimeStopBar() {
+        if (timeStopBar != null) {
+            getGameScene().removeUINode(timeStopBar);
+            timeStopBar = null;
+        }
+    }
+    
+    /**
+     * Re-adds character lines to ensure they appear above the timeStop bar
+     */
+    private void reAddCharacterLines() {
+        // Remove all existing lines first
+        if (blueLine != null) getGameScene().removeUINode(blueLine);
+        if (greenLine != null) getGameScene().removeUINode(greenLine);
+        if (purpleLine != null) getGameScene().removeUINode(purpleLine);
+        if (redLine != null) getGameScene().removeUINode(redLine);
+        if (yellowLine != null) getGameScene().removeUINode(yellowLine);
+        if (orangeLine != null) getGameScene().removeUINode(orangeLine);
+        
+        // Re-add all lines (they will appear on top of the timeStop bar)
+        if (blueLine != null) getGameScene().addUINode(blueLine);
+        if (greenLine != null) getGameScene().addUINode(greenLine);
+        if (purpleLine != null) getGameScene().addUINode(purpleLine);
+        if (redLine != null) getGameScene().addUINode(redLine);
+        if (yellowLine != null) getGameScene().addUINode(yellowLine);
+        if (orangeLine != null) getGameScene().addUINode(orangeLine);
     }
 }

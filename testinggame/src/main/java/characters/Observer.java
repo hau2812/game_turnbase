@@ -61,6 +61,12 @@ public interface Observer {
                 currentHp = character.getHp();
             }
         }
+        public void regenerateMp(float amount){
+            currentMp += amount;
+            if(currentMp>character.getMp()){
+                currentMp = character.getMp();
+            }
+        }
 
         public BuffDebuff getBuffDebuffByName(String name){
             for (BuffDebuff effect : activeEffects) {
@@ -77,6 +83,44 @@ public interface Observer {
                 return buff.getStack();
             }
             return 0;
+        }
+
+        /**
+         * Adds a BuffDebuff to this character slot's active effects
+         * @param buffDebuff The BuffDebuff to add
+         */
+        public void addBuffDebuff(BuffDebuff buffDebuff) {
+            if (buffDebuff != null) {
+                activeEffects.add(buffDebuff);
+            }
+        }
+
+        /**
+         * Returns the count of buffs (not debuffs) in this character slot's active effects
+         * @return The number of buffs
+         */
+        public int getBuffCount() {
+            int buffCount = 0;
+            for (BuffDebuff effect : activeEffects) {
+                if (effect != null && "Buff".equals(effect.getType())) {
+                    buffCount++;
+                }
+            }
+            return buffCount;
+        }
+
+        /**
+         * Checks if this character slot contains a BuffDebuff with the specified name
+         * @param name The name of the BuffDebuff to check for
+         * @return true if the BuffDebuff exists, false otherwise
+         */
+        public boolean containsBuffDebuff(String name) {
+            for (BuffDebuff effect : activeEffects) {
+                if (effect != null && effect.getName().equals(name)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -163,6 +207,7 @@ public interface Observer {
             // Hero 4
             characterSlot hero4Slot = createCharacterSlot("Pieberry", "Charge attack", "5-Orb Flame", "7-Fork Lightning", "Ecarr Vertel");
 
+            createCharacterSlot("Ina", "Light attack", "Energy charge", "Let me absorb you", "Absolute teleportation");
 
 
 

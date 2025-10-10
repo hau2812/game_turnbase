@@ -65,7 +65,7 @@ public class GameMap {
 
 
         // Random nodes (4-6 nodes) - RANDOM
-        int nodeCount = 1 + (int)(Math.random() * 0); // 4-6 random nodes
+        int nodeCount = 5 + (int)(Math.random() * 3); // 4-6 random nodes
         for (int i = 1; i <= nodeCount; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
             path.addNode(randomNode);

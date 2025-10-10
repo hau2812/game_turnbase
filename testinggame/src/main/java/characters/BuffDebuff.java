@@ -72,12 +72,22 @@ public class BuffDebuff {
         return registry;
     }
     
+    /**
+     * Creates a copy of this BuffDebuff with the same properties
+     * @return A new BuffDebuff instance with identical properties
+     */
+    public BuffDebuff copy() {
+        return new BuffDebuff(this.name, this.type, this.duration, this.effects, 
+                            this.value, this.stack, this.maxStack, this.source);
+    }
+    
     // Initialize predefined BuffDebuff effects
     public static void init() {
         // ATK Buffs
         register(new BuffDebuff("Strength Boost", "Buff", 3, "ATK", 0.2f, 1, 3, "Skill"));
         register(new BuffDebuff("Berserker Rage", "Buff", 2, "ATK", 0.5f, 1, 1, "Skill"));
-        register(new BuffDebuff("Oufuu atk up", "Buff", 999, "ATK", 1.0f, 1, 2, "Skill"));
+        register(new BuffDebuff("Oufuu atk up", "Buff", 999, "ATK", 0.5f, 1, 4, "Skill"));
+        register(new BuffDebuff("Charging", "Buff", 3, "ATK", 0.2f, 1, 5, "Skill"));
 
         // DEF Buffs
         register(new BuffDebuff("Iron Skin", "Buff", 4, "DEF", 0.3f, 1, 2, "Skill"));
@@ -87,6 +97,9 @@ public class BuffDebuff {
         register(new BuffDebuff("Haste", "Buff", 3, "SPD", 0.4f, 1, 2, "Skill"));
         register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 0.6f, 1, 1, "Skill"));
         register(new BuffDebuff("Gathering", "Buff", 10, "SPD", 20.0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Conserve", "Buff", 1, "SPD", 0.2f, 5, 999, "Skill"));
+        register(new BuffDebuff("Judgment", "Buff", 1, "SPD", 0.0f, 1, 999, "Skill"));
+
         // ATK Debuffs
         register(new BuffDebuff("Weakness", "Debuff", 3, "ATK", -0.1f, 1, 5, "Skill"));
         register(new BuffDebuff("Cripple", "Debuff", 2, "ATK", 0.6f, 1, 1, "Skill"));
@@ -107,6 +120,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 25f, 1, 2, "Skill"));
         register(new BuffDebuff("Mana Shield", "Buff", 3, "MP_COST", 0.5f, 1, 1, "Skill"));
         register(new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill"));
+
     }
     
     // Method to check if this effect can stack

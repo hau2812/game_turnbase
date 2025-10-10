@@ -277,6 +277,20 @@ public interface Characters {
                         add(new uniqueValue("MpRegeneration", "100"));
                     }}
             ));
+
+            // Create and register another fuking hero
+            register(new Characters.character(
+                    7,
+                    "Ina",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    15,// mp
+                    new ArrayList<>()
+            ));
         }
     }
 }

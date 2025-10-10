@@ -34,6 +34,8 @@ public class BattleSystem {
     private boolean autoEnemy = true;
     private boolean enemyActionTime = false;
     private Line turnOf = null;
+    private Observer.characterSlot timeStopSlot = null;
+        private float timeStop = 0;
     
     // Speed settings
     private double lineSpeed = 0.5;
@@ -80,7 +82,7 @@ public class BattleSystem {
     /**
      * Get all hero slots as an array
      */
-    private Observer.characterSlot[] getAllHeroes() {
+    public Observer.characterSlot[] getAllHeroes() {
         return new Observer.characterSlot[]{heroSlot, heroSlot2, heroSlot3};
     }
     
@@ -171,6 +173,111 @@ public class BattleSystem {
     }
     
     /**
+     * Handle special skills that require unique processing
+     * @param attacker The character using the skill
+     * @param target The target of the skill
+     * @param skill The skill being used
+     * @return true if skill processing should end early, false to continue with normal processing
+     */
+    private boolean handleSpecialSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
+        // Handle "Let me absorb you" skill
+        if(skill.getName().equals("Let me absorb you")){
+            if(timeStopSlot != null){
+                if(timeStopSlot.getCharacter().getName().equals("Ina")) {
+                    if (target.getCurrentHp() <= target.getCharacter().getHp() / 2 || target.getCharacter() == attacker.getCharacter()) {
+                        timeStop += (float) 0.5;
+                    } else {
+                        target.heal(-target.getCharacter().getHp() * (float)0.4);
+                        battleUI.updateHealthUI(target);
+                        timeStop = Math.min(200, timeStop + 100);
+                    }
+                    return true; // End skill processing early
+                }
+            } else {
+                target.heal(-target.getCurrentHp() / 2);
+                attacker.regenerateMp(3);
+            }
+            double push = attacker.getCharacter().getAV() * skill.getAVScale();
+            pushCharacterLine(attacker, push);
+            battleUI.updateHealthUI(target);
+            battleUI.updateBurningRageBar(target);
+            return true; // End skill processing early
+        }
+        
+        // Handle "Absolute teleportation" skill
+        if(skill.getName().equals("Absolute teleportation")){
+            //Buff
+            BuffDebuff buff = BuffDebuff.getByName("Conserve").copy();
+            buff.setStack(attacker.getBuffCount()+1);
+            attacker.addBuffDebuff(buff);
+            attacker.regenerateMp(-skill.getMpCost());
+            // Set timeStopSlot to attacker and initialize timeStop with black action bar length
+            timeStopSlot = attacker;
+            timeStop = (float)battleUI.getBarWidth();
+            // Create the timeStop bar in the UI
+            battleUI.createTimeStopBar();
+            return true; // End skill processing early
+        }
+        
+        // No special skill handled, continue with normal processing
+        return false;
+    }
+    
+    /**
+     * Execute AOE (Area of Effect) skill that targets multiple characters
+     * @param attacker The character using the skill
+     * @param skill The AOE skill being used
+     */
+    private void executeAoeSkill(Observer.characterSlot attacker, Ability.skill skill) {
+        String targetType = skill.getTarget();
+        
+        // Handle special case for "Family united" skill
+        
+        if ("Aoe enemy".equals(targetType)) {
+            // If attacker is enemy, target all heroes; if attacker is hero, target all enemies
+            if (isEnemy(attacker)) {
+                // Enemy attacking heroes
+                for (Observer.characterSlot hero : getAllHeroes()) {
+                    if (hero != null && hero.getCurrentHp() > 0) {
+                        useSkill(attacker, hero, skill);
+                    }
+                }
+                // Special handling for "Oufuu atk up" removal after AOE enemy attack
+                if (attacker.getBuffDebuffByName("Oufuu atk up") != null) {
+                    attacker.getActiveEffects().remove(attacker.getBuffDebuffByName("Oufuu atk up"));
+                    enemySlot.setCurrentHp(enemySlot.getCharacter().getHp());
+                    enemySlot3.setCurrentHp(enemySlot.getCharacter().getHp());
+                    battleUI.refreshAllCharacterUI();
+                }
+            } else {
+                // Hero attacking enemies
+                for (Observer.characterSlot enemy : getAllEnemies()) {
+                    if (enemy != null && enemy.getCurrentHp() > 0) {
+                        useSkill(attacker, enemy, skill);
+                    }
+                }
+            }
+        } else if ("Aoe ally".equals(targetType)) {
+            // If attacker is enemy, target all enemies; if attacker is hero, target all heroes
+            if (isEnemy(attacker)) {
+                // Enemy targeting allies (other enemies)
+                for (Observer.characterSlot enemy : getAllEnemies()) {
+                    if (enemy != null && enemy.getCurrentHp() > 0) {
+                        useSkill(attacker, enemy, skill);
+                    }
+                }
+            } else {
+                // Hero targeting allies (other heroes)
+                for (Observer.characterSlot hero : getAllHeroes()) {
+                    if (hero != null && hero.getCurrentHp() > 0) {
+                        useSkill(attacker, hero, skill);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
      * Check if any hero has Void burn debuff with specified minimum stacks
      */
     private boolean hasHeroWithVoidBurn(int minStacks) {
@@ -185,11 +292,29 @@ public class BattleSystem {
         }
         return false;
     }
+    public boolean hasIna(){
+        for(Observer.characterSlot hero: getAllHeroes()){
+            if (hero.getCharacter().getName().equals("Ina")) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public Observer.characterSlot getSlotByName(String name) {
+        for (Observer.characterSlot Slot : getAllCharacters()) {
+            if(Slot.getCharacter().getName().equals(name)){
+            return Slot;
+            }
+        }
+        return null;
+    }
     
     public void setBattleUI(BattleUI battleUI) {
         this.battleUI = battleUI;
         // Pass hideTalents setting to BattleUI
         battleUI.setHideTalents(hideTalents);
+        // Set BattleUI reference in SpecialTalents for static method access
+        characters.SpecialTalents.setBattleUI(battleUI);
     }
     
     /**
@@ -273,7 +398,10 @@ public class BattleSystem {
         if(heroSlot3 == null && selectedHeroes.length > 2) {
             heroSlot3 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[2]);
         }
-
+        //Where your mana Ina
+        if(hasIna()){
+            getSlotByName("Ina").setCurrentMp(5);
+        }
         // Enemy slots
         //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
         //if(enemySlot2 == null) {enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");}
@@ -308,14 +436,20 @@ public class BattleSystem {
         battleLoopActive = false;
         setMoving(false);
     }
-    
+
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
+
         SimpleLine attackerLine = attacker.getLine();
         if(attackerLine == null || turnOf == null || 
            attackerLine.getFxLine() != turnOf) {
             return;
         }
         
+        // Handle special skills - if returns true, end skill processing early
+        if (handleSpecialSkill(attacker, target, skill)) {
+            return;
+        }
+
         // Play skill sound effect based on skill type
         if (skill.getType().equals("Physical")) {
             audioManager.playSwordSlash();
@@ -368,17 +502,9 @@ public class BattleSystem {
         if (skill.getSkillEffects() != null && !skill.getSkillEffects().isEmpty()) {
             for (Ability.skillEffect effect : skill.getSkillEffects()) {
                 // Create a copy of the BuffDebuff with the skill's duration and stack
-                BuffDebuff effectCopy = new BuffDebuff(
-                    effect.getBuffDebuff().getName(),
-                    effect.getBuffDebuff().getType(),
-                    effect.getDuration(),
-                    effect.getBuffDebuff().getEffects(),
-                    effect.getBuffDebuff().getValue(),
-                    effect.getStack(),
-                    effect.getBuffDebuff().getMaxStack(),
-                    effect.getBuffDebuff().getSource()
-                );
-                
+                BuffDebuff effectCopy = effect.getBuffDebuff().copy();
+                effectCopy.setStack(effect.getStack());
+                effectCopy.setDuration(effect.getDuration());
                 // Apply the effect to the target
                 characters.SpecialTalents.applyBuffDebuff(target, effectCopy);
             }
@@ -457,9 +583,8 @@ public class BattleSystem {
                     }
 
                 }else if(skill.getName().equals("Daddy fury")){
-                    if((int)actingEnemy.getFloatBuffDebuffByName("Oufuu atk up")>=2){
+                    if((int)actingEnemy.getFloatBuffDebuffByName("Oufuu atk up")>=BuffDebuff.getByName("Oufuu atk up").getMaxStack()){
                         availableSkills.add(skill);
-
                     }
                 }else {
                     // Normal MP cost check for other skills
@@ -509,17 +634,8 @@ public class BattleSystem {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
         }else if(chosenSkill.getName().equals("Family united")){
             useSkill(actingEnemy, enemySlot2, chosenSkill);
-        }else if(chosenSkill.getTarget().equals("Aoe enemy")){
-            for(Observer.characterSlot hero : getAllHeroes()){
-                if(hero!=null){
-                    System.out.println("OK!!");
-                    useSkill(actingEnemy, hero, chosenSkill);
-                    actingEnemy.getActiveEffects().remove(actingEnemy.getBuffDebuffByName("Oufuu atk up"));
-                    enemySlot.setCurrentHp(enemySlot.getCharacter().getHp());
-                    enemySlot3.setCurrentHp(enemySlot.getCharacter().getHp());
-                    battleUI.refreshAllCharacterUI();
-                }
-            }
+        }else if(chosenSkill.getTarget().equals("Aoe enemy") || chosenSkill.getTarget().equals("Aoe ally")){
+            executeAoeSkill(actingEnemy, chosenSkill);
         }else {
             Observer.characterSlot targetHero = getRandomAliveHero();
             if (targetHero == null) {
@@ -549,18 +665,49 @@ public class BattleSystem {
                 checkVictoryCondition();
             }
         }
-        // Update all character lines
-        Observer.characterSlot[] allCharacters = getAllCharacters();
-        for (Observer.characterSlot character : allCharacters) {
-            if (character != null) {
-                Line characterLine = getLineForCharacter(character);
-                if (characterLine != null) {
-                    // For enemies, only move if they're alive
-                    if (isEnemy(character) && character.getCurrentHp() <= 0) {
-                        continue;
+        
+        // Handle timeStop mechanics
+        if (timeStop > 0) {
+            //For Ina only
+            if(timeStop == 1&&timeStopSlot.getCharacter().getName().equals("Ina")){
+                executeAoeSkill(timeStopSlot,Ability.SkillRegistry.getById(26));
+                timeStopSlot.getActiveEffects().remove(timeStopSlot.getBuffDebuffByName("Conserve"));
+                timeStopSlot.getActiveEffects().remove(timeStopSlot.getBuffDebuffByName("Judgment"));
+            }
+
+            // Update timeStop bar
+            battleUI.updateTimeStopBar(timeStop);
+            timeStop -= lineSpeed;
+            
+            // Only timeStopSlot line can move during timeStop
+            if (timeStopSlot != null) {
+                Line timeStopLine = getLineForCharacter(timeStopSlot);
+                if (timeStopLine != null) {
+                    double speed = getSpeedForCharacter(timeStopSlot);
+                    moveLine(timeStopLine, speed);
+                }
+            }
+            
+            // Clear timeStop when it reaches 0
+            if (timeStop <= 0) {
+                timeStop = 0;
+                timeStopSlot = null;
+                battleUI.removeTimeStopBar();
+            }
+        } else {
+            // Normal line movement when not in timeStop
+            Observer.characterSlot[] allCharacters = getAllCharacters();
+            for (Observer.characterSlot character : allCharacters) {
+                if (character != null) {
+                    Line characterLine = getLineForCharacter(character);
+                    if (characterLine != null) {
+                        // For enemies, only move if they're alive
+                        if (isEnemy(character) && character.getCurrentHp() <= 0) {
+                            continue;
+                        }
+                        double speed = getSpeedForCharacter(character);
+                        moveLine(characterLine, speed);
                     }
-                    double speed = getSpeedForCharacter(character);
-                    moveLine(characterLine, speed);
                 }
             }
         }
@@ -874,6 +1021,8 @@ public class BattleSystem {
         } else if (skill.getName().equals("Head bump")){
             attacker.setCurrentHp(Math.max(1,attacker.getCurrentHp()-100));
             battleUI.updateHealthUI(attacker);
+        }else if (skill.getId()==26){
+            specialDmgBonus = attacker.getFloatBuffDebuffByName("Judgment")*attacker.getCharacter().getAtk()/2;
         }
         
         // Add more special skills here in the future

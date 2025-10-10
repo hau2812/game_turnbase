@@ -26,14 +26,16 @@ public class testing extends GameApplication {
         "Flamita",
         "Hero",
         "Hero2",
-        "Pieberry"
+        "Pieberry",
+        "Ina"
     };
     
     // Selected heroes for battle (choose which ones to use)
     private static final String[] SELECTED_HEROES = {
-        "Flamita",
+        "Ina",
+//        "Flamita",
         "Hero2",
-        "Pieberry"
+//        "Pieberry",
 
     };
     // ===== BATTLE CONFIGURATION ======================================================================================
