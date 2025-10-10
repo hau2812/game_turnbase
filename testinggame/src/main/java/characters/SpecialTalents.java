@@ -19,9 +19,12 @@ public class SpecialTalents {
     public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
     public static final String GUTS = "Guts";
+    public static final String MOON_BARRIER = "MOON BARRIER";
+    public static final String REGEN_BARRIER = "REGEN BARRIER";
     
     // Static reference to BattleUI for use in static methods
     private static BattleUI battleUI;
+    private static BattleSystem battleSystem;
     
     /**
      * Set the BattleUI reference for use in static methods
@@ -29,6 +32,9 @@ public class SpecialTalents {
      */
     public static void setBattleUI(BattleUI ui) {
         battleUI = ui;
+    }
+    public static void setBattleSystem(BattleSystem system) {
+        battleSystem = system;
     }
     
     //public static final String OUFUULINK = "Oufuu link";
@@ -39,28 +45,40 @@ public class SpecialTalents {
      * Returns the amount of damage that should actually be applied to HP
      */
     public static float calculateActualDamage(characterSlot slot, float damageAmount) {
+        if(damageAmount<0){
+            return damageAmount;
+        }
         character character = slot.getCharacter();
         float actualDamage = damageAmount;
-        
         // Barrier - absorb damage with barrier stacks instead of HP
         if (slot.getActiveEffects() != null) {
             for (characters.BuffDebuff effect : slot.getActiveEffects()) {
                 if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
-                    float barrierAmount = effect.getStack(); // Barrier amount equals stack count
-                    float damageToBarrier = Math.min(actualDamage, barrierAmount);
-                    
-                    // Reduce barrier stacks by damage amount
-                    effect.setStack((int)(barrierAmount - damageToBarrier));
-                    actualDamage -= damageToBarrier;
-                    
-                    System.out.println(character.getName() + "'s Barrier absorbed " + damageToBarrier + " damage! Barrier: " + (int)barrierAmount + " -> " + effect.getStack());
-                    
-                    // Remove barrier effect if stacks reach 0
-                    if (effect.getStack() <= 0) {
-                        slot.getActiveEffects().remove(effect);
-                        System.out.println(character.getName() + "'s Barrier is broken!");
+                    if(slot.getFloatBuffDebuffByName("Moon shield")!=0&&battleSystem.getSlotByName("Leuna")!=null) {
+                        Observer.characterSlot Leuna = battleSystem.getSlotByName("Leuna");
+                        float damageToMana = Math.min(actualDamage, Leuna.currentMp);
+                        Leuna.regenerateMp(-damageToMana);
+                        actualDamage -= damageToMana;
+                        battleUI.updateMpUI(slot);
+                        if(actualDamage == 0){return 0;}
+
                     }
-                    break; // Only process one barrier effect
+                        float barrierAmount = effect.getStack(); // Barrier amount equals stack count
+                        float damageToBarrier = Math.min(actualDamage, barrierAmount);
+
+                        // Reduce barrier stacks by damage amount
+                        effect.setStack((int) (barrierAmount - damageToBarrier));
+                        actualDamage -= damageToBarrier;
+
+                        System.out.println(character.getName() + "'s Barrier absorbed " + damageToBarrier + " damage! Barrier: " + (int) barrierAmount + " -> " + effect.getStack());
+
+                        // Remove barrier effect if stacks reach 0
+                        if (effect.getStack() <= 0) {
+                            slot.getActiveEffects().remove(effect);
+                            System.out.println(character.getName() + "'s Barrier is broken!");
+                        }
+                        break; // Only process one barrier effect
+
                 }
             }
         }
@@ -221,6 +239,12 @@ public class SpecialTalents {
                     System.out.println(character.getName() + " regenerated " + actualRegen + " MP!");
                 }
             }
+        }
+        if(slot.getFloatBuffDebuffByName("Regen barrier")>0&&slot.getFloatBuffDebuffByName("Conserve")==0){
+            BuffDebuff shield = new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill");
+            shield.setStack((int)slot.getFloatBuffDebuffByName("Regen barrier"));
+            applyBuffDebuff(slot,shield);
+            battleUI.updateBarrierBar(slot);
         }
     }
     

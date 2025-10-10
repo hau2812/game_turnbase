@@ -35,7 +35,28 @@ public class BattleSystem {
     private boolean enemyActionTime = false;
     private Line turnOf = null;
     private Observer.characterSlot timeStopSlot = null;
-        private float timeStop = 0;
+    private float timeStop = 0;
+    public float partyMp=0;
+    public float maxPartyMp=500;
+    /**
+     * Get the current party MP value
+     * @return Current party MP
+     */
+    public float getPartyMp() {
+        return partyMp;
+    }
+    
+    /**
+     * Set the party MP value
+     * @param partyMp New party MP value
+     */
+    public void setPartyMp(float partyMp) {
+        this.partyMp = Math.min(partyMp,maxPartyMp);
+        // Update the party MP bar in the UI
+        if (battleUI != null) {
+            battleUI.updatePartyMpBar();
+        }
+    }
     
     // Speed settings
     private double lineSpeed = 0.5;
@@ -61,6 +82,8 @@ public class BattleSystem {
     
     public BattleSystem() {
         this.audioManager = AudioManager.getInstance();
+        // Set the BattleSystem reference in Observer for party MP management
+        Observer.setBattleSystem(this);
     }
     
     // ===================== HELPER FUNCTIONS =====================
@@ -91,6 +114,29 @@ public class BattleSystem {
      */
     private Observer.characterSlot[] getAllEnemies() {
         return new Observer.characterSlot[]{enemySlot, enemySlot2, enemySlot3};
+    }
+    
+    /**
+     * Get a random alive enemy
+     * @return A random alive enemy, or null if no enemies are alive
+     */
+    private Observer.characterSlot getRandomAliveEnemy() {
+        Observer.characterSlot[] allEnemies = getAllEnemies();
+        java.util.List<Observer.characterSlot> aliveEnemies = new java.util.ArrayList<>();
+        
+        // Filter out null and dead enemies
+        for (Observer.characterSlot enemy : allEnemies) {
+            if (enemy != null && enemy.getCurrentHp() > 0) {
+                aliveEnemies.add(enemy);
+            }
+        }
+        
+        if (aliveEnemies.isEmpty()) {
+            return null;
+        }
+        
+        Random random = new Random();
+        return aliveEnemies.get(random.nextInt(aliveEnemies.size()));
     }
     
     /**
@@ -129,7 +175,7 @@ public class BattleSystem {
     /**
      * Push a character's line back by the specified amount
      */
-    private void pushCharacterLine(Observer.characterSlot character, double pushAmount) {
+    public void pushCharacterLine(Observer.characterSlot character, double pushAmount) {
         Line characterLine = getLineForCharacter(character);
         if (characterLine != null) {
             double barX = battleUI.getBarX();
@@ -171,6 +217,11 @@ public class BattleSystem {
         Random random = new Random();
         return aliveHeroes.get(random.nextInt(aliveHeroes.size()));
     }
+    public void resetLine(Observer.characterSlot slot) {
+        double barX = battleUI.getBarX();
+        slot.getLine().setStartX(barX);
+        slot.getLine().setEndX(barX);
+    }
     
     /**
      * Handle special skills that require unique processing
@@ -184,12 +235,14 @@ public class BattleSystem {
         if(skill.getName().equals("Let me absorb you")){
             if(timeStopSlot != null){
                 if(timeStopSlot.getCharacter().getName().equals("Ina")) {
-                    if (target.getCurrentHp() <= target.getCharacter().getHp() / 2 || target.getCharacter() == attacker.getCharacter()) {
+                    if (target.getCurrentHp() <= target.getCharacter().getHp() * 0.4 || target.getCharacter() == attacker.getCharacter()) {
                         timeStop += (float) 0.5;
+                        resetLine(attacker);
                     } else {
                         target.heal(-target.getCharacter().getHp() * (float)0.4);
                         battleUI.updateHealthUI(target);
                         timeStop = Math.min(200, timeStop + 100);
+                        resetLine(attacker);
                     }
                     return true; // End skill processing early
                 }
@@ -197,15 +250,13 @@ public class BattleSystem {
                 target.heal(-target.getCurrentHp() / 2);
                 attacker.regenerateMp(3);
             }
-            double push = attacker.getCharacter().getAV() * skill.getAVScale();
-            pushCharacterLine(attacker, push);
             battleUI.updateHealthUI(target);
             battleUI.updateBurningRageBar(target);
             return true; // End skill processing early
         }
         
         // Handle "Absolute teleportation" skill
-        if(skill.getName().equals("Absolute teleportation")){
+        else if(skill.getName().equals("Absolute teleportation")){
             //Buff
             BuffDebuff buff = BuffDebuff.getByName("Conserve").copy();
             buff.setStack(attacker.getBuffCount()+1);
@@ -217,6 +268,11 @@ public class BattleSystem {
             // Create the timeStop bar in the UI
             battleUI.createTimeStopBar();
             return true; // End skill processing early
+        }else if(skill.getName().equals("Moon wave")){
+            resetLine(target);
+            battleUI.updateHealthUI(target);
+            battleUI.updateBurningRageBar(target);
+            return false; // End skill processing early
         }
         
         // No special skill handled, continue with normal processing
@@ -228,7 +284,7 @@ public class BattleSystem {
      * @param attacker The character using the skill
      * @param skill The AOE skill being used
      */
-    private void executeAoeSkill(Observer.characterSlot attacker, Ability.skill skill) {
+    public void executeAoeSkill(Observer.characterSlot attacker, Ability.skill skill) {
         String targetType = skill.getTarget();
         
         // Handle special case for "Family united" skill
@@ -294,16 +350,22 @@ public class BattleSystem {
     }
     public boolean hasIna(){
         for(Observer.characterSlot hero: getAllHeroes()){
-            if (hero.getCharacter().getName().equals("Ina")) {
-                return true;
+            if(hero!=null){
+                if (hero.getCharacter().getName().equals("Ina")) {
+                    return true;
+                }
             }
+
         }
         return false;
     }
     public Observer.characterSlot getSlotByName(String name) {
         for (Observer.characterSlot Slot : getAllCharacters()) {
-            if(Slot.getCharacter().getName().equals(name)){
-            return Slot;
+            if(Slot!=null){
+                if(Slot.getCharacter().getName().equals(name)){
+                    return Slot;
+            }
+
             }
         }
         return null;
@@ -315,6 +377,7 @@ public class BattleSystem {
         battleUI.setHideTalents(hideTalents);
         // Set BattleUI reference in SpecialTalents for static method access
         characters.SpecialTalents.setBattleUI(battleUI);
+
     }
     
     /**
@@ -383,7 +446,9 @@ public class BattleSystem {
         
         // Init registry
         Observer.CharacterSlotRegistry.init();
-        
+        timeStop=0;
+        timeStopSlot=null;
+
 
 
         // Hero slots - use configured heroes
@@ -466,13 +531,7 @@ public class BattleSystem {
                 return; // not enough MP
             }
             if (true) {
-                //Reduce Mp
-                if(!Objects.equals(skill.getName(), "Ecarr Vertel")) {
-                attacker.setCurrentMp(attacker.getCurrentMp() - mpCost);
-                }
-                if(attacker.getCurrentMp() > attacker.getBaseCharacter().getMp()) {
-                    attacker.setCurrentMp(attacker.getBaseCharacter().getMp());
-                }
+
                 if (battleUI != null) {
                     battleUI.updateMpUI(attacker);
                 }
@@ -515,12 +574,12 @@ public class BattleSystem {
             battleUI.updateBarrierBar(target);
         }
 
-        // Push line back for any character
-        if (isHero(attacker) || isEnemy(attacker)) {
+
+        if (isEnemy(attacker)) {
+            attacker.setCurrentMp(Math.min(attacker.getCharacter().getMp(),attacker.getCurrentMp()-skill.getMpCost()));
             double push = attacker.getCharacter().getAV() * skill.getAVScale();
             pushCharacterLine(attacker, push);
         }
-        
         // Reduce duration of buff/debuff effects at the end of turn
         characters.SpecialTalents.onTurnEnd(attacker);
     }
@@ -757,7 +816,14 @@ public class BattleSystem {
                     }
                 }
             }
-
+            if(timeStopSlot != null) {
+                double push = timeStopSlot.getCharacter().getAV() * timeStopSlot.getSkills().getFirst().getAVScale();
+                if(timeStopSlot.getCharacter().getName().equals("Ina")&&timeStop>push){
+                    useSkill(timeStopSlot,getRandomAliveEnemy(),timeStopSlot.getSkills().getFirst());
+                    pushCharacterLine(timeStopSlot, push);
+                    moving = true;
+                }
+            }
             return;
 
         }
@@ -765,7 +831,7 @@ public class BattleSystem {
         line.setStartX(newX);
         line.setEndX(newX);
     }
-    
+
     private void applyDamage(Observer.characterSlot slot, double amount) {
         float oldHp = slot.getCurrentHp();
         float actualAmount = (float)amount;
@@ -990,7 +1056,7 @@ public class BattleSystem {
             
             // Apply the HP and MP reduction
             attacker.setCurrentHp(1); // Set HP to 1
-            attacker.setCurrentMp(0); // Set MP to 0
+            attacker.regenerateMp(-currentMp); // Set MP to 0
             
             System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + 
                              "! HP: " + currentHp + " -> 1, MP: " + currentMp + " -> 0, " +

@@ -594,7 +594,7 @@ public interface Ability {
             ));
             Ability.skill energyCharge = getByName("Energy charge");
             if (energyCharge != null) {
-                energyCharge.addEffect("Charging", 3, 1);
+                energyCharge.addEffect("Charging", 3, 2);
             }
 
             register(new Ability.skill(
@@ -633,6 +633,54 @@ public interface Ability {
                     0
             ));
 
+            register(new Ability.skill(
+                    27,
+                    "Moon light",
+                    "I though we are at dungeon",
+                    "Heal",
+                    "Aoe ally",
+                    0.0f,
+                    1.5f,
+                    100,
+                    0
+            ));
+            Ability.skill moonLight = getByName("Moon light");
+            if (moonLight != null) {
+                moonLight.addEffect("Barrier", 3, 100);
+                moonLight.addEffect("Moon shield", 999, 1);
+            }
+
+            register(new Ability.skill(
+                    28,
+                    "Moon wave",
+                    "what is that even mean",
+                    "Heal",
+                    "Ally",
+                    0.0f,
+                    1.0f,
+                    50,
+                    0
+            ));
+            Ability.skill moonWave = getByName("Moon wave");
+            if (moonWave != null) {
+                moonWave.addEffect("Wind Speed", 1, 1);
+            }
+
+            register(new Ability.skill(
+                    29,
+                    "Absolute barrier",
+                    "what is that even mean",
+                    "Heal",
+                    "Aoe ally",
+                    0.0f,
+                    1.5f,
+                    0,
+                    300
+            ));
+            Ability.skill absoluteBarrier = getByName("Absolute barrier");
+            if (absoluteBarrier != null) {
+                absoluteBarrier.addEffect("Regen barrier", 10, 50);
+            }
         }
     }
 

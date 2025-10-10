@@ -13,11 +13,13 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 
+import java.util.Objects;
+
 import static com.almasb.fxgl.dsl.FXGL.*;
 
 public class  BattleUI {
 
-    
+
     /**
      * Helper class to hold Burning Rage bar data
      */
@@ -103,6 +105,15 @@ public class  BattleUI {
     // TimeStop bar (white bar that shows time stop duration)
     private Rectangle timeStopBar;
     private double timeStopBarMaxWidth;
+    
+    // Party MP bar (vertical bar on the left side)
+    private Rectangle partyMpBar;
+    private Rectangle partyMpBorder;
+    private Text partyMpText;
+    private double partyMpBarWidth = 20;
+    private double partyMpBarHeight = 200;
+    private double partyMpBarX = 10;
+    private double partyMpBarY = 80;
     
     // Skill boxes
     private Rectangle skill1Box;
@@ -238,6 +249,7 @@ public class  BattleUI {
     
     public void initializeUI() {
         createTimingBar();
+        createPartyMpBar();
         createLines();
         createHealthBars();
         createHealthText();
@@ -292,6 +304,36 @@ public class  BattleUI {
         blackBar.setTranslateX(barX);
         blackBar.setTranslateY(barY);
         getGameScene().addUINode(blackBar);
+    }
+    
+    private void createPartyMpBar() {
+        // Create party MP border
+        partyMpBorder = new Rectangle(partyMpBarWidth, partyMpBarHeight, Color.TRANSPARENT);
+        partyMpBorder.setStroke(Color.BLACK);
+        partyMpBorder.setStrokeWidth(2);
+        partyMpBorder.setTranslateX(partyMpBarX);
+        partyMpBorder.setTranslateY(partyMpBarY);
+        
+        // Create party MP bar
+        partyMpBar = new Rectangle(partyMpBarWidth, partyMpBarHeight, Color.DARKBLUE);
+        partyMpBar.setTranslateX(partyMpBarX);
+        partyMpBar.setTranslateY(partyMpBarY);
+        
+        // Create party MP text
+        partyMpText = new Text("Party MP: 0");
+        partyMpText.setFont(new Font(12));
+        partyMpText.setFill(Color.BLACK);
+        partyMpText.setTranslateX(partyMpBarX - 5);
+        partyMpText.setTranslateY(partyMpBarY - 20);
+        partyMpText.setMouseTransparent(true);
+        
+        // Add to scene
+        getGameScene().addUINode(partyMpBorder);
+        getGameScene().addUINode(partyMpBar);
+        getGameScene().addUINode(partyMpText);
+        
+        // Update with current party MP value
+        updatePartyMpBar();
     }
     
     private void createLines() {
@@ -880,11 +922,15 @@ public class  BattleUI {
                     "Damage: " + (int)(attacker.getCharacter().getAtk() * skill.getAtkScale()) + "\n" +
                     "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())+ "\n";
             
-            // Show Rage Required if skill has rage cost, otherwise show MP Cost
+            // Show costs
             if (skill.getBurningRageRequired() > 0) {
-                detailText += "Rage Required: " + (int)(skill.getBurningRageRequired());
-            } else {
-                detailText += "Mp Cost: " + (int)(skill.getMpCost());
+                detailText += "Rage Required: " + (int)(skill.getBurningRageRequired()) + "\n";
+            }
+            if (skill.getMpCost() > 0) {
+                detailText += "MP Cost: " + (int)(skill.getMpCost()) + "\n";
+            }
+            if (skill.getPartyMpCost() > 0) {
+                detailText += "Party MP Cost: " + (int)(skill.getPartyMpCost());
             }
         }
         Text skillDetail = new Text(detailText);
@@ -944,13 +990,38 @@ public class  BattleUI {
                     if (attacker.getCurrentMp() < skill.getMpCost()) {
                         return; // Not enough MP
                     }
+                    // Check Party MP affordability
+                    if (battleSystem.getPartyMp() < skill.getPartyMpCost()) {
+                        return; // Not enough Party MP
+                    }
                     // Check Burning Rage affordability
                     if (!characters.SpecialTalents.hasEnoughBurningRage(attacker, skill.getBurningRageRequired())) {
                         return; // Not enough Burning Rage
                     }
                 }
                 battleSystem.setMoving(true);
-                battleSystem.useSkill(attacker, resolvedTarget, skill);
+
+                //Reduce Mp
+                if(!Objects.equals(skill.getName(), "Ecarr Vertel")) {
+                    attacker.regenerateMp(-skill.getMpCost());
+                }
+                //Reduce Party MP
+                if (skill.getPartyMpCost() > 0) {
+                    float currentPartyMp = battleSystem.getPartyMp();
+                    battleSystem.setPartyMp(currentPartyMp - skill.getPartyMpCost());
+                }
+                // Push line back for any character
+                if (isHero(attacker)) {
+                    double push = attacker.getCharacter().getAV() * skill.getAVScale();
+                    battleSystem.pushCharacterLine(attacker, push);
+                }
+
+                if(skill.getTarget().equals("Aoe enemy")||skill.getTarget().equals("Aoe ally")) {
+                    battleSystem.executeAoeSkill(attacker, skill);
+
+                }else{
+                    battleSystem.useSkill(attacker, resolvedTarget, skill);
+                }
                 //Recover Mp for Ina
                 if(battleSystem.hasIna()){
                     Observer.characterSlot Ina = battleSystem.getSlotByName("Ina");
@@ -959,6 +1030,7 @@ public class  BattleUI {
                         updateMpUI(Ina);
                     }
                 }
+
 
             }
         });
@@ -973,8 +1045,9 @@ public class  BattleUI {
     private void updateSkillAffordabilityVisual(Rectangle box, Observer.characterSlot hero, Ability.skill skill) {
         boolean available = skill != null && !skill.getName().equals("N/A");
         boolean hasEnoughMp = available && hero.getCurrentMp() >= skill.getMpCost();
+        boolean hasEnoughPartyMp = available && battleSystem.getPartyMp() >= skill.getPartyMpCost();
         boolean hasEnoughRage = available && characters.SpecialTalents.hasEnoughBurningRage(hero, skill.getBurningRageRequired());
-        boolean affordable = hasEnoughMp && hasEnoughRage;
+        boolean affordable = hasEnoughMp && hasEnoughRage && hasEnoughPartyMp;
         
         if (!available) {
             box.setOpacity(0.3);
@@ -982,12 +1055,16 @@ public class  BattleUI {
             box.setMouseTransparent(true); // Make completely unclickable for unavailable skills
         } else {
             box.setOpacity(affordable ? 1.0 : 0.4);
-            box.setMouseTransparent(false); // Keep hover functionality for available skills
+            box.setMouseTransparent(false); // Make unclickable if not affordable
             // Use different colors to indicate what's missing
-            if (!hasEnoughMp && !hasEnoughRage) {
-                box.setStroke(Color.RED); // Missing both MP and Rage
+            if (!hasEnoughMp && !hasEnoughRage && !hasEnoughPartyMp) {
+                box.setStroke(Color.RED); // Missing MP, Rage, and Party MP
+            } else if (!hasEnoughMp && !hasEnoughPartyMp) {
+                box.setStroke(Color.BLUE); // Missing both MP types
             } else if (!hasEnoughMp) {
-                box.setStroke(Color.BLUE); // Missing MP
+                box.setStroke(Color.CYAN); // Missing individual MP
+            } else if (!hasEnoughPartyMp) {
+                box.setStroke(Color.PURPLE); // Missing Party MP
             } else if (!hasEnoughRage) {
                 box.setStroke(Color.ORANGE); // Missing Rage
             } else {
@@ -1004,6 +1081,42 @@ public class  BattleUI {
         double ratio = hero.getCurrentMp() / hero.getCharacter().getMp();
         healthBarData.mpBar.setWidth(healthBarWidth * Math.max(0, Math.min(1, ratio)));
         healthBarData.mpText.setText("MP: " + (int) hero.getCurrentMp() + " / " + (int) hero.getCharacter().getMp());
+    }
+    
+    /**
+     * Updates the party MP bar display
+     */
+    public void updatePartyMpBar() {
+        if (partyMpBar == null || partyMpText == null) return;
+        
+        float currentPartyMp = battleSystem.getPartyMp();
+        
+        // For now, we'll use a simple scaling - you can adjust this based on your needs
+        // Assuming max party MP of 100 for visualization purposes
+        float maxPartyMp = battleSystem.maxPartyMp;
+        double ratio = Math.max(0, Math.min(1, currentPartyMp / maxPartyMp));
+        
+        // Update bar height (fills from bottom to top)
+        double currentHeight = partyMpBarHeight * ratio;
+        partyMpBar.setHeight(currentHeight);
+        partyMpBar.setTranslateY(partyMpBarY + (partyMpBarHeight - currentHeight));
+        
+        // Update text
+        partyMpText.setText("Party MP: " + (int) currentPartyMp);
+        
+        // Update skill affordability when party MP changes
+        updateSkillAffordabilityForCurrentHero();
+    }
+    
+    /**
+     * Updates skill affordability for the current acting hero
+     */
+    private void updateSkillAffordabilityForCurrentHero() {
+        Observer.characterSlot currentHero = battleSystem.getCurrentActingHero();
+        if (currentHero != null) {
+            // Re-render skills to update affordability
+            renderHeroSkillsFor(currentHero);
+        }
     }
     
     public void updateHealthUI(Observer.characterSlot slot) {
@@ -1051,6 +1164,11 @@ public class  BattleUI {
         for (BarrierBarData barrierBarData : barrierBars) {
             if (barrierBarData.barrierBar != null) barrierBarData.barrierBar.setVisible(false);
         }
+        
+        // Hide party MP bar
+        if (partyMpBar != null) partyMpBar.setVisible(false);
+        if (partyMpBorder != null) partyMpBorder.setVisible(false);
+        if (partyMpText != null) partyMpText.setVisible(false);
         
         // Hide lines
         Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
@@ -1135,6 +1253,17 @@ public class  BattleUI {
             getGameScene().removeUINode(orangeLine);
         }
         
+        // Remove party MP bar
+        if (partyMpBar != null) {
+            getGameScene().removeUINode(partyMpBar);
+        }
+        if (partyMpBorder != null) {
+            getGameScene().removeUINode(partyMpBorder);
+        }
+        if (partyMpText != null) {
+            getGameScene().removeUINode(partyMpText);
+        }
+        
         // Remove skill boxes
         if (skill1Box != null) {
             getGameScene().removeUINode(skill1Box);
@@ -1186,6 +1315,11 @@ public class  BattleUI {
         for (BarrierBarData barrierBarData : barrierBars) {
             if (barrierBarData.barrierBar != null) barrierBarData.barrierBar.setVisible(true);
         }
+        
+        // Show party MP bar
+        if (partyMpBar != null) partyMpBar.setVisible(true);
+        if (partyMpBorder != null) partyMpBorder.setVisible(true);
+        if (partyMpText != null) partyMpText.setVisible(true);
         
         // Show lines
         Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};

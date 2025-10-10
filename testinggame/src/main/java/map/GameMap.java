@@ -30,7 +30,7 @@ public class GameMap {
         //Custom boss
         //addOufuuBossFight("forest");
         //addFlamitaBossFight("forest");
-        //addMabelBossFight("forest");
+        addMabelBossFight("forest");
 
         // Initialize paths với random system
         initializeRandomPath(forestPath);

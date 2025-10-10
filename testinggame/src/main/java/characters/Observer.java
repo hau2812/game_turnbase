@@ -1,6 +1,7 @@
 package characters;
 
 import abilities.Ability;
+import battle.BattleSystem;
 import ui.SimpleLine;
 
 import java.util.ArrayList;
@@ -9,6 +10,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 public interface Observer {
+    
+    // Static reference to BattleSystem for party MP management
+    public static final BattleSystem[] battleSystemInstance = new BattleSystem[1];
+    
+    /**
+     * Set the BattleSystem instance for party MP management
+     * @param battleSystem The BattleSystem instance
+     */
+    public static void setBattleSystem(BattleSystem battleSystem) {
+        battleSystemInstance[0] = battleSystem;
+    }
+    
+    /**
+     * Get the current BattleSystem instance
+     * @return The BattleSystem instance, or null if not set
+     */
+    public static BattleSystem getBattleSystem() {
+        return battleSystemInstance[0];
+    }
 
     public class characterSlot {
         int id;
@@ -19,6 +39,7 @@ public interface Observer {
         float currentHp;
         float currentMp;
         SimpleLine line;
+
 
         public characterSlot(int id, Characters.character character, Characters.character baseCharacter,
                              ArrayList<Ability.skill> skills, float currentHp, float currentMp) {
@@ -56,15 +77,16 @@ public interface Observer {
         public void setCurrentMp(float currentMp) { this.currentMp = currentMp; }
 
         public void heal(float amount){
-            currentHp += amount;
-            if(currentHp>character.getHp()){
-                currentHp = character.getHp();
-            }
+            currentHp = Math.max(0,Math.min(currentHp+amount,character.getHp()));
         }
         public void regenerateMp(float amount){
-            currentMp += amount;
-            if(currentMp>character.getMp()){
-                currentMp = character.getMp();
+            currentMp = Math.max(0,Math.min(currentMp+amount,character.getMp()));
+            if(amount<0&&battleSystemInstance[0].getSlotByName("Leuna")!=null){
+                // When mana is consumed (amount < 0), increase party MP by the amount consumed
+                if(battleSystemInstance[0] != null) {
+                    float currentPartyMp = battleSystemInstance[0].getPartyMp();
+                    battleSystemInstance[0].setPartyMp(currentPartyMp - amount); // -amount because amount is negative
+                }
             }
         }
 
@@ -208,6 +230,7 @@ public interface Observer {
             characterSlot hero4Slot = createCharacterSlot("Pieberry", "Charge attack", "5-Orb Flame", "7-Fork Lightning", "Ecarr Vertel");
 
             createCharacterSlot("Ina", "Light attack", "Energy charge", "Let me absorb you", "Absolute teleportation");
+            createCharacterSlot("Leuna", "Charge attack", "Moon light", "Moon wave", "Absolute barrier");
 
 
 

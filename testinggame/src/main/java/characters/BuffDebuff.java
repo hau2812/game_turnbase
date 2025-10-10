@@ -120,6 +120,8 @@ public class BuffDebuff {
         register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 25f, 1, 2, "Skill"));
         register(new BuffDebuff("Mana Shield", "Buff", 3, "MP_COST", 0.5f, 1, 1, "Skill"));
         register(new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill"));
+        register(new BuffDebuff("Moon shield", "Buff", 3, "MOON BARRIER", 1f, 1, 1, "Skill"));
+        register(new BuffDebuff("Regen barrier", "Buff", 3, "REGEN BARRIER", 1f, 1, 999, "Skill"));
 
     }
     

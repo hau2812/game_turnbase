@@ -291,6 +291,22 @@ public interface Characters {
                     15,// mp
                     new ArrayList<>()
             ));
+
+            // Create and register another fuking hero
+            register(new Characters.character(
+                    8,
+                    "Leuna",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    300,// mp
+                    new ArrayList<uniqueValue>() {{
+                        add(new uniqueValue("MpRegeneration", "100"));
+                    }}
+            ));
         }
     }
 }

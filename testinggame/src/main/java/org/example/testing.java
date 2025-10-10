@@ -3,6 +3,7 @@ package org.example;
 import audio.AudioManager;
 import battle.BattleSystem;
 import battle.BattleUI;
+import characters.SpecialTalents;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
 import javafx.scene.input.KeyCode;
@@ -27,21 +28,24 @@ public class testing extends GameApplication {
         "Hero",
         "Hero2",
         "Pieberry",
-        "Ina"
+        "Ina",
+        "Leuna"
     };
     
     // Selected heroes for battle (choose which ones to use)
     private static final String[] SELECTED_HEROES = {
-        "Ina",
-//        "Flamita",
+        //"Ina",
+        "Flamita",
         "Hero2",
 //        "Pieberry",
+        "Leuna"
 
     };
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
     private BattleSystem battleSystem;
     private BattleUI battleUI;
+    private SpecialTalents specialTalents;
     
     // Map system
     private GameMap gameMap;
@@ -79,6 +83,7 @@ public class testing extends GameApplication {
         
         battleUI = new BattleUI(battleSystem);
         battleSystem.setBattleUI(battleUI);
+        SpecialTalents.setBattleSystem(battleSystem);
         battleSystem.setOnBattleWon(() -> {
             // This callback is called when all enemies are defeated
             handleBattleVictory();
@@ -116,7 +121,7 @@ public class testing extends GameApplication {
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
             //System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
-            System.out.println(battleSystem.getEnemySlot2().getCharacter().toString());
+            System.out.println(battleSystem.getEnemySlot().getCurrentMp());
 
 
         });
