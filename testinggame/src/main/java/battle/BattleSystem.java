@@ -817,9 +817,9 @@ public class BattleSystem {
                 }
             }
             if(timeStopSlot != null) {
-                double push = timeStopSlot.getCharacter().getAV() * timeStopSlot.getSkills().getFirst().getAVScale();
+                double push = timeStopSlot.getCharacter().getAV() * timeStopSlot.getSkills().get(0).getAVScale();
                 if(timeStopSlot.getCharacter().getName().equals("Ina")&&timeStop>push){
-                    useSkill(timeStopSlot,getRandomAliveEnemy(),timeStopSlot.getSkills().getFirst());
+                    useSkill(timeStopSlot,getRandomAliveEnemy(),timeStopSlot.getSkills().get(0));
                     pushCharacterLine(timeStopSlot, push);
                     moving = true;
                 }

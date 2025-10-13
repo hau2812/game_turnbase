@@ -282,7 +282,7 @@ public interface Characters {
             register(new Characters.character(
                     7,
                     "Ina",
-                    100,  // atk
+                    100000,  // atk
                     35,   // matk
                     18,   // def
                     12,   // res
