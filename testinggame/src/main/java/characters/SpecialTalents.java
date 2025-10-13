@@ -390,6 +390,9 @@ public class SpecialTalents {
             if (existingEffect.canStack()) {
                 // Add a stack
                 existingEffect.addStack(effect.getStack());
+                if(existingEffect.getStack()>existingEffect.getMaxStack()){
+                    existingEffect.setStack(existingEffect.getMaxStack());
+                }
                 System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect stacked! Stacks: " + existingEffect.getStack());
             } //else {
                 // Overwrite duration
