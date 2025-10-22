@@ -135,7 +135,7 @@ public class testing extends GameApplication {
         gameMap = new GameMap();
         mapUI = new MapUI(gameMap);
         mapUI.setBattleSystem(battleSystem);
-        mapUI.setShopSystem(shop, shopUI, inventory);
+        // Shop system is handled separately through key bindings
         mapUI.setOnBattleModeRequested(() -> {
             // This callback is called when a battle node is clicked
             enterBattleMode();
@@ -336,3 +336,4 @@ public class testing extends GameApplication {
         launch(args);
     }
 }
+

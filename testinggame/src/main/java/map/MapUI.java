@@ -11,10 +11,9 @@ import javafx.scene.text.TextAlignment;
 import com.almasb.fxgl.dsl.FXGL;
 import characters.Observer;
 import event.MapEvent;
+import event.DialogueEvent;
+import ui.DialogueUI;
 import battle.BattleSystem;
-import shop.Shop;
-import ui.ShopUI;
-import items.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,11 +31,7 @@ public class MapUI {
     private List<Observer.characterSlot> currentBattleEnemies;
     private Runnable onBattleModeRequested;
     private AudioManager audioManager;
-    
-    // Shop system
-    private Shop shop;
-    private ShopUI shopUI;
-    private Inventory inventory;
+    private DialogueUI dialogueUI; // DialogueUI instance for handling dialogues
 
 
     public MapUI(GameMap gameMap) {
@@ -49,6 +44,15 @@ public class MapUI {
         this.pathSelected = false;
         this.currentBattleEnemies = new ArrayList<>();
         this.audioManager = AudioManager.getInstance();
+        this.dialogueUI = new DialogueUI(); // Initialize DialogueUI
+
+        // Set up callbacks so dialogue can hide/show the map
+        this.dialogueUI.setVisibilityCallbacks(
+            this::hideMapForDialogue,  // Hide map when dialogue shows
+            this::restoreMapAfterDialogue  // Restore map when dialogue hides
+        );
+
+        System.out.println("MapUI initialized with DialogueUI");
     }
     
     public void setBattleSystem(BattleSystem battleSystem) {
@@ -58,12 +62,7 @@ public class MapUI {
     public void setOnBattleModeRequested(Runnable callback) {
         this.onBattleModeRequested = callback;
     }
-    
-    public void setShopSystem(Shop shop, ShopUI shopUI, Inventory inventory) {
-        this.shop = shop;
-        this.shopUI = shopUI;
-        this.inventory = inventory;
-    }
+
 
     public void showPathSelection() {
         clearUI();
@@ -341,13 +340,38 @@ public class MapUI {
     }
 
     private void activateNode(MapNode node) {
+        System.out.println("=== ACTIVATING NODE ===");
+        System.out.println("Node type: " + node.getType());
+        System.out.println("Node name: " + node.getName());
+
         // Handle different node types
         switch (node.getType()) {
             case START:
                 System.out.println("Starting at: " + node.getName());
                 break;
             case EVENT:
-                if (node.getEvent() instanceof MapEvent) {
+                System.out.println("EVENT node detected!");
+                System.out.println("Node event: " + node.getEvent());
+                System.out.println("DialogueUI: " + dialogueUI);
+
+                // Check if it's a DialogueEvent first
+                if (node.getEvent() instanceof DialogueEvent) {
+                    System.out.println("✓ Event is DialogueEvent");
+                    DialogueEvent dialogueEvent = (DialogueEvent) node.getEvent();
+
+                    System.out.println("Calling dialogueUI.showDialogue()...");
+                    // Use the new DialogueUI to show the dialogue
+                    dialogueUI.showDialogue(dialogueEvent, () -> {
+                        System.out.println("Dialogue completed!");
+                        // Mark node as completed and move to next
+                        node.setCompleted(true);
+                        gameMap.getSelectedPath().moveToNextNode();
+                        showSelectedPath();
+                    });
+                    System.out.println("showDialogue() called successfully");
+                    return; // Don't call node.activate() for dialogue events
+                } else if (node.getEvent() instanceof MapEvent) {
+                    System.out.println("✓ Event is MapEvent (not DialogueEvent)");
                     MapEvent mapEvent = (MapEvent) node.getEvent();
                     mapEvent.trigger();
                     // Apply event effects to current active heroes
@@ -357,6 +381,8 @@ public class MapUI {
                         Observer.characterSlot hero2 = heroes.length > 1 ? heroes[1] : null;
                         mapEvent.applyEffect(hero1, hero2);
                     }
+                } else {
+                    System.out.println("✗ Event is neither DialogueEvent nor MapEvent: " + node.getEvent().getClass().getName());
                 }
                 break;
             case BATTLE:
@@ -374,22 +400,16 @@ public class MapUI {
                 break;
             case SHOP:
                 System.out.println("Opened shop at: " + node.getName());
-                // Open shop UI
-                if (shopUI != null) {
-                    shop.refreshShop(); // Generate new items
-                    shopUI.show();
-                } else {
-                    // Fallback: Apply shop benefits to current active heroes
-                    if (battleSystem != null) {
-                        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
-                        for (Observer.characterSlot hero : heroes) {
-                            if (hero != null) {
-                                hero.setCurrentHp(Math.min(hero.getCharacter().getHp(), hero.getCurrentHp() + 250));
-                                hero.setCurrentMp(Math.min(hero.getCharacter().getMp(), hero.getCurrentMp() + 150));
-                            }
+                // Apply shop benefits to current active heroes
+                if (battleSystem != null) {
+                    Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+                    for (Observer.characterSlot hero : heroes) {
+                        if (hero != null) {
+                            hero.setCurrentHp(Math.min(hero.getCharacter().getHp(), hero.getCurrentHp() + 250));
+                            hero.setCurrentMp(Math.min(hero.getCharacter().getMp(), hero.getCurrentMp() + 150));
                         }
-                        System.out.println("Bought healing items! +250 HP and +150 MP!");
                     }
+                    System.out.println("Bought healing items! +250 HP and +150 MP!");
                 }
                 break;
             case REST:
@@ -543,6 +563,22 @@ public class MapUI {
             onBattleModeRequested.run();
         } else {
             System.out.println("No battle mode callback set!");
+        }
+    }
+
+    private void hideMapForDialogue() {
+        System.out.println("Hiding map for dialogue...");
+        // Hide the map UI elements
+        clearUI();
+    }
+
+    private void restoreMapAfterDialogue() {
+        System.out.println("Restoring map after dialogue...");
+        // Restore the map UI elements
+        if (pathSelected) {
+            showSelectedPath();
+        } else {
+            showPathSelection();
         }
     }
 }
