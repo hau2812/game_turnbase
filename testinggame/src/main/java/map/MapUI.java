@@ -11,6 +11,8 @@ import javafx.scene.text.TextAlignment;
 import com.almasb.fxgl.dsl.FXGL;
 import characters.Observer;
 import event.MapEvent;
+import event.DialogueEvent;
+import ui.DialogueUI;
 import battle.BattleSystem;
 import shop.Shop;
 import ui.ShopUI;
@@ -32,11 +34,12 @@ public class MapUI {
     private List<Observer.characterSlot> currentBattleEnemies;
     private Runnable onBattleModeRequested;
     private AudioManager audioManager;
-    
+
     // Shop system
     private Shop shop;
     private ShopUI shopUI;
     private Inventory inventory;
+    private DialogueUI dialogueUI; // DialogueUI instance for handling dialogues
 
 
     public MapUI(GameMap gameMap) {
@@ -49,6 +52,13 @@ public class MapUI {
         this.pathSelected = false;
         this.currentBattleEnemies = new ArrayList<>();
         this.audioManager = AudioManager.getInstance();
+        this.dialogueUI = new DialogueUI(); // Initialize DialogueUI
+
+        // Set up callbacks so dialogue can hide/show the map
+        this.dialogueUI.setVisibilityCallbacks(
+            () -> hideMapForDialogue(),  // Hide map when dialogue shows
+            () -> restoreMapAfterDialogue()  // Restore map when dialogue hides
+        );
     }
     
     public void setBattleSystem(BattleSystem battleSystem) {
@@ -58,7 +68,7 @@ public class MapUI {
     public void setOnBattleModeRequested(Runnable callback) {
         this.onBattleModeRequested = callback;
     }
-    
+
     public void setShopSystem(Shop shop, ShopUI shopUI, Inventory inventory) {
         this.shop = shop;
         this.shopUI = shopUI;
@@ -347,7 +357,19 @@ public class MapUI {
                 System.out.println("Starting at: " + node.getName());
                 break;
             case EVENT:
-                if (node.getEvent() instanceof MapEvent) {
+                // Check if it's a DialogueEvent first
+                if (node.getEvent() instanceof DialogueEvent) {
+                    DialogueEvent dialogueEvent = (DialogueEvent) node.getEvent();
+
+                    // Use the new DialogueUI to show the dialogue
+                    dialogueUI.showDialogue(dialogueEvent, () -> {
+                        System.out.println("Dialogue completed!");
+                        // Mark node as completed and move to next
+                        node.setCompleted(true);
+                        gameMap.getSelectedPath().moveToNextNode();
+                        showSelectedPath();
+                    });
+                } else if (node.getEvent() instanceof MapEvent) {
                     MapEvent mapEvent = (MapEvent) node.getEvent();
                     mapEvent.trigger();
                     // Apply event effects to current active heroes
@@ -543,6 +565,22 @@ public class MapUI {
             onBattleModeRequested.run();
         } else {
             System.out.println("No battle mode callback set!");
+        }
+    }
+
+    private void hideMapForDialogue() {
+        System.out.println("Hiding map for dialogue...");
+        // Hide the map UI elements
+        clearUI();
+    }
+
+    private void restoreMapAfterDialogue() {
+        System.out.println("Restoring map after dialogue...");
+        // Restore the map UI elements
+        if (pathSelected) {
+            showSelectedPath();
+        } else {
+            showPathSelection();
         }
     }
 }
