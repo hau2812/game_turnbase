@@ -4,6 +4,8 @@ import characters.Characters;
 import characters.Observer;
 import abilities.Ability;
 import event.MapEvent;
+import event.DialogueEvent;
+import event.RandomDialogueGenerator;
 import items.ItemRegistry;
 import items.Item;
 import items.ConsumableItem;
@@ -174,11 +176,29 @@ public class RandomMapGenerator {
             200 + (random.nextInt(200) - 100)
         );
         
-        // Random event type dua tren path
-        MapEvent randomEvent = createRandomEvent(pathType);
-        eventNode.setEvent(randomEvent);
+        // Create DialogueEvent with random dialogue based on path type
+        List<String> dialogueScript = RandomDialogueGenerator.generateRandomDialogue(pathType);
+        
+        DialogueEvent dialogueEvent = new DialogueEvent("A mysterious encounter...");
+        
+        // Add all dialogue lines (no choices)
+        for (String line : dialogueScript) {
+            dialogueEvent.addLine(line);
+        }
+        
+        // No option index, no choices - dialogue just plays through
+        // When it ends, it will auto-close and return to map
+        
+        eventNode.setEvent(dialogueEvent);
         
         return eventNode;
+    }
+    
+    /**
+     * Apply random event effects
+     */
+    private static void applyRandomEventEffect(MapPath.PathType pathType) {
+        System.out.println("Event effect applied for " + pathType + " path!");
     }
     
     /**

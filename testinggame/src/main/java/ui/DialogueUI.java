@@ -4,7 +4,6 @@ import com.almasb.fxgl.dsl.FXGL;
 import core.DialogueGame;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
-import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -21,8 +20,6 @@ import java.util.Map;
 public class DialogueUI {
     private DialogueGame dialogueGame;
     private Group dialogueContainer;
-    private Rectangle charCard;
-    private Text charLabel;
     private Rectangle dialogBox;
     private Text dialogueText;
     private Text hintText;
@@ -39,21 +36,6 @@ public class DialogueUI {
     }
 
     private void initializeUI() {
-        // Character card (left side) - will be hidden for now
-        charCard = new Rectangle(220, 200, Color.web("#2b2f31"));
-        charCard.setArcWidth(16);
-        charCard.setArcHeight(16);
-        charCard.setTranslateX(40);
-        charCard.setTranslateY(80);
-        charCard.setVisible(false); // Hide the character card
-
-        charLabel = new Text("Character");
-        charLabel.setFill(Color.LIGHTGRAY);
-        charLabel.setFont(Font.font(18));
-        charLabel.setTranslateX(100);
-        charLabel.setTranslateY(185);
-        charLabel.setVisible(false); // Hide the character label
-
         // Dialogue box (bottom)
         dialogBox = new Rectangle(780, 180, Color.web("#1e2123", 0.95));
         dialogBox.setArcWidth(18);
@@ -78,15 +60,14 @@ public class DialogueUI {
         hintText.setTranslateX(650);
         hintText.setTranslateY(585);
 
-        // Options row
+        // Options row - NOT added to container (hidden)
         optionsRow = new HBox(16);
         optionsRow.setAlignment(Pos.CENTER);
         optionsRow.setTranslateX(200);
         optionsRow.setTranslateY(540);
 
-        // Container for all dialogue elements
-        dialogueContainer = new Group(charCard, charLabel, dialogBox, 
-                                      dialogueText, hintText, optionsRow);
+        // Container for all dialogue elements - WITHOUT options
+        dialogueContainer = new Group(dialogBox, dialogueText, hintText);
         dialogueContainer.setVisible(false);
 
         // Add to game scene
@@ -157,7 +138,7 @@ public class DialogueUI {
      * Update character name displayed in the dialogue
      */
     public void setCharacterName(String name) {
-        charLabel.setText(name);
+        // Character name display removed - no longer used
     }
 
     /**
