@@ -12,6 +12,9 @@ import com.almasb.fxgl.dsl.FXGL;
 import characters.Observer;
 import event.MapEvent;
 import battle.BattleSystem;
+import shop.Shop;
+import ui.ShopUI;
+import items.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,11 @@ public class MapUI {
     private List<Observer.characterSlot> currentBattleEnemies;
     private Runnable onBattleModeRequested;
     private AudioManager audioManager;
+    
+    // Shop system
+    private Shop shop;
+    private ShopUI shopUI;
+    private Inventory inventory;
 
 
     public MapUI(GameMap gameMap) {
@@ -49,6 +57,12 @@ public class MapUI {
     
     public void setOnBattleModeRequested(Runnable callback) {
         this.onBattleModeRequested = callback;
+    }
+    
+    public void setShopSystem(Shop shop, ShopUI shopUI, Inventory inventory) {
+        this.shop = shop;
+        this.shopUI = shopUI;
+        this.inventory = inventory;
     }
 
     public void showPathSelection() {
@@ -360,16 +374,22 @@ public class MapUI {
                 break;
             case SHOP:
                 System.out.println("Opened shop at: " + node.getName());
-                // Apply shop benefits to current active heroes
-                if (battleSystem != null) {
-                    Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
-                    for (Observer.characterSlot hero : heroes) {
-                        if (hero != null) {
-                            hero.setCurrentHp(Math.min(hero.getCharacter().getHp(), hero.getCurrentHp() + 250));
-                            hero.setCurrentMp(Math.min(hero.getCharacter().getMp(), hero.getCurrentMp() + 150));
+                // Open shop UI
+                if (shopUI != null) {
+                    shop.refreshShop(); // Generate new items
+                    shopUI.show();
+                } else {
+                    // Fallback: Apply shop benefits to current active heroes
+                    if (battleSystem != null) {
+                        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+                        for (Observer.characterSlot hero : heroes) {
+                            if (hero != null) {
+                                hero.setCurrentHp(Math.min(hero.getCharacter().getHp(), hero.getCurrentHp() + 250));
+                                hero.setCurrentMp(Math.min(hero.getCharacter().getMp(), hero.getCurrentMp() + 150));
+                            }
                         }
+                        System.out.println("Bought healing items! +250 HP and +150 MP!");
                     }
-                    System.out.println("Bought healing items! +250 HP and +150 MP!");
                 }
                 break;
             case REST:

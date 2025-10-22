@@ -3,7 +3,6 @@ package battle;
 import abilities.Ability;
 import audio.AudioManager;
 import characters.Observer;
-import com.almasb.fxgl.app.GameApplication;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -12,6 +11,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import items.ConsumableItem;
+import items.Inventory;
 
 import java.util.Objects;
 
@@ -121,6 +122,11 @@ public class  BattleUI {
     private Rectangle skill3Box;
     private Rectangle skill4Box;
     
+    // Item buttons
+    private Rectangle item1Button;
+    private Rectangle item2Button;
+    private Rectangle item3Button;
+    
     // Layout constants
     private double barX = 300;
     private double barY = 50;
@@ -131,6 +137,8 @@ public class  BattleUI {
     
     // Battle system reference
     private BattleSystem battleSystem;
+    // Inventory system reference
+    private Inventory inventory;
     // Hide talents text setting (Burning Rage bars still show)
     boolean hideTalents = true;
     // Audio system
@@ -139,6 +147,10 @@ public class  BattleUI {
     public BattleUI(BattleSystem battleSystem) {
         this.battleSystem = battleSystem;
         this.audioManager = AudioManager.getInstance();
+    }
+    
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
     }
     
     // ===================== HELPER FUNCTIONS =====================
@@ -899,6 +911,9 @@ public class  BattleUI {
         skill2Box = createSkillBox(hero, s2, 100, 500, Color.CYAN, null);
         skill3Box = createSkillBox(hero, s3, 150, 500, Color.DARKBLUE, null);
         skill4Box = createSkillBox(hero, s4, 200, 500, Color.PURPLE, null);
+        
+        // Create item buttons
+        createItemButtons(hero);
 
         // Visually disable boxes if MP insufficient
         updateSkillAffordabilityVisual(skill1Box, hero, s1);
@@ -1278,6 +1293,23 @@ public class  BattleUI {
             getGameScene().removeUINode(skill4Box);
         }
         
+        // Remove item buttons
+        if (item1Button != null) {
+            Object ud = item1Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item1Button);
+        }
+        if (item2Button != null) {
+            Object ud = item2Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item2Button);
+        }
+        if (item3Button != null) {
+            Object ud = item3Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item3Button);
+        }
+        
         // Clear health bars and Burning Rage bars lists
         healthBars.clear();
         burningRageBars.clear();
@@ -1291,6 +1323,10 @@ public class  BattleUI {
         skill2Box = null;
         skill3Box = null;
         skill4Box = null;
+        
+        item1Button = null;
+        item2Button = null;
+        item3Button = null;
         
     }
 
@@ -1557,5 +1593,147 @@ public class  BattleUI {
         if (redLine != null) getGameScene().addUINode(redLine);
         if (yellowLine != null) getGameScene().addUINode(yellowLine);
         if (orangeLine != null) getGameScene().addUINode(orangeLine);
+    }
+    
+    /**
+     * Create item buttons for battle consumables
+     */
+    private void createItemButtons(Observer.characterSlot hero) {
+        // Remove existing item buttons
+        if (item1Button != null) {
+            Object ud = item1Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item1Button);
+        }
+        if (item2Button != null) {
+            Object ud = item2Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item2Button);
+        }
+        if (item3Button != null) {
+            Object ud = item3Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item3Button);
+        }
+        
+        // Create item buttons (positioned below skill buttons, with more spacing)
+        item1Button = createItemButton(hero, 0, 50, 550, Color.ORANGE);
+        item2Button = createItemButton(hero, 1, 110, 550, Color.ORANGE); // Increased spacing: 100->110
+        item3Button = createItemButton(hero, 2, 170, 550, Color.ORANGE); // Increased spacing: 150->170
+    }
+    
+    /**
+     * Create a single item button
+     */
+    private Rectangle createItemButton(Observer.characterSlot hero, int itemIndex, double x, double y, Color color) {
+        Rectangle button = new Rectangle(50, 35, color); // Increased size: width 40->50, height 30->35
+        button.setStroke(Color.BLACK);
+        button.setStrokeWidth(2);
+        button.setTranslateX(x);
+        button.setTranslateY(y);
+        
+        // Get the actual consumable item from inventory
+        String itemName = "Empty";
+        if (inventory != null && itemIndex < inventory.getBattleConsumables().size()) {
+            ConsumableItem consumable = inventory.getBattleConsumables().get(itemIndex);
+            if (consumable != null) {
+                itemName = consumable.getName();
+            }
+        }
+        
+        Text buttonText = new Text(itemName);
+        buttonText.setFont(new Font(8)); // Slightly larger font since button is bigger
+        buttonText.setFill(Color.BLACK); // Change to black for better readability
+        buttonText.setTranslateX(x + 2);
+        buttonText.setTranslateY(y + 22); // Adjusted for larger button
+        buttonText.setWrappingWidth(46); // Increased wrapping width for larger button
+        
+        // Store text as user data for cleanup
+        button.setUserData(buttonText);
+        
+        // Add click handler
+        button.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                useBattleItem(hero, itemIndex);
+            }
+        });
+        
+        getGameScene().addUINode(button);
+        getGameScene().addUINode(buttonText);
+        
+        return button;
+    }
+    
+    /**
+     * Use a battle consumable item
+     */
+    private void useBattleItem(Observer.characterSlot hero, int itemIndex) {
+        if (inventory == null) {
+            System.out.println("No inventory system connected");
+            return;
+        }
+        
+        // Check if item exists at this index
+        if (itemIndex >= inventory.getBattleConsumables().size()) {
+            System.out.println("No item at slot " + (itemIndex + 1));
+            return;
+        }
+        
+        ConsumableItem consumable = inventory.getBattleConsumables().get(itemIndex);
+        if (consumable == null) {
+            System.out.println("Item at slot " + (itemIndex + 1) + " is null");
+            return;
+        }
+        
+        // Determine target based on item's target type
+        Observer.characterSlot target = determineTarget(consumable, hero);
+        if (target == null) {
+            System.out.println("No valid target for " + consumable.getName());
+            return;
+        }
+        
+        // Use the consumable item
+        if (inventory.useBattleConsumable(itemIndex, target)) {
+            System.out.println("Used " + consumable.getName() + " on " + target.getCharacter().getName());
+            
+            // Play sound effect
+            audioManager.playButtonClick();
+            
+            // Update UI to reflect the change
+            updateAllHealthAndMpBars();
+            
+            // Re-render item buttons to show updated state
+            createItemButtons(hero);
+        } else {
+            System.out.println("Failed to use " + consumable.getName());
+        }
+    }
+    
+    /**
+     * Determine the target for a consumable item based on its target type
+     */
+    private Observer.characterSlot determineTarget(ConsumableItem consumable, Observer.characterSlot hero) {
+        switch (consumable.getTargetType()) {
+            case SELF:
+                return hero;
+                
+            case ALLY:
+                // Use selected ally target, fallback to hero if none selected
+                Observer.characterSlot allyTarget = battleSystem.getSelectedAllyTarget();
+                return allyTarget != null ? allyTarget : hero;
+                
+            case ENEMY:
+                // Use selected enemy target, fallback to first enemy if none selected
+                Observer.characterSlot enemyTarget = battleSystem.getSelectedEnemyTarget();
+                return enemyTarget != null ? enemyTarget : battleSystem.getEnemySlot();
+                
+            case ANY:
+                // Use selected target (enemy or ally), fallback to hero
+                Observer.characterSlot anyTarget = battleSystem.getSelectedTarget();
+                return anyTarget != null ? anyTarget : hero;
+                
+            default:
+                return hero;
+        }
     }
 }
