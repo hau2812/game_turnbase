@@ -49,6 +49,26 @@ public interface Characters {
             this.mp = mp;
             this.uniqueValues = uniqueValues;
         }
+        // In Characters.java
+        public character(character other) {
+            this.id = other.id;
+            this.name = other.name;
+            this.atk = other.atk;
+            this.matk = other.matk;
+            this.def = other.def;
+            this.res = other.res;
+            this.spd = other.spd;
+            this.AV = other.AV;
+            this.hp = other.hp;
+            this.mp = other.mp;
+            // Deep copy uniqueValues list
+            this.uniqueValues = new ArrayList<>();
+            for (uniqueValue uv : other.uniqueValues) {
+                this.uniqueValues.add(new uniqueValue(uv.getName(), uv.getValue()));
+            }
+        }
+
+
 
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
@@ -73,6 +93,7 @@ public interface Characters {
 
         public float getAV() { return AV; }
         public void setAV(float AV) { this.AV = AV; }
+        public void updateAV(){this.AV = 1000/spd;}
 
         public float getHp() { return hp; }
         public void setHp(float hp) { this.hp = hp; }
@@ -82,10 +103,82 @@ public interface Characters {
 
         public ArrayList<uniqueValue> getUniqueValues() { return uniqueValues; }
         public void setUniqueValues(ArrayList<uniqueValue> uniqueValues) { this.uniqueValues = uniqueValues; }
+        
+        // Helper methods for managing unique values
+        public uniqueValue getUniqueValue(String name) {
+            if (uniqueValues == null) return null;
+            for (uniqueValue uv : uniqueValues) {
+                if (uv.getName().equals(name)) {
+                    return uv;
+                }
+            }
+            return null;
+        }
+        
+        public void setUniqueValue(String name, String value) {
+            if (uniqueValues == null) {
+                uniqueValues = new ArrayList<>();
+            }
+            
+            uniqueValue existing = getUniqueValue(name);
+            if (existing != null) {
+                existing.setValue(value);
+            } else {
+                uniqueValues.add(new uniqueValue(name, value));
+            }
+        }
+        
+        public void addToUniqueValue(String name, float amount) {
+            uniqueValue existing = getUniqueValue(name);
+            if (existing != null) {
+                try {
+                    float currentValue = Float.parseFloat(existing.getValue());
+                    existing.setValue(String.valueOf(currentValue + amount));
+                } catch (NumberFormatException e) {
+                    // If not a number, treat as 0
+                    existing.setValue(String.valueOf(amount));
+                }
+            } else {
+                setUniqueValue(name, String.valueOf(amount));
+            }
+        }
+        
+        public float getUniqueValueAsFloat(String name) {
+            uniqueValue uv = getUniqueValue(name);
+            if (uv != null) {
+                try {
+                    return Float.parseFloat(uv.getValue());
+                } catch (NumberFormatException e) {
+                    return 0f;
+                }
+            }
+            return 0f;
+        }
+
+        @Override
+        public String toString() {
+            return "character{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", atk=" + atk +
+                    ", matk=" + matk +
+                    ", def=" + def +
+                    ", res=" + res +
+                    ", spd=" + spd +
+                    ", AV=" + AV +
+                    ", hp=" + hp +
+                    ", mp=" + mp +
+                    ", uniqueValues=" + uniqueValues +
+                    '}';
+        }
     }
 
     public class CharacterRegistry {
         private static final Map<String, Characters.character> registry = new HashMap<>();
+
+        private static void register(Characters.character character) {
+            registry.put(character.getName(), character);
+        }
 
         public static Characters.character getByName(String name) {
             return registry.get(name);
@@ -96,33 +189,37 @@ public interface Characters {
         }
 
         public static void init() {
-            // Example: create a Hero character
-
-            Characters.character hero = new Characters.character(
+            // Create and register Hero with berserker talent using utility method
+            register(characters.SpecialTalents.createBerserker(
                     1,
                     "Hero",
-                    500,  // atk
+                    100,  // atk
                     30,  // matk
                     20,  // def
                     10,  // res
                     15,  // spd
-                    2000, // hp
-                    500,  // mp
-                    new ArrayList<>()
-            );
-            Characters.character hero2 = new Characters.character(
+                    3000, // hp
+                    200   // mp
+            ));
+            
+            // Create and register Hero2 with mana shield talent using utility method
+            Characters.character hero2 = characters.SpecialTalents.createMage(
                     4,
                     "Hero2",
-                    480,  // atk
+                    100,  // atk
                     35,   // matk
                     18,   // def
                     12,   // res
-                    14,   // spd
-                    1800, // hp
-                    150,   // mp
-                    new ArrayList<>()
+                    12,   // spd
+                    180, // hp
+                    500   // mp
             );
-            Characters.character enemy = new Characters.character(
+            hero2.setUniqueValue("Regeneration","25");
+            hero2.setUniqueValue("MpRegeneration","25");
+            register(hero2);
+
+            // Create and register Enemy
+            register(new Characters.character(
                     2,
                     "Enemy",
                     50,  // atk
@@ -133,9 +230,10 @@ public interface Characters {
                     2000, // hp
                     50,  // mp
                     new ArrayList<>()
-            );
+            ));
 
-            Characters.character enemy2 = new Characters.character(
+            // Create and register Enemy2
+            register(new Characters.character(
                     3,
                     "Enemy2",
                     50,  // atk
@@ -146,15 +244,69 @@ public interface Characters {
                     2000, // hp
                     50,  // mp
                     new ArrayList<>()
-            );
+            ));
             
+            // Create and register Hero3 (Flamita) with Burning Rage
+            register(new Characters.character(
+                    5,
+                    "Flamita",
+                    50,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    12,   // spd
+                    500, // hp
+                    0,   // mp
+                    new ArrayList<uniqueValue>() {{
+                        add(new uniqueValue("Burning rage", "0"));
+                    }}
+            ));
+            
+            // Create and register Hero4 (Pieberry)
+            register(new Characters.character(
+                    6,
+                    "Pieberry",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    500,   // mp
+                    new ArrayList<>(){{
+                        add(new uniqueValue("MpRegeneration", "100"));
+                    }}
+            ));
 
+            // Create and register another fuking hero
+            register(new Characters.character(
+                    7,
+                    "Ina",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    15,// mp
+                    new ArrayList<>()
+            ));
 
-            // Register the character
-            registry.put(hero.getName(), hero);
-            registry.put(hero2.getName(), hero2);
-            registry.put(enemy.getName(), enemy);
-            registry.put(enemy2.getName(), enemy2);
+            // Create and register another fuking hero
+            register(new Characters.character(
+                    8,
+                    "Leuna",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    300,// mp
+                    new ArrayList<uniqueValue>() {{
+                        add(new uniqueValue("MpRegeneration", "100"));
+                    }}
+            ));
         }
     }
 }
