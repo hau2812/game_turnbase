@@ -19,6 +19,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import items.ConsumableItem;
+import items.Inventory;
 import javafx.util.Duration;
 
 import java.util.Objects;
@@ -145,6 +147,11 @@ public class  BattleUI {
     private Rectangle skill3Box;
     private Rectangle skill4Box;
     
+    // Item buttons
+    private Rectangle item1Button;
+    private Rectangle item2Button;
+    private Rectangle item3Button;
+
     // Layout constants
     private double barX = 300;
     private double barY = 50;
@@ -155,6 +162,8 @@ public class  BattleUI {
     
     // Battle system reference
     private BattleSystem battleSystem;
+    // Inventory system reference
+    private Inventory inventory;
     // Hide talents text setting (Burning Rage bars still show)
     boolean hideTalents = true;
     // Audio system
@@ -165,6 +174,10 @@ public class  BattleUI {
         this.audioManager = AudioManager.getInstance();
     }
     
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
+    }
+
     // ===================== HELPER FUNCTIONS =====================
     
     /**
@@ -463,11 +476,11 @@ public class  BattleUI {
                     spriteAnimation = createSpriteAnimation(idleSprite, slot);
                 }
             }
-            
+
             // Add to health bars list
             healthBars.add(new HealthBarData(slot, healthBar, healthBorder, 
                 mpBar, mpBorder, hpText, mpText, nameText, idleSprite, spriteAnimation, healthX, healthY));
-            
+
             // Add hover functionality to show debuffs (for both heroes and enemies)
             addDebuffHoverToHealthBar(healthBar, healthBorder, slot);
         }
@@ -797,39 +810,39 @@ public class  BattleUI {
         if (slot == null || slot.getCharacter() == null) {
             return null;
         }
-        
+
         String characterName = slot.getCharacter().getName();
         if (characterName == null || characterName.isEmpty()) {
             return null;
         }
-        
+
         // Construct sprite filename: {characterName}_idle.png (case-insensitive matching)
         // FXGL automatically prepends /assets/textures/ to image paths
         // So "sprites/flamita_idle.png" becomes "/assets/textures/sprites/flamita_idle.png"
         String spriteFileName = characterName.toLowerCase() + "_idle.png";
         String spritePath = "sprites/" + spriteFileName;
-        
+
         try {
             // Try to load the sprite image
             // Note: File should be located at: src/main/resources/assets/textures/sprites/{name}_idle.png
             Image spriteImage = getAssetLoader().loadImage(spritePath);
-            
+
             // Immediately check if image is null or has error
             if (spriteImage == null || spriteImage.isError()) {
                 return null;
             }
-            
+
             // Check image URL - if it doesn't contain our expected path, it's likely an error placeholder
             String imageUrl = spriteImage.getUrl();
             if (imageUrl == null || !imageUrl.contains(spriteFileName.toLowerCase())) {
                 // URL doesn't match expected file - likely an error placeholder
                 return null;
             }
-            
+
             // Create ImageView but keep it invisible initially
             ImageView spriteView = new ImageView(spriteImage);
             spriteView.setVisible(false); // Start invisible until we verify it's valid
-            
+
             // Add error listener to ensure it stays hidden if error occurs
             spriteImage.errorProperty().addListener((obs, wasError, isError) -> {
                 if (isError) {
@@ -842,14 +855,14 @@ public class  BattleUI {
                     }
                 }
             });
-            
+
             // Wait for image to finish loading, then validate
             if (spriteImage.isBackgroundLoading()) {
                 // Image is still loading - add listener to check when done
                 spriteImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
                     if (newProgress.doubleValue() >= 1.0) {
                         // Image finished loading - check if valid
-                        if (spriteImage.isError() || spriteImage.getWidth() <= 0 || 
+                        if (spriteImage.isError() || spriteImage.getWidth() <= 0 ||
                             !spriteImage.getUrl().contains(spriteFileName.toLowerCase())) {
                             spriteView.setVisible(false);
                         } else {
@@ -868,7 +881,7 @@ public class  BattleUI {
                     return null; // Invalid image, don't return the view
                 }
             }
-            
+
             // Set sprite size - ADJUST THESE VALUES TO MAKE SPRITE BIGGER/SMALLER
             // Current: 128x128 (2x the original 64x64 size)
             double spriteDisplayWidth = 100;  // ADJUST THIS to change sprite width
@@ -876,32 +889,32 @@ public class  BattleUI {
             spriteView.setFitWidth(spriteDisplayWidth);
             spriteView.setFitHeight(spriteDisplayHeight);
             spriteView.setPreserveRatio(true);
-            
+
             // Position sprite to the right of the HP bar
             // NOTE: ADJUST THESE POSITION VALUES AS NEEDED
             // spriteX: horizontal position (to the right of health bar)
             // spriteY: vertical position (relative to health bar)
             double spriteX = healthX + healthBarWidth + 10; // 10 pixels to the right of health bar - ADJUST THIS
             double spriteY = healthY - 30; // Slightly above the health bar - ADJUST THIS
-            
+
             spriteView.setTranslateX(spriteX);
             spriteView.setTranslateY(spriteY);
             spriteView.setMouseTransparent(true); // Allow mouse events to pass through
-            
+
             // Store original position for skill animations
             HealthBarData healthBarData = findHealthBarData(slot);
             if (healthBarData != null) {
                 healthBarData.originalSpriteX = spriteX;
                 healthBarData.originalSpriteY = spriteY;
             }
-            
+
             return spriteView;
         } catch (Exception e) {
             // Sprite file doesn't exist or couldn't be loaded - silently return null (no error image shown)
             return null;
         }
     }
-    
+
     /**
      * Creates an animation timeline for a sprite sheet (64x64 pixels per frame)
      * @param spriteView The ImageView containing the sprite sheet
@@ -912,31 +925,31 @@ public class  BattleUI {
         if (spriteView == null || spriteView.getImage() == null) {
             return null;
         }
-        
+
         Image spriteImage = spriteView.getImage();
         double imageWidth = spriteImage.getWidth();
         double imageHeight = spriteImage.getHeight();
-        
+
         // Calculate number of frames (assuming 64x64 pixels per frame)
         int frameWidth = 64;
         int frameHeight = 64;
         int framesPerRow = (int) (imageWidth / frameWidth);
         int totalFrames = framesPerRow; // Assuming single row sprite sheet
-        
+
         if (totalFrames <= 0) {
             return null;
         }
-        
+
         // Set initial viewport to first frame
         spriteView.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
-        
+
         // Create animation timeline
         Timeline animation = new Timeline();
         animation.setCycleCount(Animation.INDEFINITE);
-        
+
         // Animation speed: change frame every 0.15 seconds (adjust as needed)
         Duration frameDuration = Duration.millis(150);
-        
+
         // Create keyframes for each frame
         for (int i = 0; i < totalFrames; i++) {
             final int frameIndex = i;
@@ -952,13 +965,13 @@ public class  BattleUI {
             );
             animation.getKeyFrames().add(keyFrame);
         }
-        
+
         // Start the animation
         animation.play();
-        
+
         return animation;
     }
-    
+
     /**
      * Creates a skill animation sprite for a character
      * @param characterName The character name (e.g., "Flamita")
@@ -969,26 +982,26 @@ public class  BattleUI {
         if (characterName == null || characterName.isEmpty()) {
             return null;
         }
-        
+
         // Construct sprite filename: {characterName}_skill_{skillNumber}.png
         String spriteFileName = characterName.toLowerCase() + "_skill_" + skillNumber + ".png";
         String spritePath = "sprites/" + spriteFileName;
-        
+
         try {
             Image skillImage = getAssetLoader().loadImage(spritePath);
-            
+
             if (skillImage == null || skillImage.isError()) {
                 return null;
             }
-            
+
             String imageUrl = skillImage.getUrl();
             if (imageUrl == null || !imageUrl.contains(spriteFileName.toLowerCase())) {
                 return null;
             }
-            
+
             ImageView skillView = new ImageView(skillImage);
             skillView.setVisible(false);
-            
+
             // Set sprite size (same as idle sprite)
             double spriteDisplayWidth = 100;
             double spriteDisplayHeight = 100;
@@ -996,7 +1009,7 @@ public class  BattleUI {
             skillView.setFitHeight(spriteDisplayHeight);
             skillView.setPreserveRatio(true);
             skillView.setMouseTransparent(true);
-            
+
             // Wait for image to finish loading
             if (skillImage.isBackgroundLoading()) {
                 skillImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
@@ -1013,13 +1026,13 @@ public class  BattleUI {
                     return null;
                 }
             }
-            
+
             return skillView;
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     /**
      * Creates an animation timeline for a skill sprite sheet
      * @param spriteView The ImageView containing the skill sprite sheet
@@ -1031,25 +1044,25 @@ public class  BattleUI {
         if (spriteView == null || spriteView.getImage() == null) {
             return null;
         }
-        
+
         Image spriteImage = spriteView.getImage();
         double imageWidth = spriteImage.getWidth();
         double imageHeight = spriteImage.getHeight();
-        
+
         int framesPerRow = (int) (imageWidth / frameWidth);
         int totalFrames = framesPerRow;
-        
+
         if (totalFrames <= 0) {
             return null;
         }
-        
+
         spriteView.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
-        
+
         Timeline animation = new Timeline();
         animation.setCycleCount(1); // Play once, not loop
-        
+
         Duration frameDuration = Duration.millis(150);
-        
+
         for (int i = 0; i < totalFrames; i++) {
             final int frameIndex = i;
             KeyFrame keyFrame = new KeyFrame(
@@ -1063,10 +1076,10 @@ public class  BattleUI {
             );
             animation.getKeyFrames().add(keyFrame);
         }
-        
+
         return animation;
     }
-    
+
     /**
      * Creates an enemy sprite (mirrored) for skill animations
      * @param enemySlot The enemy character slot
@@ -1078,50 +1091,50 @@ public class  BattleUI {
         if (enemySlot == null || enemySlot.getCharacter() == null) {
             return null;
         }
-        
+
         String characterName = enemySlot.getCharacter().getName();
         if (characterName == null || characterName.isEmpty()) {
             return null;
         }
-        
+
         // Try to load enemy idle sprite
         String spriteFileName = characterName.toLowerCase() + "_idle.png";
         String spritePath = "sprites/" + spriteFileName;
-        
+
         try {
             Image spriteImage = getAssetLoader().loadImage(spritePath);
-            
+
             if (spriteImage == null || spriteImage.isError()) {
                 return null;
             }
-            
+
             String imageUrl = spriteImage.getUrl();
             if (imageUrl == null || !imageUrl.contains(spriteFileName.toLowerCase())) {
                 return null;
             }
-            
+
             ImageView spriteView = new ImageView(spriteImage);
             spriteView.setVisible(false);
-            
+
             // Mirror the sprite horizontally (flip for enemy facing left)
             spriteView.setScaleX(-1); // Flip horizontally
-            
+
             // Set sprite size
             double spriteDisplayWidth = 100;
             double spriteDisplayHeight = 100;
             spriteView.setFitWidth(spriteDisplayWidth);
             spriteView.setFitHeight(spriteDisplayHeight);
             spriteView.setPreserveRatio(true);
-            
+
             // Position sprite to the LEFT of the enemy HP bar
             // NOTE: ADJUST THESE POSITION VALUES AS NEEDED
             double spriteX = enemyHealthX - spriteDisplayWidth - 10; // 10 pixels to the left of health bar - ADJUST THIS
             double spriteY = enemyHealthY - 30; // Slightly above the health bar - ADJUST THIS
-            
+
             spriteView.setTranslateX(spriteX);
             spriteView.setTranslateY(spriteY);
             spriteView.setMouseTransparent(true);
-            
+
             if (!spriteImage.isBackgroundLoading()) {
                 if (spriteImage.getWidth() > 0 && !spriteImage.isError()) {
                     spriteView.setVisible(true);
@@ -1137,13 +1150,13 @@ public class  BattleUI {
                     }
                 });
             }
-            
+
             return spriteView;
         } catch (Exception e) {
             return null;
         }
     }
-    
+
     /**
      * Plays a skill animation sequence:
      * 1. Move hero sprite to left of selected enemy (if shouldMove is true)
@@ -1160,41 +1173,41 @@ public class  BattleUI {
         if (hero == null) {
             return;
         }
-        
+
         HealthBarData heroData = findHealthBarData(hero);
         if (heroData == null || heroData.idleSprite == null) {
             return;
         }
-        
+
         String characterName = hero.getCharacter().getName();
         if (characterName == null || characterName.isEmpty()) {
             return;
         }
-        
+
         // Store original position if not already stored
         if (heroData.originalSpriteX == 0 && heroData.originalSpriteY == 0) {
             heroData.originalSpriteX = heroData.idleSprite.getTranslateX();
             heroData.originalSpriteY = heroData.idleSprite.getTranslateY();
         }
-        
+
         // Pause idle animation
         if (heroData.spriteAnimation != null) {
             heroData.spriteAnimation.pause();
         }
-        
+
         if (shouldMove && targetEnemy != null) {
             // Moving to enemy - show enemy sprite and move hero
             HealthBarData enemyData = findHealthBarData(targetEnemy);
             if (enemyData == null) {
                 return;
             }
-            
+
             // Calculate target position (left of enemy HP bar)
             double enemyHealthX = enemyData.baseX;
             double enemyHealthY = enemyData.baseY;
             double targetX = enemyHealthX - 100 - 20; // 20 pixels to the left of enemy HP bar - ADJUST THIS
             double targetY = enemyHealthY - 30; // Slightly above enemy HP bar - ADJUST THIS
-            
+
             // Create and show enemy sprite (mirrored)
             if (enemyData.enemySprite == null) {
                 enemyData.enemySprite = createEnemySprite(targetEnemy, enemyHealthX, enemyHealthY);
@@ -1209,23 +1222,23 @@ public class  BattleUI {
                     enemyData.enemyIdleAnimation.play();
                 }
             }
-            
+
             // Animate hero sprite moving to target position (1.5x faster: 300ms -> 200ms)
             javafx.animation.TranslateTransition moveToEnemy = new javafx.animation.TranslateTransition(Duration.millis(200), heroData.idleSprite);
             moveToEnemy.setToX(targetX); // Absolute position
             moveToEnemy.setToY(targetY); // Absolute position
-            
+
             moveToEnemy.setOnFinished(e -> {
                 playSkillAnimationAtPosition(heroData, characterName, skillNumber, true);
             });
-            
+
             moveToEnemy.play();
         } else {
             // Not moving - play skill animation at current position
             playSkillAnimationAtPosition(heroData, characterName, skillNumber, false);
         }
     }
-    
+
     /**
      * Plays the skill animation at the hero's current position
      * @param heroData The hero's health bar data
@@ -1236,7 +1249,7 @@ public class  BattleUI {
     private void playSkillAnimationAtPosition(HealthBarData heroData, String characterName, int skillNumber, boolean shouldReturn) {
         // Check if we need to create or update the skill sprite for this skill number
         boolean needNewSprite = false;
-        
+
         if (heroData.skillSprite == null) {
             // No sprite exists, need to create one
             needNewSprite = true;
@@ -1262,7 +1275,7 @@ public class  BattleUI {
                 needNewSprite = true;
             }
         }
-        
+
         // Create skill sprite if needed
         if (needNewSprite) {
             heroData.skillSprite = createSkillSprite(characterName, skillNumber);
@@ -1272,23 +1285,23 @@ public class  BattleUI {
                 heroData.skillAnimation = null;
             }
         }
-        
+
         // Always update skill sprite position to match hero's current position
         if (heroData.skillSprite != null) {
             heroData.skillSprite.setTranslateX(heroData.idleSprite.getTranslateX());
             heroData.skillSprite.setTranslateY(heroData.idleSprite.getTranslateY());
         }
-        
+
         // Hide idle sprite, show skill sprite
         if (heroData.skillSprite != null) {
             heroData.idleSprite.setVisible(false);
             heroData.skillSprite.setVisible(true);
-            
+
             // Create and play skill animation
             if (heroData.skillAnimation == null) {
                 heroData.skillAnimation = createSkillSpriteAnimation(heroData.skillSprite, 64, 64);
             }
-            
+
             if (heroData.skillAnimation != null) {
                 // Stop any ongoing animation and reset it
                 heroData.skillAnimation.stop();
@@ -1339,14 +1352,14 @@ public class  BattleUI {
             pause.play();
         }
     }
-    
+
     /**
      * Returns the hero sprite to its original position and resumes idle animation
      * @param heroData The hero's health bar data
      */
     private void returnHeroToOriginalPosition(HealthBarData heroData) {
         if (heroData == null) return;
-        
+
         // Hide skill sprite, show idle sprite
         if (heroData.skillSprite != null) {
             heroData.skillSprite.setVisible(false);
@@ -1354,19 +1367,19 @@ public class  BattleUI {
         if (heroData.idleSprite != null) {
             heroData.idleSprite.setVisible(true);
         }
-        
+
         // Animate hero sprite returning to original position
         javafx.animation.TranslateTransition returnHome = new javafx.animation.TranslateTransition(
             Duration.millis(300), heroData.idleSprite);
         returnHome.setToX(heroData.originalSpriteX); // Return to original absolute position
         returnHome.setToY(heroData.originalSpriteY); // Return to original absolute position
-        
+
         returnHome.setOnFinished(e -> {
             // Resume idle animation
             if (heroData.spriteAnimation != null) {
                 heroData.spriteAnimation.play();
             }
-            
+
             // Hide enemy sprite after animation completes
             // Find all enemy health bar data and hide their enemy sprites
             for (HealthBarData healthBarData : healthBars) {
@@ -1378,10 +1391,10 @@ public class  BattleUI {
                 }
             }
         });
-        
+
         returnHome.play();
     }
-    
+
     private void addUIElements() {
         // Add health bar elements to scene
         for (HealthBarData healthBarData : healthBars) {
@@ -1411,7 +1424,7 @@ public class  BattleUI {
             if (healthBarData.idleSprite != null) {
                 // Double-check that the sprite image is valid before adding
                 Image spriteImage = healthBarData.idleSprite.getImage();
-                if (spriteImage != null && !spriteImage.isError() && 
+                if (spriteImage != null && !spriteImage.isError() &&
                     spriteImage.getWidth() > 0 && spriteImage.getHeight() > 0) {
                     // Only add if image is valid (not an error placeholder)
                     getGameScene().addUINode(healthBarData.idleSprite);
@@ -1425,7 +1438,7 @@ public class  BattleUI {
                 }
             }
         }
-        
+
         // Add text elements last so they appear on top of everything
         for (HealthBarData healthBarData : healthBars) {
             if (healthBarData.hpText != null) {
@@ -1549,7 +1562,8 @@ public class  BattleUI {
         skill2Box = createSkillBox(hero, s2, 100, 550, Color.CYAN, null);
         skill3Box = createSkillBox(hero, s3, 150, 550, Color.DARKBLUE, null);
         skill4Box = createSkillBox(hero, s4, 200, 550, Color.PURPLE, null);
-
+        // Create item buttons
+        createItemButtons(hero);
         // Visually disable boxes if MP insufficient
         updateSkillAffordabilityVisual(skill1Box, hero, s1);
         updateSkillAffordabilityVisual(skill2Box, hero, s2);
@@ -1676,15 +1690,15 @@ public class  BattleUI {
                         }
                     }
                 }
-                
+
                 // Check if skill targets enemies (should move to enemy)
                 String skillTarget = skill.getTarget();
                 boolean isEnemyTargeting = skillTarget != null && (
-                    skillTarget.equals("Enemy") || 
-                    skillTarget.equals("Single Enemy") || 
+                    skillTarget.equals("Enemy") ||
+                    skillTarget.equals("Single Enemy") ||
                     skillTarget.equals("Aoe enemy")
                 );
-                
+
                 // Play skill animation for all skills (1-4)
                 if (skillNumber > 0 && isHero(attacker)) {
                     if (isEnemyTargeting && isEnemy(resolvedTarget)) {
@@ -1915,7 +1929,7 @@ public class  BattleUI {
             if (healthBarData.enemySprite != null) {
                 getGameScene().removeUINode(healthBarData.enemySprite);
             }
-            
+
             // Remove debuff tooltip if it exists
             if (healthBarData.healthBar != null) {
                 Object userData = healthBarData.healthBar.getUserData();
@@ -1985,6 +1999,23 @@ public class  BattleUI {
             getGameScene().removeUINode(skill4Box);
         }
         
+        // Remove item buttons
+        if (item1Button != null) {
+            Object ud = item1Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item1Button);
+        }
+        if (item2Button != null) {
+            Object ud = item2Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item2Button);
+        }
+        if (item3Button != null) {
+            Object ud = item3Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item3Button);
+        }
+
         // Clear health bars and Burning Rage bars lists
         healthBars.clear();
         burningRageBars.clear();
@@ -1999,6 +2030,10 @@ public class  BattleUI {
         skill3Box = null;
         skill4Box = null;
         
+        item1Button = null;
+        item2Button = null;
+        item3Button = null;
+
     }
 
     public void showAllCombatUI() {
@@ -2267,5 +2302,147 @@ public class  BattleUI {
         if (redLine != null) getGameScene().addUINode(redLine);
         if (yellowLine != null) getGameScene().addUINode(yellowLine);
         if (orangeLine != null) getGameScene().addUINode(orangeLine);
+    }
+
+    /**
+     * Create item buttons for battle consumables
+     */
+    private void createItemButtons(Observer.characterSlot hero) {
+        // Remove existing item buttons
+        if (item1Button != null) {
+            Object ud = item1Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item1Button);
+        }
+        if (item2Button != null) {
+            Object ud = item2Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item2Button);
+        }
+        if (item3Button != null) {
+            Object ud = item3Button.getUserData();
+            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            getGameScene().removeUINode(item3Button);
+        }
+
+        // Create item buttons (positioned below skill buttons, with more spacing)
+        item1Button = createItemButton(hero, 0, 50+300, 550, Color.ORANGE);
+        item2Button = createItemButton(hero, 1, 110+300, 550, Color.ORANGE); // Increased spacing: 100->110
+        item3Button = createItemButton(hero, 2, 170+300, 550, Color.ORANGE); // Increased spacing: 150->170
+    }
+
+    /**
+     * Create a single item button
+     */
+    private Rectangle createItemButton(Observer.characterSlot hero, int itemIndex, double x, double y, Color color) {
+        Rectangle button = new Rectangle(50, 35, color); // Increased size: width 40->50, height 30->35
+        button.setStroke(Color.BLACK);
+        button.setStrokeWidth(2);
+        button.setTranslateX(x);
+        button.setTranslateY(y);
+
+        // Get the actual consumable item from inventory
+        String itemName = "Empty";
+        if (inventory != null && itemIndex < inventory.getBattleConsumables().size()) {
+            ConsumableItem consumable = inventory.getBattleConsumables().get(itemIndex);
+            if (consumable != null) {
+                itemName = consumable.getName();
+            }
+        }
+
+        Text buttonText = new Text(itemName);
+        buttonText.setFont(new Font(8)); // Slightly larger font since button is bigger
+        buttonText.setFill(Color.BLACK); // Change to black for better readability
+        buttonText.setTranslateX(x + 2);
+        buttonText.setTranslateY(y + 22); // Adjusted for larger button
+        buttonText.setWrappingWidth(46); // Increased wrapping width for larger button
+
+        // Store text as user data for cleanup
+        button.setUserData(buttonText);
+
+        // Add click handler
+        button.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                useBattleItem(hero, itemIndex);
+            }
+        });
+
+        getGameScene().addUINode(button);
+        getGameScene().addUINode(buttonText);
+
+        return button;
+    }
+
+    /**
+     * Use a battle consumable item
+     */
+    private void useBattleItem(Observer.characterSlot hero, int itemIndex) {
+        if (inventory == null) {
+            System.out.println("No inventory system connected");
+            return;
+        }
+
+        // Check if item exists at this index
+        if (itemIndex >= inventory.getBattleConsumables().size()) {
+            System.out.println("No item at slot " + (itemIndex + 1));
+            return;
+        }
+
+        ConsumableItem consumable = inventory.getBattleConsumables().get(itemIndex);
+        if (consumable == null) {
+            System.out.println("Item at slot " + (itemIndex + 1) + " is null");
+            return;
+        }
+
+        // Determine target based on item's target type
+        Observer.characterSlot target = determineTarget(consumable, hero);
+        if (target == null) {
+            System.out.println("No valid target for " + consumable.getName());
+            return;
+        }
+
+        // Use the consumable item
+        if (inventory.useBattleConsumable(itemIndex, target)) {
+            System.out.println("Used " + consumable.getName() + " on " + target.getCharacter().getName());
+
+            // Play sound effect
+            audioManager.playButtonClick();
+
+            // Update UI to reflect the change
+            updateAllHealthAndMpBars();
+
+            // Re-render item buttons to show updated state
+            createItemButtons(hero);
+        } else {
+            System.out.println("Failed to use " + consumable.getName());
+        }
+    }
+
+    /**
+     * Determine the target for a consumable item based on its target type
+     */
+    private Observer.characterSlot determineTarget(ConsumableItem consumable, Observer.characterSlot hero) {
+        switch (consumable.getTargetType()) {
+            case SELF:
+                return hero;
+
+            case ALLY:
+                // Use selected ally target, fallback to hero if none selected
+                Observer.characterSlot allyTarget = battleSystem.getSelectedAllyTarget();
+                return allyTarget != null ? allyTarget : hero;
+
+            case ENEMY:
+                // Use selected enemy target, fallback to first enemy if none selected
+                Observer.characterSlot enemyTarget = battleSystem.getSelectedEnemyTarget();
+                return enemyTarget != null ? enemyTarget : battleSystem.getEnemySlot();
+
+            case ANY:
+                // Use selected target (enemy or ally), fallback to hero
+                Observer.characterSlot anyTarget = battleSystem.getSelectedTarget();
+                return anyTarget != null ? anyTarget : hero;
+
+            default:
+                return hero;
+        }
     }
 }

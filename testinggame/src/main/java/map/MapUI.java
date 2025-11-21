@@ -12,6 +12,9 @@ import com.almasb.fxgl.dsl.FXGL;
 import characters.Observer;
 import event.MapEvent;
 import battle.BattleSystem;
+import shop.Shop;
+import ui.ShopUI;
+import items.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,11 @@ public class MapUI {
     private List<Observer.characterSlot> currentBattleEnemies;
     private Runnable onBattleModeRequested;
     private AudioManager audioManager;
+
+    // Shop system
+    private Shop shop;
+    private ShopUI shopUI;
+    private Inventory inventory;
 
 
     public MapUI(GameMap gameMap) {
@@ -49,6 +57,12 @@ public class MapUI {
     
     public void setOnBattleModeRequested(Runnable callback) {
         this.onBattleModeRequested = callback;
+    }
+
+    public void setShopSystem(Shop shop, ShopUI shopUI, Inventory inventory) {
+        this.shop = shop;
+        this.shopUI = shopUI;
+        this.inventory = inventory;
     }
 
     public void showPathSelection() {
@@ -336,10 +350,13 @@ public class MapUI {
                 if (node.getEvent() instanceof MapEvent) {
                     MapEvent mapEvent = (MapEvent) node.getEvent();
                     mapEvent.trigger();
-                    // Apply event effects to heroes (you'll need to pass hero references)
-                    Observer.characterSlot hero1 = Observer.CharacterSlotRegistry.getByName("Hero");
-                    Observer.characterSlot hero2 = Observer.CharacterSlotRegistry.getByName("Hero2");
-                    mapEvent.applyEffect(hero1, hero2);
+                    // Apply event effects to current active heroes
+                    if (battleSystem != null) {
+                        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+                        Observer.characterSlot hero1 = heroes.length > 0 ? heroes[0] : null;
+                        Observer.characterSlot hero2 = heroes.length > 1 ? heroes[1] : null;
+                        mapEvent.applyEffect(hero1, hero2);
+                    }
                 }
                 break;
             case BATTLE:
@@ -357,33 +374,37 @@ public class MapUI {
                 break;
             case SHOP:
                 System.out.println("Opened shop at: " + node.getName());
-                // Apply shop benefits
-                Observer.characterSlot hero1 = Observer.CharacterSlotRegistry.getByName("Hero");
-                Observer.characterSlot hero2 = Observer.CharacterSlotRegistry.getByName("Hero2");
-                if (hero1 != null) {
-                    hero1.setCurrentHp(Math.min(hero1.getCharacter().getHp(), hero1.getCurrentHp() + 250));
-                    hero1.setCurrentMp(Math.min(hero1.getCharacter().getMp(), hero1.getCurrentMp() + 150));
+                // Open shop UI
+                if (shopUI != null) {
+                    shop.refreshShop(); // Generate new items
+                    shopUI.show();
+                } else {
+                    // Fallback: Apply shop benefits to current active heroes
+                    if (battleSystem != null) {
+                        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+                        for (Observer.characterSlot hero : heroes) {
+                            if (hero != null) {
+                                hero.setCurrentHp(Math.min(hero.getCharacter().getHp(), hero.getCurrentHp() + 250));
+                                hero.setCurrentMp(Math.min(hero.getCharacter().getMp(), hero.getCurrentMp() + 150));
+                            }
+                        }
+                        System.out.println("Bought healing items! +250 HP and +150 MP!");
+                    }
                 }
-                if (hero2 != null) {
-                    hero2.setCurrentHp(Math.min(hero2.getCharacter().getHp(), hero2.getCurrentHp() + 250));
-                    hero2.setCurrentMp(Math.min(hero2.getCharacter().getMp(), hero2.getCurrentMp() + 150));
-                }
-                System.out.println("Bought healing items! +250 HP and +150 MP!");
                 break;
             case REST:
                 System.out.println("Resting at: " + node.getName());
-                // Full heal
-                Observer.characterSlot h1 = Observer.CharacterSlotRegistry.getByName("Hero");
-                Observer.characterSlot h2 = Observer.CharacterSlotRegistry.getByName("Hero2");
-                if (h1 != null) {
-                    h1.setCurrentHp(h1.getCharacter().getHp());
-                    h1.setCurrentMp(h1.getCharacter().getMp());
+                // Full heal for current active heroes
+                if (battleSystem != null) {
+                    Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+                    for (Observer.characterSlot hero : heroes) {
+                        if (hero != null) {
+                            hero.setCurrentHp(hero.getCharacter().getHp());
+                            hero.setCurrentMp(hero.getCharacter().getMp());
+                        }
+                    }
+                    System.out.println("Fully rested! HP and MP restored!");
                 }
-                if (h2 != null) {
-                    h2.setCurrentHp(h2.getCharacter().getHp());
-                    h2.setCurrentMp(h2.getCharacter().getMp());
-                }
-                System.out.println("Fully rested! HP and MP restored!");
                 break;
             case BOSS:
                 System.out.println("Boss battle begins!");

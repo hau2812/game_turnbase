@@ -4,6 +4,10 @@ import characters.Characters;
 import characters.Observer;
 import abilities.Ability;
 import event.MapEvent;
+import items.ItemRegistry;
+import items.Item;
+import items.ConsumableItem;
+import items.EquipmentItem;
 import java.util.*;
 
 /**
@@ -194,6 +198,11 @@ public class RandomMapGenerator {
     }
     
     private static MapEvent createForestRandomEvent() {
+        // 30% chance for treasure event, 70% chance for regular event
+        if (random.nextInt(10) < 3) {
+            return createTreasureEvent();
+        }
+
         String[] events = {
             "Ban tim thay mot suoi nuoc thieng trong rung.",
             "Mot con thu hoang da xuat hien va tang ban mot vat pham quy.",
@@ -241,6 +250,11 @@ public class RandomMapGenerator {
     }
     
     private static MapEvent createMountainRandomEvent() {
+        // 25% chance for treasure event, 75% chance for regular event
+        if (random.nextInt(10) < 2) {
+            return createTreasureEvent();
+        }
+
         String[] events = {
             "Ban tim thay mot hang dong bi an voi tinh the ma thuat.",
             "Mot con gio lanh thoi qua, mang theo suc manh co xua.",
@@ -297,6 +311,11 @@ public class RandomMapGenerator {
     }
     
     private static MapEvent createVillageRandomEvent() {
+        // 40% chance for shop event, 60% chance for regular event
+        if (random.nextInt(10) < 4) {
+            return createShopEvent();
+        }
+
         String[] events = {
             "Ban gap mot nguoi dan lang tot bung.",
             "Mot thuong gia giau co moi ban vao nha.",
@@ -482,5 +501,119 @@ public class RandomMapGenerator {
             default:
                 return FOREST_ENEMIES;
         }
+    }
+
+    /**
+     * Create a treasure event that gives items to the player
+     */
+    public static MapEvent createTreasureEvent() {
+        String[] treasureEvents = {
+            "Ban tim thay mot kho bau cu an!",
+            "Mot kho bau bi bo hoang xuat hien truoc mat ban!",
+            "Ban phat hien mot hop kho bau ky la!",
+            "Mot kho bau ma thuat duoc an giu trong hang dong!",
+            "Ban tim thay kho bau cua mot nha tham hiem truoc day!"
+        };
+
+        String eventText = treasureEvents[random.nextInt(treasureEvents.length)];
+
+        return new MapEvent(eventText) {
+            @Override
+            public void trigger() {
+                System.out.println(getDescription());
+            }
+
+            @Override
+            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
+                // Give random items to player
+                List<Item> allItems = new ArrayList<>(ItemRegistry.getAllItems());
+                Collections.shuffle(allItems);
+
+                // Give 1-3 random items
+                int itemCount = 1 + random.nextInt(3);
+                System.out.println("Ban tim thay " + itemCount + " vat pham trong kho bau:");
+
+                for (int i = 0; i < Math.min(itemCount, allItems.size()); i++) {
+                    Item item = allItems.get(i);
+                    int quantity = getRandomItemQuantity(item);
+
+                    // Add to inventory (this would need to be connected to the actual inventory system)
+                    System.out.println("- " + item.getName() + " x" + quantity + " (" + item.getRarity().getDisplayName() + ")");
+                }
+
+                // Also give some healing
+                float healAmount = 100 + random.nextInt(200);
+                healCharacter(hero1, healAmount);
+                healCharacter(hero2, healAmount);
+                System.out.println("Ca hai hero duoc hoi " + (int)healAmount + " HP!");
+            }
+        };
+    }
+
+    /**
+     * Get random quantity for an item based on its rarity
+     */
+    private static int getRandomItemQuantity(Item item) {
+        switch (item.getRarity()) {
+            case COMMON:
+                return 1 + random.nextInt(3); // 1-3
+            case UNCOMMON:
+                return 1 + random.nextInt(2); // 1-2
+            case RARE:
+                return 1; // Always 1
+            case EPIC:
+                return 1; // Always 1
+            case LEGENDARY:
+                return 1; // Always 1
+            default:
+                return 1;
+        }
+    }
+
+    /**
+     * Create a shop event that gives gold and items
+     */
+    public static MapEvent createShopEvent() {
+        String[] shopEvents = {
+            "Ban gap mot thuong gia lang thang va mua mot so vat pham!",
+            "Mot cua hang nho xuat hien va ban mua mot so do dung!",
+            "Ban tim thay mot thuong gia va trao doi vat pham!",
+            "Mot nguoi ban hang di qua va ban mua mot so thuoc!"
+        };
+
+        String eventText = shopEvents[random.nextInt(shopEvents.length)];
+
+        return new MapEvent(eventText) {
+            @Override
+            public void trigger() {
+                System.out.println(getDescription());
+            }
+
+            @Override
+            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
+                // Give gold
+                int goldAmount = 100 + random.nextInt(300);
+                System.out.println("Ban nhan duoc " + goldAmount + " gold!");
+
+                // Give some consumable items
+                List<ConsumableItem> consumables = ItemRegistry.getConsumableItems();
+                Collections.shuffle(consumables);
+
+                int itemCount = 1 + random.nextInt(2); // 1-2 items
+                System.out.println("Ban mua duoc " + itemCount + " vat pham:");
+
+                for (int i = 0; i < Math.min(itemCount, consumables.size()); i++) {
+                    ConsumableItem item = consumables.get(i);
+                    int quantity = 1 + random.nextInt(2); // 1-2 quantity
+                    System.out.println("- " + item.getName() + " x" + quantity);
+                }
+
+                // Also give some healing
+                float healAmount = 150 + random.nextInt(200);
+                healCharacter(hero1, healAmount);
+                healCharacter(hero2, healAmount);
+                System.out.println("Ca hai hero duoc hoi " + (int)healAmount + " HP!");
+            }
+        };
     }
 }
