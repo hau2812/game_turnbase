@@ -36,8 +36,8 @@ public class AudioManager {
     private Music currentMusic;
     private boolean musicEnabled = true;
     private boolean soundEnabled = true;
-    private double musicVolume = 0.3;
-    private double soundVolume = 0.5;
+    private double musicVolume = 0.0;
+    private double soundVolume = 0.0;
     
     private AudioManager() {
         musicTracks = new HashMap<>();

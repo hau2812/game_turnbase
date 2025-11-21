@@ -8,15 +8,11 @@ import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import map.GameMap;
 import map.MapUI;
 import ui.AudioSettingsUI;
-import ui.InventoryUI;
-import ui.ShopUI;
-import ui.SimpleTestUI;
-import items.Inventory;
-import items.ItemRegistry;
-import shop.Shop;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
@@ -38,11 +34,11 @@ public class testing extends GameApplication {
     
     // Selected heroes for battle (choose which ones to use)
     private static final String[] SELECTED_HEROES = {
-        "Ina",
+        //"Ina",
         "Flamita",
         //"Hero2",
 //        "Pieberry",
-        "Leuna"
+        //"Leuna"
 
     };
     // ===== BATTLE CONFIGURATION ======================================================================================
@@ -59,17 +55,6 @@ public class testing extends GameApplication {
     // Audio system
     private AudioManager audioManager;
     private AudioSettingsUI audioSettingsUI;
-    
-    // Inventory system
-    private Inventory inventory;
-    private InventoryUI inventoryUI;
-    
-    // Shop system
-    private Shop shop;
-    private ShopUI shopUI;
-    
-    // Test UI
-    private SimpleTestUI testUI;
     
     @Override
     protected void initSettings(GameSettings settings) {
@@ -93,37 +78,10 @@ public class testing extends GameApplication {
         // Initialize battle system (but don't start it yet)
         battleSystem = new BattleSystem();
         
-        // Initialize inventory system
-        ItemRegistry.init();
-        inventory = new Inventory();
-        inventoryUI = new InventoryUI(inventory, battleSystem);
-        System.out.println("Inventory system initialized");
-        
-        // Initialize shop system
-        shop = new Shop();
-        shopUI = new ShopUI(shop, inventory);
-        System.out.println("Shop system initialized");
-        
-        // Give player some starting items
-        giveStartingItems();
-        
-        // Initialize test UI
-        testUI = new SimpleTestUI();
-        System.out.println("Test UI initialized");
-        
-        // Test UI visibility (temporary)
-        System.out.println("Testing UI visibility...");
-        testUI.show(); // Show test UI to verify UI system works
-        
-        // Don't force show inventory UI - let user press I to show it
-        System.out.println("Game initialized successfully!");
-        System.out.println("Controls: I=Inventory, S=Shop (map only), T=Test UI, F1=Audio");
-        
         // Configure battle settings
         battleSystem.configureBattle(HIDE_TALENTS, SELECTED_HEROES);
         
         battleUI = new BattleUI(battleSystem);
-        battleUI.setInventory(inventory); // Connect inventory to battle UI
         battleSystem.setBattleUI(battleUI);
         SpecialTalents.setBattleSystem(battleSystem);
         battleSystem.setOnBattleWon(() -> {
@@ -135,7 +93,6 @@ public class testing extends GameApplication {
         gameMap = new GameMap();
         mapUI = new MapUI(gameMap);
         mapUI.setBattleSystem(battleSystem);
-        mapUI.setShopSystem(shop, shopUI, inventory);
         mapUI.setOnBattleModeRequested(() -> {
             // This callback is called when a battle node is clicked
             enterBattleMode();
@@ -179,51 +136,6 @@ public class testing extends GameApplication {
         // F1 key to toggle audio settings
         onKeyDown(KeyCode.F1, () -> {
             audioSettingsUI.toggle();
-        });
-        
-        // I key to toggle inventory (works in both map and battle mode)
-        onKeyDown(KeyCode.I, () -> {
-            System.out.println("=== I KEY PRESSED ===");
-            System.out.println("Current mode: " + (inMapMode ? "MAP" : "BATTLE"));
-            System.out.println("Inventory UI object: " + inventoryUI);
-            
-            if (inventoryUI != null) {
-                boolean wasVisible = inventoryUI.isVisible();
-                System.out.println("Inventory was visible: " + wasVisible);
-                
-                inventoryUI.toggle();
-                
-                boolean isNowVisible = inventoryUI.isVisible();
-                System.out.println("Inventory is now visible: " + isNowVisible);
-                System.out.println("Toggle successful: " + (wasVisible != isNowVisible));
-            } else {
-                System.out.println("ERROR: Inventory UI is null!");
-            }
-            System.out.println("=== END I KEY ===");
-        });
-        
-        // S key to toggle shop (only works in map mode)
-        onKeyDown(KeyCode.S, () -> {
-            System.out.println("S key pressed - toggling shop");
-            if (inMapMode && shopUI != null) {
-                shopUI.toggle();
-                System.out.println("Shop UI toggled. Visible: " + shopUI.isVisible());
-            } else if (!inMapMode) {
-                System.out.println("Shop can only be opened in map mode!");
-            } else {
-                System.out.println("Shop UI is null!");
-            }
-        });
-        
-        // T key to toggle test UI
-        onKeyDown(KeyCode.T, () -> {
-            System.out.println("T key pressed - toggling test UI");
-            if (testUI != null) {
-                testUI.toggle();
-                System.out.println("Test UI toggled. Visible: " + testUI.isVisible());
-            } else {
-                System.out.println("Test UI is null!");
-            }
         });
     }
 
@@ -312,26 +224,6 @@ public class testing extends GameApplication {
         }
     }
 
-    private void giveStartingItems() {
-        // Give player some starting consumables
-        inventory.addItem(ItemRegistry.getItem("health_potion_medium"), 3);
-        inventory.addItem(ItemRegistry.getItem("mana_potion_medium"), 2);
-        inventory.addItem(ItemRegistry.getItem("elixir_small"), 1);
-        
-        // Give player some enemy-targeting items
-        inventory.addItem(ItemRegistry.getItem("fire_bomb"), 2);
-        inventory.addItem(ItemRegistry.getItem("poison_dart"), 1);
-        inventory.addItem(ItemRegistry.getItem("ice_shard"), 1);
-        inventory.addItem(ItemRegistry.getItem("weakness_potion"), 1);
-        
-        // Give player some starting equipment
-        inventory.addItem(ItemRegistry.getItem("iron_sword"), 1);
-        inventory.addItem(ItemRegistry.getItem("leather_armor"), 1);
-        inventory.addItem(ItemRegistry.getItem("power_ring"), 1);
-        
-        System.out.println("Starting items given to player!");
-    }
-    
     public static void main(String[] args) {
         launch(args);
     }
