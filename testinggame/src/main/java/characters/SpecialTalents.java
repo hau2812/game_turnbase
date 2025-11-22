@@ -4,6 +4,7 @@ import battle.BattleSystem;
 import battle.BattleUI;
 import characters.Observer.characterSlot;
 import characters.Characters.character;
+import items.Inventory;
 
 /**
  * Utility class for managing special character talents and abilities
@@ -25,6 +26,7 @@ public class SpecialTalents {
     // Static reference to BattleUI for use in static methods
     private static BattleUI battleUI;
     private static BattleSystem battleSystem;
+    private static Inventory inventory;
     
     /**
      * Set the BattleUI reference for use in static methods
@@ -35,6 +37,9 @@ public class SpecialTalents {
     }
     public static void setBattleSystem(BattleSystem system) {
         battleSystem = system;
+    }
+    public static void setInventory(Inventory system) {
+        inventory = system;
     }
     
     //public static final String OUFUULINK = "Oufuu link";
@@ -344,8 +349,56 @@ public class SpecialTalents {
         character.setDef(baseCharacter.getDef());
         character.setSpd(baseCharacter.getSpd());
         character.updateAV();
+        equipmentStatModification(slot);
+    }
+    public static void equipmentStatModification(characterSlot slot) {
+        if (inventory == null) {
+            return; // Can't apply equipment stats without inventory reference
+        }
+        
+        character character = slot.getCharacter();
+        
+        // Get all equipped items for this character
+        java.util.Map<items.EquipmentItem.EquipmentSlot, items.EquipmentItem> equippedItems = inventory.getEquippedItems(slot);
+        
+        if (equippedItems == null || equippedItems.isEmpty()) {
+            return; // No equipment to apply
+        }
+        
+        // Sum up stat bonuses from all equipped items
+        float totalHpBonus = 0;
+        float totalMpBonus = 0;
+        float totalAtkBonus = 0;
+        float totalMatkBonus = 0;
+        float totalDefBonus = 0;
+        float totalResBonus = 0;
+        float totalSpdBonus = 0;
+        
+        for (items.EquipmentItem equipment : equippedItems.values()) {
+            if (equipment != null && equipment.getStatBonus() != null) {
+                items.EquipmentItem.StatBonus statBonus = equipment.getStatBonus();
+                totalHpBonus += statBonus.getHpBonus();
+                totalMpBonus += statBonus.getMpBonus();
+                totalAtkBonus += statBonus.getAtkBonus();
+                totalMatkBonus += statBonus.getMatkBonus();
+                totalDefBonus += statBonus.getDefBonus();
+                totalResBonus += statBonus.getResBonus();
+                totalSpdBonus += statBonus.getSpdBonus();
+            }
+        }
+        
+        // Apply stat bonuses to character
+        character.setHp(character.getHp() + totalHpBonus);
+        character.setMp(character.getMp() + totalMpBonus);
+        character.setAtk(character.getAtk() + totalAtkBonus);
+        character.setMatk(character.getMatk() + totalMatkBonus);
+        character.setDef(character.getDef() + totalDefBonus);
+        character.setRes(character.getRes() + totalResBonus);
+        character.setSpd(character.getSpd() + totalSpdBonus);
+        character.updateAV();
     }
     public static void applyStatModifications(characterSlot slot, BuffDebuff effect) {
+        character basecharacter = slot.getBaseCharacter();
         character character = slot.getCharacter();
         // Reset character stats to base character stats
         resetStatModification(slot);
@@ -362,9 +415,9 @@ public class SpecialTalents {
                 totalSpd+=activeEffect.getTotalValue();
             }
         }
-        character.setAtk(character.getAtk()*totalAtk);
-        character.setDef(character.getDef()*totalDef);
-        character.setSpd(character.getSpd()*totalSpd);
+        character.setAtk(basecharacter.getAtk()*totalAtk);
+        character.setDef(basecharacter.getDef()*totalDef);
+        character.setSpd(basecharacter.getSpd()*totalSpd);
         character.updateAV();
     }
     

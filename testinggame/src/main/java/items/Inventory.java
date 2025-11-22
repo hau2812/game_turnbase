@@ -100,8 +100,8 @@ public class Inventory {
         
         // Equip new item to character
         characterEquipment.get(characterName).put(slot, equipment);
-        equipment.applyStats(character.getCharacter());
-        
+        //character.addEquipment(equipment);
+
         // Remove from inventory
         removeItem(itemId, 1);
         

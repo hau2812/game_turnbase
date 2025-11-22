@@ -113,7 +113,7 @@ public class testing extends GameApplication {
 
         // Test UI visibility (temporary)
         System.out.println("Testing UI visibility...");
-        testUI.show(); // Show test UI to verify UI system works
+        //testUI.show(); // Show test UI to verify UI system works
 
         // Don't force show inventory UI - let user press I to show it
         System.out.println("Game initialized successfully!");
@@ -124,6 +124,7 @@ public class testing extends GameApplication {
 
         battleUI = new BattleUI(battleSystem);
         battleUI.setInventory(inventory); // Connect inventory to battle UI
+        SpecialTalents.setInventory(inventory);
         battleSystem.setBattleUI(battleUI);
         SpecialTalents.setBattleSystem(battleSystem);
         battleSystem.setOnBattleWon(() -> {
@@ -164,7 +165,7 @@ public class testing extends GameApplication {
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
             //System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
-            System.out.println(battleSystem.getEnemySlot().getCurrentMp());
+            System.out.println(battleSystem.getHeroSlot().getCharacter().getAtk());
 
 
         });

@@ -2,6 +2,7 @@ package characters;
 
 import abilities.Ability;
 import battle.BattleSystem;
+import items.EquipmentItem;
 import ui.SimpleLine;
 
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ public interface Observer {
         Characters.character baseCharacter;   // transformed/altered state (optional)
         ArrayList<Ability.skill> skills;       // skills assigned to this slot
         ArrayList<BuffDebuff> activeEffects;   // active buffs/debuffs
+        ArrayList<EquipmentItem> equipments;
         float currentHp;
         float currentMp;
         SimpleLine line;
@@ -50,6 +52,20 @@ public interface Observer {
             this.activeEffects = new ArrayList<>();
             this.currentHp = currentHp;
             this.currentMp = currentMp;
+        }
+
+        public ArrayList<EquipmentItem> getEquipment() {
+            return equipments;
+        }
+
+        public void setEquipment(ArrayList<EquipmentItem> equipment) {
+            this.equipments = equipment;
+        }
+        public void addEquipment(EquipmentItem equipment) {
+            this.equipments.add(equipment);
+        }
+        public void removeEquipment(EquipmentItem equipment) {
+            this.equipments.remove(equipment);
         }
 
         public SimpleLine getLine() {return line;}

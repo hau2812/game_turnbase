@@ -115,32 +115,33 @@ public class EquipmentItem extends Item {
      * Apply stat bonuses to a character
      */
     public void applyStats(Characters.character character) {
-        if (character == null || statBonus == null) return;
-        
-        character.setHp(character.getHp() + statBonus.getHpBonus());
-        character.setMp(character.getMp() + statBonus.getMpBonus());
-        character.setAtk(character.getAtk() + statBonus.getAtkBonus());
-        character.setMatk(character.getMatk() + statBonus.getMatkBonus());
-        character.setDef(character.getDef() + statBonus.getDefBonus());
-        character.setRes(character.getRes() + statBonus.getResBonus());
-        character.setSpd(character.getSpd() + statBonus.getSpdBonus());
-        character.updateAV();
+//        if (character == null || statBonus == null) return;
+//
+//        character.setHp(character.getHp() + statBonus.getHpBonus());
+//        character.setMp(character.getMp() + statBonus.getMpBonus());
+//        character.setAtk(character.getAtk() + statBonus.getAtkBonus());
+//        character.setMatk(character.getMatk() + statBonus.getMatkBonus());
+//        character.setDef(character.getDef() + statBonus.getDefBonus());
+//        character.setRes(character.getRes() + statBonus.getResBonus());
+//        character.setSpd(character.getSpd() + statBonus.getSpdBonus());
+//        character.updateAV();
     }
     
     /**
      * Remove stat bonuses from a character
      */
     public void removeStats(Characters.character character) {
-        if (character == null || statBonus == null) return;
-        
-        character.setHp(character.getHp() - statBonus.getHpBonus());
-        character.setMp(character.getMp() - statBonus.getMpBonus());
-        character.setAtk(character.getAtk() - statBonus.getAtkBonus());
-        character.setMatk(character.getMatk() - statBonus.getMatkBonus());
-        character.setDef(character.getDef() - statBonus.getDefBonus());
-        character.setRes(character.getRes() - statBonus.getResBonus());
-        character.setSpd(character.getSpd() - statBonus.getSpdBonus());
-        character.updateAV();
+
+//        if (character == null || statBonus == null) return;
+//
+//        character.setHp(character.getHp() - statBonus.getHpBonus());
+//        character.setMp(character.getMp() - statBonus.getMpBonus());
+//        character.setAtk(character.getAtk() - statBonus.getAtkBonus());
+//        character.setMatk(character.getMatk() - statBonus.getMatkBonus());
+//        character.setDef(character.getDef() - statBonus.getDefBonus());
+//        character.setRes(character.getRes() - statBonus.getResBonus());
+//        character.setSpd(character.getSpd() - statBonus.getSpdBonus());
+//        character.updateAV();
     }
     
     @Override
