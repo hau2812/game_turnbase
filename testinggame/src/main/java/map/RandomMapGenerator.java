@@ -14,7 +14,7 @@ import java.util.*;
  * He thong tao map random voi events va battles
  * Chi giu co dinh su kien cuoi va boss
  */
-public class RandomMapGenerator {
+public class    RandomMapGenerator {
     
     private static final Random random = new Random();
     

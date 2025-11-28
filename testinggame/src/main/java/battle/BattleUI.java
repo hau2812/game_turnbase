@@ -6,6 +6,7 @@ import characters.Observer;
 import com.almasb.fxgl.app.GameApplication;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
@@ -86,6 +87,10 @@ public class  BattleUI {
         public double originalSpriteY; // Original Y position of sprite
         public double baseX;
         public double baseY;
+        public ImageView slashEffectSprite;
+        public Timeline slashEffectTimeline;
+        public ImageView igniteEffectSprite;
+        public Timeline igniteEffectTimeline;
         
         public HealthBarData(Observer.characterSlot slot, Rectangle healthBar, Rectangle healthBorder, 
                            Rectangle mpBar, Rectangle mpBorder, Text hpText, Text mpText, Text nameText, 
@@ -108,6 +113,10 @@ public class  BattleUI {
             this.originalSpriteY = 0;
             this.baseX = x;
             this.baseY = y;
+            this.slashEffectSprite = null;
+            this.slashEffectTimeline = null;
+            this.igniteEffectSprite = null;
+            this.igniteEffectTimeline = null;
         }
     }
     
@@ -160,6 +169,10 @@ public class  BattleUI {
     private double healthBarWidth = 200;
     private double healthBarHeight = 20;
     
+    // Magic projectile animation constants
+    private double magicProjectileWidth = 300;  // ADJUST THIS to change projectile size
+    private double magicProjectileHeight = 300; // ADJUST THIS to change projectile size
+    
     // Battle system reference
     private BattleSystem battleSystem;
     // Inventory system reference
@@ -179,6 +192,37 @@ public class  BattleUI {
     }
 
     // ===================== HELPER FUNCTIONS =====================
+    
+    /**
+     * Normalizes a character name for sprite file lookup
+     * - Converts to lowercase
+     * - Replaces spaces with underscores
+     * - Removes level information like "(lv.2)" or "(Lv.2)"
+     * @param characterName The character name to normalize
+     * @return Normalized name suitable for sprite filename
+     */
+    private String normalizeCharacterNameForSprite(String characterName) {
+        if (characterName == null || characterName.isEmpty()) {
+            return characterName;
+        }
+        
+        String normalized = characterName.toLowerCase();
+        
+        // Remove level information patterns like "(lv.2)", "(Lv.2)", "(lv 2)", etc.
+        normalized = normalized.replaceAll("\\(\\s*lv\\.?\\s*\\d+\\s*\\)", "");
+        
+        // Replace spaces with underscores
+        normalized = normalized.replaceAll("\\s+", "_");
+        
+        // Remove any remaining parentheses or special characters that might cause issues
+        normalized = normalized.replaceAll("[()]", "");
+        
+        // Trim any extra underscores
+        normalized = normalized.replaceAll("_+", "_");
+        normalized = normalized.replaceAll("^_|_$", "");
+        
+        return normalized;
+    }
     
     /**
      * Check if a character slot is a hero
@@ -467,19 +511,43 @@ public class  BattleUI {
             Text mpText = null;
             Text nameText = null;
             
-            // Create idle sprite animation (only for heroes)
+            // Create idle sprite animation (for heroes and enemies)
             ImageView idleSprite = null;
             Timeline spriteAnimation = null;
-            if (i < 3) { // Only heroes (Hero1, Hero2, Hero3)
+            ImageView enemySprite = null;
+            Timeline enemyIdleAnimation = null;
+            
+            if (i < 3) { // Heroes (Hero1, Hero2, Hero3)
                 idleSprite = createIdleSprite(slot, healthX, healthY);
                 if (idleSprite != null) {
                     spriteAnimation = createSpriteAnimation(idleSprite, slot);
                 }
+            } else { // Enemies (Enemy1, Enemy2, Enemy3)
+                // Create enemy sprite (mirrored)
+                enemySprite = createEnemySprite(slot, healthX, healthY);
+                if (enemySprite != null) {
+                    // Add to scene and make visible
+                    getGameScene().addUINode(enemySprite);
+                    enemySprite.setVisible(true);
+                    // Create and start idle animation
+                    enemyIdleAnimation = createSpriteAnimation(enemySprite, slot);
+                    if (enemyIdleAnimation != null) {
+                        enemyIdleAnimation.play();
+                    }
+                }
             }
 
             // Add to health bars list
-            healthBars.add(new HealthBarData(slot, healthBar, healthBorder, 
-                mpBar, mpBorder, hpText, mpText, nameText, idleSprite, spriteAnimation, healthX, healthY));
+            HealthBarData healthBarData = new HealthBarData(slot, healthBar, healthBorder, 
+                mpBar, mpBorder, hpText, mpText, nameText, idleSprite, spriteAnimation, healthX, healthY);
+            
+            // Set enemy sprite and animation if created
+            if (enemySprite != null) {
+                healthBarData.enemySprite = enemySprite;
+                healthBarData.enemyIdleAnimation = enemyIdleAnimation;
+            }
+            
+            healthBars.add(healthBarData);
 
             // Add hover functionality to show debuffs (for both heroes and enemies)
             addDebuffHoverToHealthBar(healthBar, healthBorder, slot);
@@ -819,7 +887,8 @@ public class  BattleUI {
         // Construct sprite filename: {characterName}_idle.png (case-insensitive matching)
         // FXGL automatically prepends /assets/textures/ to image paths
         // So "sprites/flamita_idle.png" becomes "/assets/textures/sprites/flamita_idle.png"
-        String spriteFileName = characterName.toLowerCase() + "_idle.png";
+        String normalizedName = normalizeCharacterNameForSprite(characterName);
+        String spriteFileName = normalizedName + "_idle.png";
         String spritePath = "sprites/" + spriteFileName;
 
         try {
@@ -834,7 +903,8 @@ public class  BattleUI {
 
             // Check image URL - if it doesn't contain our expected path, it's likely an error placeholder
             String imageUrl = spriteImage.getUrl();
-            if (imageUrl == null || !imageUrl.contains(spriteFileName.toLowerCase())) {
+            // Check if URL contains normalized name (handles URL encoding and variations)
+            if (imageUrl == null || (!imageUrl.contains(normalizedName) && !imageUrl.contains(spriteFileName))) {
                 // URL doesn't match expected file - likely an error placeholder
                 return null;
             }
@@ -875,7 +945,7 @@ public class  BattleUI {
                 double width = spriteImage.getWidth();
                 double height = spriteImage.getHeight();
                 if (width > 0 && height > 0 && !Double.isNaN(width) && !Double.isNaN(height) &&
-                    !spriteImage.isError() && imageUrl.contains(spriteFileName.toLowerCase())) {
+                    !spriteImage.isError() && (imageUrl.contains(normalizedName) || imageUrl.contains(spriteFileName))) {
                     spriteView.setVisible(true);
                 } else {
                     return null; // Invalid image, don't return the view
@@ -984,7 +1054,8 @@ public class  BattleUI {
         }
 
         // Construct sprite filename: {characterName}_skill_{skillNumber}.png
-        String spriteFileName = characterName.toLowerCase() + "_skill_" + skillNumber + ".png";
+        String normalizedName = normalizeCharacterNameForSprite(characterName);
+        String spriteFileName = normalizedName + "_skill_" + skillNumber + ".png";
         String spritePath = "sprites/" + spriteFileName;
 
         try {
@@ -995,7 +1066,8 @@ public class  BattleUI {
             }
 
             String imageUrl = skillImage.getUrl();
-            if (imageUrl == null || !imageUrl.contains(spriteFileName.toLowerCase())) {
+            // Check if URL contains normalized name (handles URL encoding and variations)
+            if (imageUrl == null || (!imageUrl.contains(normalizedName) && !imageUrl.contains(spriteFileName))) {
                 return null;
             }
 
@@ -1098,7 +1170,8 @@ public class  BattleUI {
         }
 
         // Try to load enemy idle sprite
-        String spriteFileName = characterName.toLowerCase() + "_idle.png";
+        String normalizedName = normalizeCharacterNameForSprite(characterName);
+        String spriteFileName = normalizedName + "_idle.png";
         String spritePath = "sprites/" + spriteFileName;
 
         try {
@@ -1109,15 +1182,14 @@ public class  BattleUI {
             }
 
             String imageUrl = spriteImage.getUrl();
-            if (imageUrl == null || !imageUrl.contains(spriteFileName.toLowerCase())) {
+            if (imageUrl == null || (!imageUrl.contains(spriteFileName) && !imageUrl.contains(normalizedName))) {
                 return null;
             }
 
             ImageView spriteView = new ImageView(spriteImage);
             spriteView.setVisible(false);
 
-            // Mirror the sprite horizontally (flip for enemy facing left)
-            spriteView.setScaleX(-1); // Flip horizontally
+           
 
             // Set sprite size
             double spriteDisplayWidth = 100;
@@ -1238,6 +1310,274 @@ public class  BattleUI {
             playSkillAnimationAtPosition(heroData, characterName, skillNumber, false);
         }
     }
+    
+    /**
+     * Plays a magic projectile animation that moves from hero to target
+     * @param hero The hero using the magic skill
+     * @param target The target enemy
+     * @param skill The magic skill being used
+     */
+    private void playMagicProjectileAnimation(Observer.characterSlot hero, Observer.characterSlot target, Ability.skill skill) {
+        if (hero == null || target == null || skill == null) {
+            return;
+        }
+        
+        HealthBarData heroData = findHealthBarData(hero);
+        HealthBarData targetData = findHealthBarData(target);
+        
+        if (heroData == null || targetData == null) {
+            return;
+        }
+        
+        // Get hero position (where projectile spawns)
+        double heroX = heroData.baseX + healthBarWidth + 10 + 50; // Center of hero sprite
+        double heroY = heroData.baseY - 30 + 50; // Center of hero sprite
+        
+        // Get target position (where projectile moves to)
+        double targetX = targetData.baseX - 30; // Left of enemy health bar (where hit effect appears)
+        double targetY = targetData.baseY - 30 + 50; // Center of enemy sprite area
+        
+        // Load skill-specific projectile image
+        String skillName = skill.getName();
+        String projectilePath = "sprites/" + skillName + ".png";
+        
+        try {
+            Image projectileImage = getAssetLoader().loadImage(projectilePath);
+            
+            // Check if image is valid (similar to other animations)
+            if (projectileImage == null || projectileImage.isError()) {
+                return; // Don't run projectile animation if image not found
+            }
+            
+            // Check if image is a placeholder/error image (FXGL returns 66x66 placeholder when file not found)
+            double imageWidth = projectileImage.getWidth();
+            double imageHeight = projectileImage.getHeight();
+            if (imageWidth <= 0 || imageHeight <= 0) {
+                return;
+            }
+            
+            // Check if it's a placeholder image (66x66 is FXGL's default error image size)
+            if (imageWidth < 64 || imageHeight < 64 || (imageWidth == 66 && imageHeight == 66)) {
+                return; // Don't use placeholder images
+            }
+            
+            // Check animation type: null or "projectile" = move from hero to enemy, "spawn" = play at enemy location
+            String animationType = skill.getAnimation();
+            boolean isSpawnAnimation = "spawn".equalsIgnoreCase(animationType);
+            
+            // Wait for image to finish loading if it's loading in background
+            if (projectileImage.isBackgroundLoading()) {
+                projectileImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                    if (newProgress.doubleValue() >= 1.0) {
+                        if (!projectileImage.isError() && projectileImage.getWidth() > 0) {
+                            // Verify it's not a placeholder (placeholders are usually 66x66 or smaller than 64x64)
+                            double imgWidth = projectileImage.getWidth();
+                            double imgHeight = projectileImage.getHeight();
+                            if (imgWidth < 64 || imgHeight < 64 || (imgWidth == 66 && imgHeight == 66)) {
+                                return;
+                            }
+                            // Image loaded successfully, proceed with animation
+                            if (isSpawnAnimation) {
+                                createAndPlaySpawnAnimation(projectileImage, targetData, targetX, targetY);
+                            } else {
+                                createAndPlayProjectile(projectileImage, heroData, targetData, heroX, heroY, targetX, targetY);
+                            }
+                        }
+                    }
+                });
+                // Return early, animation will start when image loads
+                return;
+            } else {
+                // Image already loaded, validation already done above
+                // Proceed with animation based on type
+                if (isSpawnAnimation) {
+                    createAndPlaySpawnAnimation(projectileImage, targetData, targetX, targetY);
+                } else {
+                    createAndPlayProjectile(projectileImage, heroData, targetData, heroX, heroY, targetX, targetY);
+                }
+            }
+        } catch (Exception e) {
+            // If loading fails, don't run projectile animation
+            return;
+        }
+    }
+    
+    /**
+     * Helper method to create and play spawn animation at target location (no movement)
+     */
+    private void createAndPlaySpawnAnimation(Image projectileImage, HealthBarData targetData,
+                                            double targetX, double targetY) {
+        try {
+            // Create projectile ImageView with sprite sheet support
+            ImageView projectile = new ImageView(projectileImage);
+            projectile.setFitWidth(magicProjectileWidth);
+            projectile.setFitHeight(magicProjectileHeight);
+            projectile.setPreserveRatio(false); // Use exact dimensions for sprite sheets
+            projectile.setMouseTransparent(true);
+            projectile.setVisible(true);
+            
+            // No rotation needed for spawn animation (plays at target location)
+            
+            // Set up sprite sheet viewport (64x64 frames)
+            int frameWidth = 64;
+            int frameHeight = 64;
+            double imageWidth = projectileImage.getWidth();
+            double imageHeight = projectileImage.getHeight();
+            int framesPerRow = (int) (imageWidth / frameWidth);
+            int totalFrames = framesPerRow;
+            
+            if (totalFrames <= 0) {
+                // Not a valid sprite sheet, don't run animation
+                return;
+            }
+            
+            // Set initial viewport to first frame
+            projectile.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+            
+            // Position directly at target location (centered)
+            double spawnX = targetX - (magicProjectileWidth / 2.0);
+            double spawnY = targetY - (magicProjectileHeight / 2.0);
+            projectile.setTranslateX(spawnX);
+            projectile.setTranslateY(spawnY);
+            
+            getGameScene().addUINode(projectile);
+            projectile.toFront();
+            
+            // Create frame animation timeline
+            Timeline frameAnimation = new Timeline();
+            frameAnimation.setCycleCount(1); // Play once
+            
+            Duration frameDuration = Duration.millis(100); // Frame rate for animation
+            int lastFrameIndex = totalFrames - 1;
+            
+            // Create keyframes for each frame
+            for (int i = 0; i < totalFrames; i++) {
+                final int frameIndex = i;
+                KeyFrame keyFrame = new KeyFrame(
+                    frameDuration.multiply(i),
+                    e -> {
+                        double viewportX = frameIndex * frameWidth;
+                        projectile.setViewport(new javafx.geometry.Rectangle2D(
+                            viewportX, 0, frameWidth, frameHeight
+                        ));
+                    }
+                );
+                frameAnimation.getKeyFrames().add(keyFrame);
+            }
+            
+            // When frame animation finishes, remove the projectile
+            frameAnimation.setOnFinished(e -> {
+                getGameScene().removeUINode(projectile);
+            });
+            
+            // Start animation (no movement, just frame animation)
+            frameAnimation.play();
+            
+        } catch (Exception e) {
+            // If animation setup fails, don't run animation
+            return;
+        }
+    }
+    
+    /**
+     * Helper method to create and play the projectile animation (moves from hero to target)
+     */
+    private void createAndPlayProjectile(Image projectileImage, HealthBarData heroData, HealthBarData targetData,
+                                        double heroX, double heroY, double targetX, double targetY) {
+        try {
+            // Create projectile ImageView with sprite sheet support
+            ImageView projectile = new ImageView(projectileImage);
+            projectile.setFitWidth(magicProjectileWidth);
+            projectile.setFitHeight(magicProjectileHeight);
+            projectile.setPreserveRatio(false); // Use exact dimensions for sprite sheets
+            projectile.setMouseTransparent(true);
+            projectile.setVisible(true);
+            
+            // Calculate rotation angle based on direction (from hero to target)
+            double deltaX = targetX - heroX;
+            double deltaY = targetY - heroY;
+            double angle = Math.toDegrees(Math.atan2(deltaY, deltaX));
+            projectile.setRotate(angle);
+            
+            // Set up sprite sheet viewport (64x64 frames)
+            int frameWidth = 64;
+            int frameHeight = 64;
+            double imageWidth = projectileImage.getWidth();
+            double imageHeight = projectileImage.getHeight();
+            int framesPerRow = (int) (imageWidth / frameWidth);
+            int totalFrames = framesPerRow;
+            
+            if (totalFrames <= 0) {
+                // Not a valid sprite sheet, don't run projectile animation
+                return;
+            }
+            
+            // Set initial viewport to first frame
+            projectile.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+            
+            // Position at hero location (centered)
+            double startX = heroX - (magicProjectileWidth / 2.0);
+            double startY = heroY - (magicProjectileHeight / 2.0);
+            projectile.setTranslateX(startX);
+            projectile.setTranslateY(startY);
+            
+            getGameScene().addUINode(projectile);
+            projectile.toFront();
+            
+            // Create frame animation timeline
+            Timeline frameAnimation = new Timeline();
+            frameAnimation.setCycleCount(1); // Play once
+            
+            Duration frameDuration = Duration.millis(100); // Frame rate for projectile animation
+            int lastFrameIndex = totalFrames - 1;
+            
+            // Create keyframes for each frame
+            for (int i = 0; i < totalFrames; i++) {
+                final int frameIndex = i;
+                KeyFrame keyFrame = new KeyFrame(
+                    frameDuration.multiply(i),
+                    e -> {
+                        double viewportX = frameIndex * frameWidth;
+                        projectile.setViewport(new javafx.geometry.Rectangle2D(
+                            viewportX, 0, frameWidth, frameHeight
+                        ));
+                    }
+                );
+                frameAnimation.getKeyFrames().add(keyFrame);
+            }
+            
+            // When frame animation finishes, keep showing last frame
+            frameAnimation.setOnFinished(e -> {
+                // Show last frame
+                double lastFrameX = lastFrameIndex * frameWidth;
+                projectile.setViewport(new javafx.geometry.Rectangle2D(
+                    lastFrameX, 0, frameWidth, frameHeight
+                ));
+            });
+            
+            // Animate projectile moving to target (centered)
+            double endX = targetX - (magicProjectileWidth / 2.0);
+            double endY = targetY - (magicProjectileHeight / 2.0);
+            
+            javafx.animation.TranslateTransition moveProjectile = new javafx.animation.TranslateTransition(
+                Duration.millis(500), projectile);
+            moveProjectile.setToX(endX);
+            moveProjectile.setToY(endY);
+            
+            moveProjectile.setOnFinished(e -> {
+                // Remove projectile when it reaches target
+                getGameScene().removeUINode(projectile);
+            });
+            
+            // Start both animations simultaneously
+            frameAnimation.play();
+            moveProjectile.play();
+            
+        } catch (Exception e) {
+            // If animation setup fails, don't run projectile animation
+            return;
+        }
+    }
 
     /**
      * Plays the skill animation at the hero's current position
@@ -1258,7 +1598,8 @@ public class  BattleUI {
             Image currentImage = heroData.skillSprite.getImage();
             if (currentImage != null) {
                 String imageUrl = currentImage.getUrl();
-                String expectedFileName = characterName.toLowerCase() + "_skill_" + skillNumber + ".png";
+                String normalizedName = normalizeCharacterNameForSprite(characterName);
+                String expectedFileName = normalizedName + "_skill_" + skillNumber + ".png";
                 if (imageUrl == null || !imageUrl.contains(expectedFileName.toLowerCase())) {
                     // Image doesn't match - need to create new sprite
                     needNewSprite = true;
@@ -1380,16 +1721,8 @@ public class  BattleUI {
                 heroData.spriteAnimation.play();
             }
 
-            // Hide enemy sprite after animation completes
-            // Find all enemy health bar data and hide their enemy sprites
-            for (HealthBarData healthBarData : healthBars) {
-                if (healthBarData.enemySprite != null) {
-                    healthBarData.enemySprite.setVisible(false);
-                }
-                if (healthBarData.enemyIdleAnimation != null) {
-                    healthBarData.enemyIdleAnimation.pause();
-                }
-            }
+            // Don't hide enemy sprites - they should stay visible throughout battle
+            // Enemy sprites are now created during health bar rendering and stay visible
         });
 
         returnHome.play();
@@ -1693,19 +2026,25 @@ public class  BattleUI {
 
                 // Check if skill targets enemies (should move to enemy)
                 String skillTarget = skill.getTarget();
+                String skillType = skill.getType();
                 boolean isEnemyTargeting = skillTarget != null && (
                     skillTarget.equals("Enemy") ||
                     skillTarget.equals("Single Enemy") ||
                     skillTarget.equals("Aoe enemy")
                 );
+                // Magic skills don't move - they play at current position
+                boolean isMagicSkill = "Magic".equalsIgnoreCase(skillType);
 
                 // Play skill animation for all skills (1-4)
                 if (skillNumber > 0 && isHero(attacker)) {
-                    if (isEnemyTargeting && isEnemy(resolvedTarget)) {
-                        // Move to enemy and play animation
+                    if (isMagicSkill && isEnemyTargeting && isEnemy(resolvedTarget)) {
+                        // Magic skill targeting enemy - play projectile animation
+                        playMagicProjectileAnimation(attacker, resolvedTarget, skill);
+                    } else if (isEnemyTargeting && isEnemy(resolvedTarget) && !isMagicSkill) {
+                        // Physical skill targeting enemy - move to enemy and play animation
                         playSkillAnimationSequence(attacker, resolvedTarget, skillNumber, true);
                     } else {
-                        // Play animation at current position (no movement)
+                        // Non-enemy target or other cases - play animation at current position (no movement)
                         playSkillAnimationSequence(attacker, null, skillNumber, false);
                     }
                 }
@@ -1824,6 +2163,181 @@ public class  BattleUI {
     }
     
     /**
+     * Plays a short hit effect (slash or ignite) on the provided target based on skill type.
+     * Animates through the sprite sheet frames (64x64 each).
+     */
+    public void playHitEffect(Observer.characterSlot target, Ability.skill skill) {
+        if (target == null || skill == null) {
+            return;
+        }
+        
+        String skillType = skill.getType();
+        boolean isPhysical = "Physical".equalsIgnoreCase(skillType);
+        boolean isMagic = "Magic".equalsIgnoreCase(skillType);
+        if (!isPhysical && !isMagic) {
+            return;
+        }
+        
+        HealthBarData targetData = findHealthBarData(target);
+        if (targetData == null) {
+            return;
+        }
+        
+        String effectName = isPhysical ? "slash" : "ignite";
+        ImageView effectSprite = getOrCreateHitEffectSprite(targetData, effectName);
+        if (effectSprite == null || effectSprite.getImage() == null) {
+            return;
+        }
+        
+        // Position effect based on target type
+        // Heroes: effect appears to the right of health bar (where sprite is)
+        // Enemies: effect appears to the left of health bar
+        double spriteCenterX;
+        double spriteCenterY = targetData.baseY - 30 + 50; // 50 = half of 100px sprite height
+        
+        if (isEnemy(target)) {
+            // Enemy target: position to the left of enemy health bar
+            spriteCenterX = targetData.baseX - 30; // 50 = half of 100px sprite width, positioned to the left
+        } else {
+            // Hero target: position to the right of health bar (where sprite would be)
+            spriteCenterX = targetData.baseX + healthBarWidth + 10 + 50; // 50 = half of 100px sprite width
+        }
+        
+        // Position effect sprite centered on calculated position
+        effectSprite.setTranslateX(spriteCenterX - (effectSprite.getFitWidth() / 2.0));
+        effectSprite.setTranslateY(spriteCenterY - (effectSprite.getFitHeight() / 2.0));
+        effectSprite.setOpacity(1.0);
+        effectSprite.setVisible(true);
+        effectSprite.toFront();
+        
+        // Stop any existing animation
+        Timeline existingTimeline = isPhysical ? targetData.slashEffectTimeline : targetData.igniteEffectTimeline;
+        if (existingTimeline != null) {
+            existingTimeline.stop();
+        }
+        
+        // Create sprite sheet animation (64x64 frames)
+        Timeline effectTimeline = createHitEffectAnimation(effectSprite, 64, 64);
+        if (effectTimeline == null) {
+            effectSprite.setVisible(false);
+            return;
+        }
+        
+        effectTimeline.setOnFinished(e -> {
+            effectSprite.setVisible(false);
+        });
+        effectTimeline.play();
+        
+        // Store timeline reference
+        if (isPhysical) {
+            targetData.slashEffectTimeline = effectTimeline;
+        } else {
+            targetData.igniteEffectTimeline = effectTimeline;
+        }
+    }
+    
+    /**
+     * Creates an animation timeline for a hit effect sprite sheet
+     * @param spriteView The ImageView containing the effect sprite sheet
+     * @param frameWidth Width of each frame (64 pixels)
+     * @param frameHeight Height of each frame (64 pixels)
+     * @return Timeline animation, or null if invalid
+     */
+    private Timeline createHitEffectAnimation(ImageView spriteView, int frameWidth, int frameHeight) {
+        if (spriteView == null || spriteView.getImage() == null) {
+            return null;
+        }
+
+        Image spriteImage = spriteView.getImage();
+        double imageWidth = spriteImage.getWidth();
+        double imageHeight = spriteImage.getHeight();
+
+        // Calculate number of frames (assuming horizontal sprite sheet)
+        int framesPerRow = (int) (imageWidth / frameWidth);
+        int totalFrames = framesPerRow;
+
+        if (totalFrames <= 0) {
+            return null;
+        }
+
+        // Set initial viewport to first frame
+        spriteView.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+
+        Timeline animation = new Timeline();
+        animation.setCycleCount(1); // Play once, not loop
+
+        // Faster frame rate for hit effects (50ms per frame - twice as fast)
+        Duration frameDuration = Duration.millis(50);
+
+        // Create keyframes for each frame
+        for (int i = 0; i < totalFrames; i++) {
+            final int frameIndex = i;
+            KeyFrame keyFrame = new KeyFrame(
+                frameDuration.multiply(i),
+                e -> {
+                    double viewportX = frameIndex * frameWidth;
+                    spriteView.setViewport(new javafx.geometry.Rectangle2D(
+                        viewportX, 0, frameWidth, frameHeight
+                    ));
+                }
+            );
+            animation.getKeyFrames().add(keyFrame);
+        }
+
+        return animation;
+    }
+    
+    private ImageView getOrCreateHitEffectSprite(HealthBarData targetData, String effectName) {
+        ImageView cached = "slash".equals(effectName) ? targetData.slashEffectSprite : targetData.igniteEffectSprite;
+        if (cached != null) {
+            return cached;
+        }
+        
+        try {
+            Image effectImage = getAssetLoader().loadImage("sprites/" + effectName + ".png");
+            if (effectImage == null || effectImage.isError()) {
+                return null;
+            }
+            
+            ImageView sprite = new ImageView(effectImage);
+            // Set size to match frame size (64x64) scaled up for visibility
+            sprite.setFitWidth(128); // 2x scale for 64x64 frames
+            sprite.setFitHeight(128);
+            sprite.setPreserveRatio(false); // Use exact dimensions for sprite sheets
+            sprite.setVisible(false);
+            sprite.setMouseTransparent(true);
+            
+            // Wait for image to finish loading before setting viewport
+            if (effectImage.isBackgroundLoading()) {
+                effectImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                    if (newProgress.doubleValue() >= 1.0) {
+                        if (!effectImage.isError() && effectImage.getWidth() > 0) {
+                            // Set initial viewport to first frame (64x64)
+                            sprite.setViewport(new javafx.geometry.Rectangle2D(0, 0, 64, 64));
+                        }
+                    }
+                });
+            } else {
+                // Image already loaded, set viewport immediately
+                if (effectImage.getWidth() > 0 && !effectImage.isError()) {
+                    sprite.setViewport(new javafx.geometry.Rectangle2D(0, 0, 64, 64));
+                }
+            }
+            
+            getGameScene().addUINode(sprite);
+            
+            if ("slash".equals(effectName)) {
+                targetData.slashEffectSprite = sprite;
+            } else {
+                targetData.igniteEffectSprite = sprite;
+            }
+            return sprite;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
      * Finds the health bar data for a specific character slot
      * @param slot The character slot
      * @return The corresponding health bar data, or null if not found
@@ -1849,10 +2363,15 @@ public class  BattleUI {
             if (healthBarData.nameText != null) healthBarData.nameText.setVisible(false);
             if (healthBarData.idleSprite != null) healthBarData.idleSprite.setVisible(false);
             if (healthBarData.skillSprite != null) healthBarData.skillSprite.setVisible(false);
-            if (healthBarData.enemySprite != null) healthBarData.enemySprite.setVisible(false);
+            // Don't hide enemy sprites - they should stay visible throughout battle
+            // if (healthBarData.enemySprite != null) healthBarData.enemySprite.setVisible(false);
             if (healthBarData.spriteAnimation != null) healthBarData.spriteAnimation.pause();
             if (healthBarData.skillAnimation != null) healthBarData.skillAnimation.pause();
             if (healthBarData.enemyIdleAnimation != null) healthBarData.enemyIdleAnimation.pause();
+            if (healthBarData.slashEffectSprite != null) healthBarData.slashEffectSprite.setVisible(false);
+            if (healthBarData.igniteEffectSprite != null) healthBarData.igniteEffectSprite.setVisible(false);
+            if (healthBarData.slashEffectTimeline != null) healthBarData.slashEffectTimeline.stop();
+            if (healthBarData.igniteEffectTimeline != null) healthBarData.igniteEffectTimeline.stop();
         }
         
         // Hide Burning Rage bars
@@ -1928,6 +2447,16 @@ public class  BattleUI {
             }
             if (healthBarData.enemySprite != null) {
                 getGameScene().removeUINode(healthBarData.enemySprite);
+            }
+            if (healthBarData.slashEffectSprite != null) {
+                getGameScene().removeUINode(healthBarData.slashEffectSprite);
+                healthBarData.slashEffectSprite = null;
+                healthBarData.slashEffectTimeline = null;
+            }
+            if (healthBarData.igniteEffectSprite != null) {
+                getGameScene().removeUINode(healthBarData.igniteEffectSprite);
+                healthBarData.igniteEffectSprite = null;
+                healthBarData.igniteEffectTimeline = null;
             }
 
             // Remove debuff tooltip if it exists

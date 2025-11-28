@@ -38,7 +38,7 @@ public interface Ability {
         float AVScale;
         float mpCost;
         float partyMpCost;
-        
+        String animation;
         // Burning Rage interaction properties
         float burningRageRequired;  // Minimum Burning Rage required to use skill
         float burningRageConsumed;  // Amount of Burning Rage consumed when using skill
@@ -168,7 +168,15 @@ public interface Ability {
         public void setPartyMpCost(float partyMpCost) {
             this.partyMpCost = partyMpCost;
         }
-        
+
+        public String getAnimation() {
+            return animation;
+        }
+
+        public void setAnimation(String animation) {
+            this.animation = animation;
+        }
+
         // Burning Rage getters and setters
         public float getBurningRageRequired() {
             return burningRageRequired;
@@ -428,6 +436,7 @@ public interface Ability {
                     0
             ));
             Ability.skill forkLightning = getByName("7-Fork Lightning");
+            forkLightning.setAnimation("spawn");
             if (forkLightning != null) {
                 //forkLightning.addEffect("Burn", 2, 1);        // Burn for 2 turns, 1 stack
                 forkLightning.addEffect("Weakness", 2, 5);    // Weakness for 1 turn, 1 stack
@@ -443,6 +452,8 @@ public interface Ability {
                     200,
                     0
             ));
+            Ability.skill Ecarr_Vertel = getByName("Ecarr Vertel");
+            Ecarr_Vertel.setAnimation("spawn");
             
             register(new Ability.skill(
                     14,

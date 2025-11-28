@@ -41,7 +41,7 @@ public class testing extends GameApplication {
         //"Ina",
         "Flamita",
         //"Hero2",
-//        "Pieberry",
+        "Pieberry",
         //"Leuna"
 
     };
@@ -252,7 +252,7 @@ public class testing extends GameApplication {
 
         // Hide map UI
         mapUI.hide();
-
+        shopUI.hide();
         // Stop any existing battle loop first
         battleSystem.stopBattleLoop();
 

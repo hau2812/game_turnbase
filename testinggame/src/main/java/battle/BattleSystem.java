@@ -526,10 +526,10 @@ public class BattleSystem {
         
         // Check MP for heroes and deduct if needed
         if (true) {
-            float mpCost = skill.getMpCost();
-            if (mpCost > 0 && attacker.getCurrentMp() < mpCost) {
-                return; // not enough MP
-            }
+//            float mpCost = skill.getMpCost();
+//            if (mpCost > 0 && attacker.getCurrentMp() < mpCost) {
+//                return; // not enough MP
+//            }
             if (true) {
 
                 if (battleUI != null) {
@@ -556,6 +556,13 @@ public class BattleSystem {
         double finalDmg = baseDamage+burnBonus+talentBonus+specialDmgBonus;
         // Calculate final damage with Burning Rage bonuses, talent bonuses, and special skill bonuses
         applyDamage(target, finalDmg);
+        // Delay hit effect animation by 0.5 seconds
+        if (battleUI != null && target != null) {
+            Observer.characterSlot finalTarget = target;
+            runOnce(() -> {
+                battleUI.playHitEffect(finalTarget, skill);
+            }, Duration.millis(500));
+        }
 
         // Apply skill effects (buffs/debuffs) to target
         if (skill.getSkillEffects() != null && !skill.getSkillEffects().isEmpty()) {
