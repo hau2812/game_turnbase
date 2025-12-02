@@ -5,6 +5,7 @@ import battle.BattleUI;
 import characters.Observer.characterSlot;
 import characters.Characters.character;
 import items.Inventory;
+import org.example.testing;
 
 /**
  * Utility class for managing special character talents and abilities
@@ -52,6 +53,9 @@ public class SpecialTalents {
     public static float calculateActualDamage(characterSlot slot, float damageAmount) {
         if(damageAmount<0){
             return damageAmount;
+        }
+        if(testing.EASY_MODE==true&&battleSystem.isHero(slot)){
+            damageAmount/=10;
         }
         character character = slot.getCharacter();
         float actualDamage = damageAmount;

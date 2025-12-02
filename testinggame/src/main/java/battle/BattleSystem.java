@@ -91,14 +91,14 @@ public class BattleSystem {
     /**
      * Check if a character slot is a hero
      */
-    private boolean isHero(Observer.characterSlot slot) {
+    public boolean isHero(Observer.characterSlot slot) {
         return slot == heroSlot || slot == heroSlot2 || slot == heroSlot3;
     }
     
     /**
      * Check if a character slot is an enemy
      */
-    private boolean isEnemy(Observer.characterSlot slot) {
+    public boolean isEnemy(Observer.characterSlot slot) {
         return slot == enemySlot || slot == enemySlot2 || slot == enemySlot3;
     }
     
@@ -112,7 +112,7 @@ public class BattleSystem {
     /**
      * Get all enemy slots as an array
      */
-    private Observer.characterSlot[] getAllEnemies() {
+    public Observer.characterSlot[] getAllEnemies() {
         return new Observer.characterSlot[]{enemySlot, enemySlot2, enemySlot3};
     }
     
@@ -463,7 +463,7 @@ public class BattleSystem {
         if(heroSlot3 == null && selectedHeroes.length > 2) {
             heroSlot3 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[2]);
         }
-        //Where your mana Ina
+        //Where's your mana Ina
         if(hasIna()){
             getSlotByName("Ina").setCurrentMp(5);
         }

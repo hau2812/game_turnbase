@@ -315,7 +315,7 @@ public interface Ability {
             register(new Ability.skill(
                     4,
                     "heavy attack",
-                    "a heavy attack that deals a lot of damage.",
+                    "A heavy attack that deals a lot of damage.",
                     "Physical",
                     "Single Enemy",
                     2.0f,
@@ -326,7 +326,7 @@ public interface Ability {
             register(new Ability.skill(
                     5,
                     "Charge attack",
-                    "a charge attack that gain a lot of mana.",
+                    "A charge attack that gain a lot of mana.",
                     "Physical",
                     "Single Enemy",
                     0.5f,
@@ -337,7 +337,7 @@ public interface Ability {
             register(new Ability.skill(
                     6,
                     "Burning slash",
-                    "an attack that consuming burning rage to deal massive damage",
+                    "An attack that consuming burning rage to deal more damage",
                     "Physical",
                     "Single Enemy",
                     1f,
@@ -508,7 +508,7 @@ public interface Ability {
             register(new Ability.skill(
                     17,
                     "Eternal darkness",
-                    "All shall be gone with the void",
+                    "All shall be gone within the void",
                     "Magic",
                     "All enemy",
                     0.0f,
@@ -517,17 +517,7 @@ public interface Ability {
                     0
             ));
 
-            register(new Ability.skill(
-                    17,
-                    "Eternal darkness",
-                    "All shall be gone with the void",
-                    "Magic",
-                    "All enemy",
-                    0.0f,
-                    2.0f,
-                    0,
-                    0
-            ));
+
 
             register(new Ability.skill(
                     18,
@@ -595,7 +585,7 @@ public interface Ability {
             register(new Ability.skill(
                     23,
                     "Energy charge",
-                    "When will you try to do something",
+                    "Gain a stackable attack buff",
                     "Heal",
                     "Self",
                     0.0f,
@@ -611,7 +601,7 @@ public interface Ability {
             register(new Ability.skill(
                     24,
                     "Let me absorb you",
-                    "That why no one want to work with her",
+                    "Absorb an ally hp to gain mp",
                     "Heal",
                     "Ally",
                     0.0f,
@@ -647,7 +637,7 @@ public interface Ability {
             register(new Ability.skill(
                     27,
                     "Moon light",
-                    "I though we are at dungeon",
+                    "Grant a barrier and a buff -'I though we are at dungeon'",
                     "Heal",
                     "Aoe ally",
                     0.0f,
@@ -664,7 +654,7 @@ public interface Ability {
             register(new Ability.skill(
                     28,
                     "Moon wave",
-                    "what is that even mean",
+                    "An ally instantly get a turn and speed buff for 1 turn",
                     "Heal",
                     "Ally",
                     0.0f,
@@ -680,7 +670,7 @@ public interface Ability {
             register(new Ability.skill(
                     29,
                     "Absolute barrier",
-                    "what is that even mean",
+                    "Grant all ally a buff which regen barrier each turn",
                     "Heal",
                     "Aoe ally",
                     0.0f,

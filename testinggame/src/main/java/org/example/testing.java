@@ -14,6 +14,8 @@ import ui.AudioSettingsUI;
 import ui.InventoryUI;
 import ui.ShopUI;
 import ui.SimpleTestUI;
+import ui.HeroSelectionUI;
+import ui.BossSelectionUI;
 import items.Inventory;
 import items.ItemRegistry;
 import shop.Shop;
@@ -24,8 +26,10 @@ public class testing extends GameApplication {
 
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Change these values to configure your battle settings
-    private static final boolean HIDE_TALENTS = true;  // Set to true to hide talent text, false to show
-
+    private static final boolean HIDE_TALENTS = false;  // Set to true to hide talent text, false to show
+    private static final boolean SKIP_PICKING = false;
+    public static boolean EASY_MODE = false;
+    public static boolean SKIP_TO_BOSS = false;
     // Available heroes to choose from (you can select multiple)
     private static final String[] AVAILABLE_HEROES = {
         "Flamita",
@@ -33,23 +37,22 @@ public class testing extends GameApplication {
         "Hero2",
         "Pieberry",
         "Ina",
-        "Leuna"
+        "Leuna",
     };
 
-    // Selected heroes for battle (choose which ones to use)
-    private static final String[] SELECTED_HEROES = {
-        //"Ina",
-        "Flamita",
-        //"Hero2",
-        "Pieberry",
-        //"Leuna"
-
+    // Selected heroes for battle (will be set by hero selection UI)
+    private String[] selectedHeroes = {
+            "Flamita",
+            //"Hero",
+            //"Hero2",
+            "Pieberry",
+            //"Ina",
+            "Leuna",
     };
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
     private BattleSystem battleSystem;
     private BattleUI battleUI;
-    private SpecialTalents specialTalents;
 
     // Map system
     private GameMap gameMap;
@@ -70,12 +73,16 @@ public class testing extends GameApplication {
 
     // Test UI
     private SimpleTestUI testUI;
+    
+    // Selection UIs
+    private HeroSelectionUI heroSelectionUI;
+    private BossSelectionUI bossSelectionUI;
 
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setWidth(800);
         settings.setHeight(600);
-        settings.setTitle("Hero vs Enemy");
+        settings.setTitle("Lost Dungeon");
     }
 
     @Override
@@ -119,8 +126,8 @@ public class testing extends GameApplication {
         System.out.println("Game initialized successfully!");
         System.out.println("Controls: I=Inventory, S=Shop (map only), T=Test UI, F1=Audio");
 
-        // Configure battle settings
-        battleSystem.configureBattle(HIDE_TALENTS, SELECTED_HEROES);
+        // Configure battle settings (will be updated after hero selection if not skipping)
+        battleSystem.configureBattle(HIDE_TALENTS, selectedHeroes);
 
         battleUI = new BattleUI(battleSystem);
         battleUI.setInventory(inventory); // Connect inventory to battle UI
@@ -132,24 +139,33 @@ public class testing extends GameApplication {
             handleBattleVictory();
         });
 
-        // Initialize Map System first
-        gameMap = new GameMap();
-        mapUI = new MapUI(gameMap);
-        mapUI.setBattleSystem(battleSystem);
-        mapUI.setShopSystem(shop, shopUI, inventory);
-        mapUI.setOnBattleModeRequested(() -> {
-            // This callback is called when a battle node is clicked
-            enterBattleMode();
-        });
 
-        // Start with map mode
-        inMapMode = true;
-        mapUI.showPathSelection();
+
+        // Check if we should skip picking screens
+        if (SKIP_PICKING) {
+            // Skip hero and boss selection, use default selectedHeroes and go directly to map
+            startGameWithoutBossSelection();
+        } else {
+            // Initialize selection UIs
+            heroSelectionUI = new HeroSelectionUI(AVAILABLE_HEROES);
+            heroSelectionUI.setOnStart(() -> {
+                selectedHeroes = heroSelectionUI.getSelectedHeroes();
+                heroSelectionUI.hide();
+                showBossSelection();
+            });
+            
+            bossSelectionUI = new BossSelectionUI();
+            bossSelectionUI.setOnContinue(() -> {
+                bossSelectionUI.hide();
+                startGame();
+            });
+
+            // Start with hero selection
+            heroSelectionUI.show();
+        }
 
         // Start menu music
         audioManager.playMenuMusic();
-
-        // Add instruction text
 
     }
 
@@ -226,14 +242,6 @@ public class testing extends GameApplication {
                 System.out.println("Test UI is null!");
             }
         });
-    }
-
-    private void toggleMapMode() {
-        if (inMapMode) {
-            exitMapMode();
-        } else {
-            enterMapMode();
-        }
     }
 
     private void enterMapMode() {
@@ -331,6 +339,63 @@ public class testing extends GameApplication {
         inventory.addItem(ItemRegistry.getItem("power_ring"), 1);
 
         System.out.println("Starting items given to player!");
+    }
+
+    private void showBossSelection() {
+        bossSelectionUI.show();
+    }
+    
+    private void startGame() {
+        // Initialize Map System
+        if(bossSelectionUI.isSkipToBossSelected()) {
+            SKIP_TO_BOSS=true;
+        }
+        gameMap = new GameMap();
+        mapUI = new MapUI(gameMap);
+        mapUI.setBattleSystem(battleSystem);
+        mapUI.setShopSystem(shop, shopUI, inventory);
+        mapUI.setOnBattleModeRequested(() -> {
+            // This callback is called when a battle node is clicked
+            enterBattleMode();
+        });
+        // Apply boss selections to game map
+        if (bossSelectionUI.isOufuuSelected()) {
+            gameMap.addOufuuBossFight("forest");
+        }
+        if (bossSelectionUI.isFlamitaSelected()) {
+            gameMap.addFlamitaBossFight("forest");
+        }
+        if (bossSelectionUI.isMabelSelected()) {
+            gameMap.addMabelBossFight("forest");
+        }
+        if(bossSelectionUI.isEasyModeSelected()){
+            EASY_MODE=true;
+        }
+
+        // Update battle system with selected heroes
+        battleSystem.configureBattle(HIDE_TALENTS, selectedHeroes);
+        
+        // Start with map mode
+        inMapMode = true;
+        mapUI.showPathSelection();
+    }
+    
+    private void startGameWithoutBossSelection() {
+        // Skip boss selection, use default selectedHeroes and go directly to map
+        // Update battle system with selected heroes
+        battleSystem.configureBattle(HIDE_TALENTS, selectedHeroes);
+        // Initialize Map System
+        gameMap = new GameMap();
+        mapUI = new MapUI(gameMap);
+        mapUI.setBattleSystem(battleSystem);
+        mapUI.setShopSystem(shop, shopUI, inventory);
+        mapUI.setOnBattleModeRequested(() -> {
+            // This callback is called when a battle node is clicked
+            enterBattleMode();
+        });
+        // Start with map mode
+        inMapMode = true;
+        mapUI.showPathSelection();
     }
 
     public static void main(String[] args) {

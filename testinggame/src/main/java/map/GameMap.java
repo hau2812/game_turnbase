@@ -3,6 +3,8 @@ package map;
 import characters.Characters;
 import characters.Observer;
 import abilities.Ability;
+import org.example.testing;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -12,6 +14,7 @@ public class GameMap {
     private MapNode bossNode;
     private boolean mapCompleted;
     int currentNodeNumber = 1;
+
     public GameMap() {
         this.paths = new ArrayList<>();
         this.mapCompleted = false;
@@ -66,6 +69,9 @@ public class GameMap {
 
         // Random nodes (4-6 nodes) - RANDOM
         int nodeCount = 5 + (int)(Math.random() * 3); // 4-6 random nodes
+        if(testing.SKIP_TO_BOSS){
+            nodeCount = 0;
+        }
         for (int i = 1; i <= nodeCount; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
             path.addNode(randomNode);
@@ -75,11 +81,14 @@ public class GameMap {
         }
 
         // Final event/battle - CO DINH (nhung khac nhau cho moi path)
-        MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
-        path.addNode(finalNode);
+        if(!testing.SKIP_TO_BOSS){
+            MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
+            path.addNode(finalNode);
+        }
+
 
     }
-    
+
     /**
      * Tạo random node dựa trên path type
      */

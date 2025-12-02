@@ -16,6 +16,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import ui.SimpleLine;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -91,6 +92,7 @@ public class  BattleUI {
         public Timeline slashEffectTimeline;
         public ImageView igniteEffectSprite;
         public Timeline igniteEffectTimeline;
+        public Polygon turnIndicator; // Green triangle to indicate current turn
         
         public HealthBarData(Observer.characterSlot slot, Rectangle healthBar, Rectangle healthBorder, 
                            Rectangle mpBar, Rectangle mpBorder, Text hpText, Text mpText, Text nameText, 
@@ -117,6 +119,7 @@ public class  BattleUI {
             this.slashEffectTimeline = null;
             this.igniteEffectSprite = null;
             this.igniteEffectTimeline = null;
+            this.turnIndicator = null;
         }
     }
     
@@ -637,7 +640,7 @@ public class  BattleUI {
         debuffDetail.setWrappingWidth(wrapWidth);
         debuffDetail.setTextAlignment(TextAlignment.CENTER);
         debuffDetail.setTranslateX((getAppWidth() - wrapWidth) / 2.0);
-        debuffDetail.setTranslateY(getAppHeight() / 2.0 - 60);
+        debuffDetail.setTranslateY(getAppHeight() / 6.0);
         // Prevent flicker when moving mouse from bar over the text
         debuffDetail.setMouseTransparent(true);
         
@@ -1861,6 +1864,7 @@ public class  BattleUI {
     
     public void renderHeroSkillsFor(Observer.characterSlot hero) {
         createAndRenderHeroSkillBoxes(hero);
+        updateTurnIndicator(hero);
     }
     
     private void createAndRenderHeroSkillBoxes(Observer.characterSlot hero) {
@@ -1927,8 +1931,9 @@ public class  BattleUI {
                 detailText += "MP Cost: " + (int)(skill.getMpCost()) + "\n";
             }
             if (skill.getPartyMpCost() > 0) {
-                detailText += "Party MP Cost: " + (int)(skill.getPartyMpCost());
+                detailText += "Party MP Cost: " + (int)(skill.getPartyMpCost())+ "\n";
             }
+            detailText+=skill.getDescription();
         }
         Text skillDetail = new Text(detailText);
         skillDetail.setFont(new Font(14));
@@ -1939,7 +1944,7 @@ public class  BattleUI {
         skillDetail.setWrappingWidth(wrapWidth);
         skillDetail.setTextAlignment(TextAlignment.CENTER);
         skillDetail.setTranslateX((getAppWidth() - wrapWidth) / 2.0);
-        skillDetail.setTranslateY(getAppHeight() / 2.0 - 60);
+        skillDetail.setTranslateY(getAppHeight() / 6.0 );
         // Prevent flicker when moving mouse from box over the text
         skillDetail.setMouseTransparent(true);
 
@@ -2160,6 +2165,64 @@ public class  BattleUI {
         double ratio = slot.getCurrentHp() / slot.getCharacter().getHp();
         healthBarData.healthBar.setWidth(healthBarWidth * ratio);
         healthBarData.hpText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+    }
+    
+    /**
+     * Updates the turn indicator (green triangle) above the current acting hero
+     * @param currentHero The hero whose turn it is
+     */
+    private void updateTurnIndicator(Observer.characterSlot currentHero) {
+        if (currentHero == null) {
+            // Hide all turn indicators if no hero is acting
+            for (HealthBarData healthBarData : healthBars) {
+                if (healthBarData.turnIndicator != null) {
+                    healthBarData.turnIndicator.setVisible(false);
+                }
+            }
+            return;
+        }
+        
+        // Only show indicator for heroes (not enemies)
+        if (isEnemy(currentHero)) {
+            return;
+        }
+        
+        // Find the health bar data for the current hero
+        HealthBarData heroData = findHealthBarData(currentHero);
+        if (heroData == null) {
+            return;
+        }
+        
+        // Hide all turn indicators first
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.turnIndicator != null) {
+                healthBarData.turnIndicator.setVisible(false);
+            }
+        }
+        
+        // Create or show the turn indicator for the current hero
+        if (heroData.turnIndicator == null) {
+            // Create a small green triangle pointing up
+            double triangleSize = 15;
+            double centerX = heroData.baseX + healthBarWidth / 2.0;
+            double topY = heroData.baseY - triangleSize - 5; // Position above health bar
+            
+            // Triangle points: bottom point (pointing up), top left, top right
+            Polygon triangle = new Polygon(
+                centerX, topY + triangleSize,  // Bottom point (pointing up toward health bar)
+                centerX - triangleSize / 2, topY,  // Top left
+                centerX + triangleSize / 2, topY   // Top right
+            );
+            triangle.setFill(Color.LIMEGREEN);
+            triangle.setStroke(Color.DARKGREEN);
+            triangle.setStrokeWidth(1);
+            
+            heroData.turnIndicator = triangle;
+            getGameScene().addUINode(triangle);
+        }
+        
+        // Show the turn indicator
+        heroData.turnIndicator.setVisible(true);
     }
     
     /**
@@ -2458,6 +2521,10 @@ public class  BattleUI {
                 healthBarData.igniteEffectSprite = null;
                 healthBarData.igniteEffectTimeline = null;
             }
+            if (healthBarData.turnIndicator != null) {
+                getGameScene().removeUINode(healthBarData.turnIndicator);
+                healthBarData.turnIndicator = null;
+            }
 
             // Remove debuff tooltip if it exists
             if (healthBarData.healthBar != null) {
@@ -2479,6 +2546,13 @@ public class  BattleUI {
         for (BarrierBarData barrierBarData : barrierBars) {
             if (barrierBarData.barrierBar != null) {
                 getGameScene().removeUINode(barrierBarData.barrierBar);
+            }
+        }
+        
+        // Remove turn indicators
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.turnIndicator != null) {
+                getGameScene().removeUINode(healthBarData.turnIndicator);
             }
         }
         
