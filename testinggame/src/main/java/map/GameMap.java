@@ -284,6 +284,7 @@ public class GameMap {
         );
         corruptedFlamita.setUniqueValue("Burning rage", "0");
         corruptedFlamita.setUniqueValue("Guts", "1");
+        corruptedFlamita.setUniqueValue("Phase 1", "1");
         
         // Skill IDs: 6, 7, 8, 9
         Characters.character[] enemies = {corruptedFlamita};

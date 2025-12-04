@@ -3,6 +3,7 @@ package org.example;
 import audio.AudioManager;
 import battle.BattleSystem;
 import battle.BattleUI;
+import characters.Observer;
 import characters.SpecialTalents;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
@@ -33,21 +34,23 @@ public class testing extends GameApplication {
     // Available heroes to choose from (you can select multiple)
     private static final String[] AVAILABLE_HEROES = {
         "Flamita",
-        "Hero",
+        //"Hero",
         "Hero2",
         "Pieberry",
         "Ina",
         "Leuna",
+        "Flatina"
     };
 
     // Selected heroes for battle (will be set by hero selection UI)
     private String[] selectedHeroes = {
             "Flamita",
+            "Flatina",
             //"Hero",
             //"Hero2",
-            "Pieberry",
+            //"Pieberry",
             //"Ina",
-            "Leuna",
+            //"Leuna",
     };
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
@@ -181,7 +184,7 @@ public class testing extends GameApplication {
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
             //System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
-            System.out.println(battleSystem.getHeroSlot().getCharacter().getAtk());
+            System.out.println(battleSystem.getHeroSlot().getCharacter().toString());
 
 
         });
@@ -301,6 +304,14 @@ public class testing extends GameApplication {
     }
 
     private void handleBattleVictory() {
+        //Gain gold
+        for (Observer.characterSlot slot : battleSystem.getAllEnemies()){
+            if (slot !=null){
+                inventory.addGold(100);
+            }
+        }
+
+        battleSystem.removeAllBuffsDebuffsFromHeroes();
         // Clear all battle UI elements
         battleUI.clearAllBattleUI();
 
@@ -336,7 +347,7 @@ public class testing extends GameApplication {
         // Give player some starting equipment
         inventory.addItem(ItemRegistry.getItem("iron_sword"), 1);
         inventory.addItem(ItemRegistry.getItem("leather_armor"), 1);
-        inventory.addItem(ItemRegistry.getItem("power_ring"), 1);
+        inventory.addItem(ItemRegistry.getItem("mana_crystal"), 1);
 
         System.out.println("Starting items given to player!");
     }

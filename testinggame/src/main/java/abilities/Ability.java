@@ -340,7 +340,7 @@ public interface Ability {
                     "An attack that consuming burning rage to deal more damage",
                     "Physical",
                     "Single Enemy",
-                    1f,
+                    1.5f,
                     1.2f,
                     0,
                     0,
@@ -368,7 +368,7 @@ public interface Ability {
             register(new Ability.skill(
                     8,
                     "Rage Burst",
-                    "Consumes all Burning Rage to deal damage based on max HP and rage ratio",
+                    "Consumes all Burning Rage to deal damage based on max HP and rage ratio and heal up to half of max Hp",
                     "Physical",
                     "Single Enemy",
                     0.0f,  // Base damage is 0, all damage comes from rage
@@ -682,6 +682,52 @@ public interface Ability {
             if (absoluteBarrier != null) {
                 absoluteBarrier.addEffect("Regen barrier", 10, 50);
             }
+            //Flatina
+            register(new Ability.skill(
+                    30,
+                    "Amber sacrifice",
+                    "Consume hp of an ally to gain a huge attack buff",
+                    "Heal",
+                    "Ally",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            Ability.skill amberSacrifice = getByName("Amber sacrifice");
+            if (amberSacrifice != null) {
+                amberSacrifice.addEffect("Boiling blood", 3, 1);
+            }
+            register(new Ability.skill(
+                    31,
+                    "Rage empowerment",
+                    "Consume burning rage each AV to increase maxHP for an ally\n",
+                    "Heal",
+                    "Ally",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0,
+                    50,    // Requires 50 Burning Rage
+                    0,    // Consumes 50 Burning Rage
+                    0      // Gains 0 Burning Rage
+            ));
+            Ability.skill rageEmpowerment = getByName("Rage empowerment");
+            if (rageEmpowerment != null) {
+                rageEmpowerment.addEffect("Rage empowerment", 2, 1);
+            }
+            register(new Ability.skill(
+                    32,
+                    "Burning guts",
+                    "All allies gain 1 guts",
+                    "Heal",
+                    "All ally",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+
         }
     }
 

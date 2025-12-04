@@ -20,7 +20,9 @@ public class SpecialTalents {
     public static final String REGENERATION = "Regeneration";
     public static final String MP_REGENERATION = "MpRegeneration";
     public static final String BURNING_RAGE = "Burning rage";
+    public static final String ENRAGE = "Enrage";
     public static final String GUTS = "Guts";
+    public static final String PHASE1 = "Phase 1";
     public static final String MOON_BARRIER = "MOON BARRIER";
     public static final String REGEN_BARRIER = "REGEN BARRIER";
     
@@ -52,6 +54,7 @@ public class SpecialTalents {
      */
     public static float calculateActualDamage(characterSlot slot, float damageAmount) {
         if(damageAmount<0){
+
             return damageAmount;
         }
         if(testing.EASY_MODE==true&&battleSystem.isHero(slot)){
@@ -106,16 +109,20 @@ public class SpecialTalents {
             actualDamage = slot.currentHp-1;
             character.addToUniqueValue(GUTS,-1);
             System.out.println(character.getName() + " don't let the battle end " + (int)character.getUniqueValueAsFloat(GUTS) + " time remaining!");
-        //--Boss Flamita special--------------------------------------------------------------------------------------
-            if(character.getName().equals("Flamita ?")){
-                actualDamage = 0;
-                slot.setCurrentHp(character.getHp()/2);
-                if(character.getUniqueValueAsFloat(BURNING_RAGE) < character.getHp()/2){
-                    character.setUniqueValue(BURNING_RAGE,character.getHp()/2 +"");
-                }
-            }
-        //--Boss Flamita special--------------------------------------------------------------------------------------
+
         }
+        //--Boss Flamita special--------------------------------------------------------------------------------------
+        if(character.getName().equals("Flamita ?")&& character.getUniqueValueAsFloat(PHASE1) > 0 && slot.getCurrentHp() <= damageAmount&& slot.getFloatBuffDebuffByName("Guts")==0){
+            actualDamage = 0;
+            slot.setCurrentHp(character.getHp()/2);
+            character.addToUniqueValue(PHASE1,-1);
+            character.addToUniqueValue(GUTS,1);
+            character.addToUniqueValue("Phase 2",1);
+            if(character.getUniqueValueAsFloat(BURNING_RAGE) < character.getHp()/2){
+                character.setUniqueValue(BURNING_RAGE,character.getHp()/2 +"");
+            }
+        }
+        //--Boss Flamita special--------------------------------------------------------------------------------------
 
         // Burning Rage Protection - prevents HP from dropping below 1
         if (character.getUniqueValue(BURNING_RAGE) != null) {
@@ -188,6 +195,9 @@ public class SpecialTalents {
             float newRage = Math.max(0, currentRage - rageReduction);
             character.setUniqueValue(BERSERKER_RAGE, String.valueOf(newRage));
             System.out.println(character.getName() + " healed for " + healingAmount + ". Berserker rage reduced to: " + newRage);
+        }
+        if(slot.getCharacter().getName().equals("Flamita ?")&&slot.getCharacter().getUniqueValueAsFloat("Phase 2")==1){
+            slot.getCharacter().setUniqueValue("Guts","1");
         }
     }
     
@@ -349,8 +359,13 @@ public class SpecialTalents {
     public static void resetStatModification(characterSlot slot) {
         character character = slot.getCharacter();
         character baseCharacter = slot.getBaseCharacter();
-        character.setAtk(baseCharacter.getAtk());
+
+        character.setHp(baseCharacter.getHp());
+        character.setMp(baseCharacter.getMp());
+        character.setAtk(baseCharacter.getAtk() );
+        character.setMatk(baseCharacter.getMatk());
         character.setDef(baseCharacter.getDef());
+        character.setRes(baseCharacter.getRes());
         character.setSpd(baseCharacter.getSpd());
         character.updateAV();
         equipmentStatModification(slot);
@@ -409,6 +424,7 @@ public class SpecialTalents {
         float totalAtk = 1;
         float totalDef = 1;
         float totalSpd = 1;
+        float totalHp = 1;
         // Apply all active effects
         for (BuffDebuff activeEffect : slot.getActiveEffects()) {
             if (activeEffect.getEffects().equals("ATK")) {
@@ -417,11 +433,14 @@ public class SpecialTalents {
                 totalDef+=activeEffect.getTotalValue();
             } else if (activeEffect.getEffects().equals("SPD")) {
                 totalSpd+=activeEffect.getTotalValue();
+            } else if (activeEffect.getEffects().equals("HP")) {
+                totalHp+=activeEffect.getTotalValue();
             }
         }
         character.setAtk(basecharacter.getAtk()*totalAtk);
         character.setDef(basecharacter.getDef()*totalDef);
         character.setSpd(basecharacter.getSpd()*totalSpd);
+        character.setHp(basecharacter.getHp()*totalHp);
         character.updateAV();
     }
     
@@ -443,23 +462,25 @@ public class SpecialTalents {
         }
         
         if (existingEffect != null) {
+
             // Character already has this effect
             if (existingEffect.canStack()) {
+
                 // Add a stack
                 existingEffect.addStack(effect.getStack());
                 if(existingEffect.getStack()>existingEffect.getMaxStack()){
                     existingEffect.setStack(existingEffect.getMaxStack());
                 }
-                System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect stacked! Stacks: " + existingEffect.getStack());
+                //System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect stacked! Stacks: " + existingEffect.getStack());
             } //else {
                 // Overwrite duration
                 existingEffect.setDuration(effect.getDuration());
-                System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect duration refreshed!");
+                //System.out.println(slot.getCharacter().getName() + "'s " + effect.getName() + " effect duration refreshed!");
             //}
         } else {
             // Add new effect
             slot.getActiveEffects().add(effect);
-            System.out.println(slot.getCharacter().getName() + " gained " + effect.getName() + " effect!");
+            //System.out.println(slot.getCharacter().getName() + " gained " + effect.getName() + " effect!");
         }
         
         // Apply stat modifications immediately

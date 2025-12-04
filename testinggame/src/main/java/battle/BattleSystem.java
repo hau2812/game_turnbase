@@ -3,8 +3,8 @@ package battle;
 import abilities.Ability;
 import audio.AudioManager;
 import characters.BuffDebuff;
-import characters.Characters;
 import characters.Observer;
+import characters.SpecialTalents;
 import javafx.scene.shape.Line;
 import ui.SimpleLine;
 import javafx.util.Duration;
@@ -114,6 +114,32 @@ public class BattleSystem {
      */
     public Observer.characterSlot[] getAllEnemies() {
         return new Observer.characterSlot[]{enemySlot, enemySlot2, enemySlot3};
+    }
+    
+    /**
+     * Remove all buffs and debuffs from all heroes
+     */
+    public void removeAllBuffsDebuffsFromHeroes() {
+        Observer.characterSlot[] heroes = getAllHeroes();
+        
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null) {
+                // Clear all active effects
+                if (hero.getActiveEffects() != null) {
+                    hero.getActiveEffects().clear();
+                }
+                hero.getCharacter().getUniqueValues().remove(hero.getCharacter().getUniqueValue("Guts"));
+                
+                // Reset stat modifications to base values
+                SpecialTalents.resetStatModification(hero);
+                
+                // Update UI if available
+                if (battleUI != null) {
+                    battleUI.updateHealthUI(hero);
+                    battleUI.updateBarrierBar(hero);
+                }
+            }
+        }
     }
     
     /**
@@ -258,9 +284,9 @@ public class BattleSystem {
         // Handle "Absolute teleportation" skill
         else if(skill.getName().equals("Absolute teleportation")){
             //Buff
-            BuffDebuff buff = BuffDebuff.getByName("Conserve").copy();
-            buff.setStack(attacker.getBuffCount()+1);
-            attacker.addBuffDebuff(buff);
+            BuffDebuff teleBuff = BuffDebuff.getByName("Conserve").copy();
+            teleBuff.setStack(attacker.getBuffCount()+1);
+            attacker.addBuffDebuff(teleBuff);
             attacker.regenerateMp(-skill.getMpCost());
             // Set timeStopSlot to attacker and initialize timeStop with black action bar length
             timeStopSlot = attacker;
@@ -273,6 +299,30 @@ public class BattleSystem {
             battleUI.updateHealthUI(target);
             battleUI.updateBurningRageBar(target);
             return false; // End skill processing early
+        }else if(skill.getName().equals("Amber sacrifice")){
+            if(target.getCurrentHp()>1) {
+                applyDamage(target, target.getCurrentHp() / 2);
+            }
+        }
+        else if(skill.getName().equals("Rage empowerment")){
+            //Buff
+            BuffDebuff rageBuff = BuffDebuff.getByName("Rage empowerment host").copy();
+            attacker.addBuffDebuff(rageBuff);
+        }
+        else if(skill.getName().equals("Burning guts")){
+            //Buff
+            if(attacker.getBuffDebuffByName("Burning guts cd")==null){
+                for(Observer.characterSlot slot : getAllHeroes()){
+                    if(slot!=null){
+                        slot.getCharacter().addToUniqueValue("Guts",1);
+                    }
+
+                }
+                BuffDebuff cd = BuffDebuff.getByName("Burning guts cd").copy();
+                cd.setStack(1000);
+                attacker.addBuffDebuff(cd);
+            }
+
         }
         
         // No special skill handled, continue with normal processing
@@ -348,16 +398,47 @@ public class BattleSystem {
         }
         return false;
     }
-    public boolean hasIna(){
+    public boolean hasHeroName(String name){
         for(Observer.characterSlot hero: getAllHeroes()){
             if(hero!=null){
-                if (hero.getCharacter().getName().equals("Ina")) {
+                if (hero.getCharacter().getName().equals(name)) {
                     return true;
                 }
             }
 
         }
         return false;
+    }
+    public Observer.characterSlot getHeroByName(String name){
+        for(Observer.characterSlot hero: getAllHeroes()){
+            if(hero!=null){
+                if (hero.getCharacter().getName().equals(name)) {
+                    return hero;
+                }
+            }
+
+        }
+        return null;
+    }
+    public Observer.characterSlot hasRageEmpowermentHost(){
+        for(Observer.characterSlot hero: getAllHeroes()){
+            if(hero!=null){
+                if(hero.getBuffDebuffByName("Rage empowerment host") != null) {
+                    return hero;
+                }
+            }
+        }
+        return null;
+    }
+    public Observer.characterSlot hasRageEmpowerment(){
+        for(Observer.characterSlot hero: getAllHeroes()){
+            if(hero!=null){
+                if(hero.getBuffDebuffByName("Rage empowerment") != null) {
+                    return hero;
+                }
+            }
+        }
+        return null;
     }
     public Observer.characterSlot getSlotByName(String name) {
         for (Observer.characterSlot Slot : getAllCharacters()) {
@@ -464,7 +545,7 @@ public class BattleSystem {
             heroSlot3 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[2]);
         }
         //Where's your mana Ina
-        if(hasIna()){
+        if(hasHeroName("Ina")){
             getSlotByName("Ina").setCurrentMp(5);
         }
         // Enemy slots
@@ -731,7 +812,36 @@ public class BattleSystem {
                 checkVictoryCondition();
             }
         }
-        
+        // Handle Rage empowerment mechanics
+        if(hasHeroName("Flatina")) {
+            Observer.characterSlot Flatina = hasRageEmpowermentHost();
+            Observer.characterSlot Flatina2 = getHeroByName("Flatina");
+            Observer.characterSlot rageHero = hasRageEmpowerment();
+            if (Flatina != null) {
+                if (Flatina.getCharacter().getUniqueValueAsFloat("Burning rage") > 0) {
+                    Flatina.getCharacter().addToUniqueValue("Burning rage", -0.1f);
+                    SpecialTalents.applyBuffDebuff(rageHero, BuffDebuff.getByName("Rage empowerment"));
+                } else {
+                    Flatina.getActiveEffects().remove(Flatina.getBuffDebuffByName("Rage empowerment host"));
+                    rageHero.getActiveEffects().remove(rageHero.getBuffDebuffByName("Rage empowerment"));
+                }
+                SpecialTalents.applyStatModifications(rageHero, null);
+                battleUI.updateHealthUI(rageHero);
+                battleUI.updateBurningRageBar(rageHero);
+                battleUI.updateBurningRageBar(Flatina);
+            }
+            if(Flatina2.getBuffDebuffByName("Burning guts cd")!=null) {
+
+                BuffDebuff cd = BuffDebuff.getByName("Burning guts cd").copy();
+                cd.setStack(-1);
+                SpecialTalents.applyBuffDebuff(Flatina2,cd);
+                if(Flatina2.getBuffDebuffByName("Burning guts cd").getStack()==0) {
+                    Flatina2.getActiveEffects().remove(Flatina2.getBuffDebuffByName("Burning guts cd"));
+                }
+
+            }
+        }
+
         // Handle timeStop mechanics
         if (timeStop > 0) {
             //For Ina only
@@ -1015,12 +1125,12 @@ public class BattleSystem {
                 float maxHp = attacker.getCharacter().getHp();
                 dmg = 3 * maxHp * (rageConsumed / (10*currentHp + rageConsumed));
                 float heal = (float)dmg/2;
-                attacker.heal(heal);
+                applyDamage(attacker,-heal);
                 battleUI.updateHealthUI(attacker);
                 System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage for " + dmg + " damage!");
             } else {
                 // Other rage skills: add rage as bonus damage
-                dmg += rageConsumed;
+                dmg += rageConsumed*1.5;
                 System.out.println(attacker.getCharacter().getName() + " consumed " + rageConsumed + " rage for +" + rageConsumed+ " bonus damage!");
             }
         }

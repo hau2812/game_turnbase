@@ -247,6 +247,7 @@ public interface Observer {
 
             createCharacterSlot("Ina", "Light attack", "Energy charge", "Let me absorb you", "Absolute teleportation");
             createCharacterSlot("Leuna", "Charge attack", "Moon light", "Moon wave", "Absolute barrier");
+            createCharacterSlot("Flatina", "Rage Strike", "Amber sacrifice", "Rage empowerment", "Burning guts");
 
 
 

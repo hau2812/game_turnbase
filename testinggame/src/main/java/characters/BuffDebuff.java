@@ -88,11 +88,15 @@ public class BuffDebuff {
         register(new BuffDebuff("Berserker Rage", "Buff", 2, "ATK", 0.5f, 1, 1, "Skill"));
         register(new BuffDebuff("Oufuu atk up", "Buff", 999, "ATK", 0.5f, 1, 4, "Skill"));
         register(new BuffDebuff("Charging", "Buff", 3, "ATK", 0.2f, 1, 5, "Skill"));
+        register(new BuffDebuff("Boiling blood", "Buff", 2, "ATK", 0.5f, 1, 1, "Skill"));
 
         // DEF Buffs
         register(new BuffDebuff("Iron Skin", "Buff", 4, "DEF", 0.3f, 1, 2, "Skill"));
         register(new BuffDebuff("Shield", "Buff", 2, "DEF", 0.8f, 1, 1, "Skill"));
-        
+
+        // HP Buffs
+        register(new BuffDebuff("Rage empowerment", "Buff", 2, "HP", 0.001f, 1, 1000, "Skill"));
+
         // SPD Buffs
         register(new BuffDebuff("Haste", "Buff", 3, "SPD", 0.4f, 1, 2, "Skill"));
         register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 0.6f, 1, 1, "Skill"));
@@ -122,6 +126,8 @@ public class BuffDebuff {
         register(new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill"));
         register(new BuffDebuff("Moon shield", "Buff", 3, "MOON BARRIER", 1f, 1, 1, "Skill"));
         register(new BuffDebuff("Regen barrier", "Buff", 3, "REGEN BARRIER", 1f, 1, 999, "Skill"));
+        register(new BuffDebuff("Rage empowerment host", "Buff", 999, "ATK", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Burning guts cd", "Buff", 999, "ATK", 0f, 1000, 1001, "Skill"));
 
     }
     

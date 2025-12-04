@@ -250,7 +250,7 @@ public interface Characters {
             register(new Characters.character(
                     5,
                     "Flamita",
-                    50,  // atk
+                    100,  // atk
                     35,   // matk
                     18,   // def
                     12,   // res
@@ -305,6 +305,21 @@ public interface Characters {
                     300,// mp
                     new ArrayList<uniqueValue>() {{
                         add(new uniqueValue("MpRegeneration", "100"));
+                    }}
+            ));
+
+            register(new Characters.character(
+                    9,
+                    "Flatina",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    400, // hp
+                    0,// mp
+                    new ArrayList<uniqueValue>() {{
+                        add(new uniqueValue("Burning rage", "0"));
                     }}
             ));
         }

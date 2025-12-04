@@ -677,51 +677,26 @@ public class  BattleUI {
         
         // === UNIQUE VALUE EFFECTS (Special Talents) ===
         if (!hideTalents) {
-            
             debuffText.append("Special Talents:\n");
             
-            // Show Burning Rage if present
-            if (slot.getCharacter().getUniqueValue("Burning rage") != null) {
-                float currentRage = characters.SpecialTalents.getCurrentBurningRage(slot);
-                if (currentRage > 0) {
-                    debuffText.append("🔥 Burning Rage: ").append((int)currentRage).append("\n");
-                    hasUniqueEffects = true;
-                }
-            }
-            
-            // Show Regeneration if present
-            if (slot.getCharacter().getUniqueValue("Regeneration") != null) {
-                float regenAmount = slot.getCharacter().getUniqueValueAsFloat("Regeneration");
-                if (regenAmount > 0) {
-                    debuffText.append("💚 Regeneration: +").append((int)regenAmount).append(" HP/turn\n");
-                    hasUniqueEffects = true;
-                }
-            }
-            
-            // Show MP Regeneration if present
-            if (slot.getCharacter().getUniqueValue("MpRegeneration") != null) {
-                float mpRegenAmount = slot.getCharacter().getUniqueValueAsFloat("MpRegeneration");
-                if (mpRegenAmount > 0) {
-                    debuffText.append("💙 MP Regeneration: +").append((int)mpRegenAmount).append(" MP/turn\n");
-                    hasUniqueEffects = true;
-                }
-            }
-            
-            // Show Mana Shield if present
-            if (slot.getCharacter().getUniqueValue("MANA_SHIELD") != null) {
-                float shieldAmount = slot.getCharacter().getUniqueValueAsFloat("MANA_SHIELD");
-                if (shieldAmount > 0) {
-                    debuffText.append("🛡️ Mana Shield: Active\n");
-                    hasUniqueEffects = true;
-                }
-            }
-            
-            // Show Berserker Rage if present
-            if (slot.getCharacter().getUniqueValue("BerserkerRage") != null) {
-                float berserkerRage = slot.getCharacter().getUniqueValueAsFloat("BerserkerRage");
-                if (berserkerRage > 0) {
-                    debuffText.append("⚔️ Berserker Rage: +").append((int)berserkerRage).append(" ATK\n");
-                    hasUniqueEffects = true;
+            if (slot.getCharacter().getUniqueValues() != null) {
+                for (characters.Characters.uniqueValue uv : slot.getCharacter().getUniqueValues()) {
+                    try {
+                        float value = Float.parseFloat(uv.getValue());
+                        if (value > 0||uv.getName().equals("Burning rage")) {
+                            // Format name: capitalize first letter of each word
+                            String displayName = formatTalentName(uv.getName());
+                            debuffText.append(displayName);
+                            if(!uv.getName().contains("Phase")) {
+                                debuffText.append(": ").append((int) value).append("\n");
+                            }else{
+                                debuffText.append("\n");
+                            }
+                            hasUniqueEffects = true;
+                        }
+                    } catch (NumberFormatException e) {
+                        // If value is not a number, skip it
+                    }
                 }
             }
             
@@ -737,10 +712,17 @@ public class  BattleUI {
             for (characters.BuffDebuff effect : slot.getActiveEffects()) {
                 String effectIcon = getEffectIcon(effect.getType(), effect.getEffects());
                 String effectDescription = getEffectDescription(effect);
-                debuffText.append(effectIcon).append(" ").append(effect.getName())
-                         .append(" (").append(effect.getDuration()).append(" turns)")
-                         .append(": ").append(effectDescription).append("\n");
-                hasBuffDebuffEffects = true;
+                if(effect.getName().contains("cd")){
+                    debuffText.append(" ").append(effect.getName())
+                            .append(" (").append(effect.getStack()).append(" AV left)")
+                            .append("\n");
+                    hasBuffDebuffEffects = true;
+                } else {
+                    debuffText.append(effectIcon).append(" ").append(effect.getName())
+                            .append(" (").append(effect.getDuration()).append(" turns)")
+                            .append(": ").append(effectDescription).append("\n");
+                    hasBuffDebuffEffects = true;
+                }
             }
         }
         
@@ -749,6 +731,41 @@ public class  BattleUI {
         }
         
         return debuffText.toString();
+    }
+    
+    /**
+     * Format talent name for display (capitalize first letter of each word)
+     */
+    private String formatTalentName(String name) {
+        if (name == null || name.isEmpty()) {
+            return name;
+        }
+        // Handle special cases
+        if (name.equals("Burning rage")) {
+            return "Burning Rage";
+        }
+        if (name.equals("MpRegeneration")) {
+            return "MP Regeneration";
+        }
+        if (name.equals("MANA_SHIELD")) {
+            return "Mana Shield";
+        }
+        if (name.equals("BerserkerRage")) {
+            return "Berserker Rage";
+        }
+        // Default: capitalize first letter of each word
+        String[] words = name.split(" ");
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < words.length; i++) {
+            if (i > 0) formatted.append(" ");
+            if (!words[i].isEmpty()) {
+                formatted.append(Character.toUpperCase(words[i].charAt(0)));
+                if (words[i].length() > 1) {
+                    formatted.append(words[i].substring(1));
+                }
+            }
+        }
+        return formatted.toString();
     }
     
     /**
@@ -787,12 +804,17 @@ public class  BattleUI {
         
         switch (effects) {
             case "ATK":
-                if (totalValue > 0f) {
-                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return "+" + (int)((totalValue) * 100) + "% ATK" + stackInfo;
-                } else {
-                    String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                    return (int)((totalValue) * 100) + "% ATK" + stackInfo;
+                if(effect.getName().contains("cd")){
+                    return "";
+                }
+                else {
+                    if (totalValue > 0f) {
+                        String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                        return "+" + (int) ((totalValue) * 100) + "% ATK" + stackInfo;
+                    } else {
+                        String stackInfo = stack > 1 ? " (x" + stack + ")" : "";
+                        return (int) ((totalValue) * 100) + "% ATK" + stackInfo;
+                    }
                 }
             case "DEF":
                 if (totalValue > 0f) {
@@ -2061,7 +2083,7 @@ public class  BattleUI {
                     battleSystem.useSkill(attacker, resolvedTarget, skill);
                 }
                 //Recover Mp for Ina
-                if(battleSystem.hasIna()){
+                if(battleSystem.hasHeroName("Ina")){
                     Observer.characterSlot Ina = battleSystem.getSlotByName("Ina");
                     if(Ina.getBuffDebuffByName("Conserve")==null&&Ina.getCurrentHp()>0) {
                         Ina.regenerateMp(1);
