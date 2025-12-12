@@ -126,8 +126,14 @@ public class BuffDebuff {
         register(new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill"));
         register(new BuffDebuff("Moon shield", "Buff", 3, "MOON BARRIER", 1f, 1, 1, "Skill"));
         register(new BuffDebuff("Regen barrier", "Buff", 3, "REGEN BARRIER", 1f, 1, 999, "Skill"));
+
         register(new BuffDebuff("Rage empowerment host", "Buff", 999, "ATK", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Burning guts cd", "Buff", 999, "ATK", 0f, 1000, 1001, "Skill"));
+        register(new BuffDebuff("Prey", "Debuff", 999, "mark", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Brave", "Debuff", 3, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Swap", "Buff", 1, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Taunt", "Buff", 2, "Taunt", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Dragon breath", "Buff", 1, "", 0f, 1, 1, "Skill"));
 
     }
     

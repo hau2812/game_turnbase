@@ -727,6 +727,115 @@ public interface Ability {
                     0,
                     0
             ));
+            register(new Ability.skill(
+                    33,
+                    "Tiger claw",
+                    "Deal damage and heal",
+                    "Physical",
+                    "Enemy",
+                    1.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            register(new Ability.skill(
+                    34,
+                    "Dragon tail",
+                    "Deal aoe damage and push them back",
+                    "Physical",
+                    "Aoe enemy",
+                    1.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            register(new Ability.skill(
+                    35,
+                    "Eagle fang",
+                    "Deal damage and mark an enemy",
+                    "Physical",
+                    "Enemy",
+                    0.75f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            Ability.skill eagleFang = getByName("Eagle fang");
+            if (eagleFang != null) {
+                eagleFang.addEffect("Prey", 999, 1);
+            }
+
+            register(new Ability.skill(
+                    36,
+                    "Weakening",
+                    "Weakness 5 to prey",
+                    "Physical",
+                    "Enemy",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            Ability.skill Weakening = getByName("Weakening");
+            if (Weakening != null) {
+                Weakening.addEffect("Weakness", 1, 5);
+            }
+
+            register(new Ability.skill(
+                    37,
+                    "Push",
+                    "Push prey back",
+                    "Physical",
+                    "Enemy",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    38,
+                    "Taunt",
+                    "Taunt prey",
+                    "Physical",
+                    "Enemy",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0
+            ));
+            Ability.skill Taunt = getByName("Taunt");
+            if (Taunt != null) {
+                Taunt.addEffect("Taunt", 2, 1);
+            }
+
+            register(new Ability.skill(
+                    39,
+                    "Backstep",
+                    "Use one of her skill instead",
+                    "non",
+                    "Self",
+                    0.0f,
+                    0.0f,
+                    0,
+                    0
+            ));
+
+            register(new Ability.skill(
+                    40,
+                    "Dragon breath",
+                    "Continue consume party mp to deal damage to all enemy",
+                    "non",
+                    "Self",
+                    0.0f,
+                    0.1f,
+                    0,
+                    0
+            ));
+            Ability.skill dragonBreath = getByName("Dragon breath");
+            if (dragonBreath != null) {
+                dragonBreath.addEffect("Dragon breath", 2, 1);
+            }
 
         }
     }

@@ -322,6 +322,18 @@ public interface Characters {
                         add(new uniqueValue("Burning rage", "0"));
                     }}
             ));
+            register(new Characters.character(
+                    10,
+                    "Chigon",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    400, // hp
+                    0,// mp
+                    new ArrayList<uniqueValue>()
+            ));
         }
     }
 }

@@ -33,6 +33,7 @@ public class BattleSystem {
     private boolean moving = false;
     private boolean autoEnemy = true;
     private boolean enemyActionTime = false;
+
     private Line turnOf = null;
     private Observer.characterSlot timeStopSlot = null;
     private float timeStop = 0;
@@ -114,6 +115,29 @@ public class BattleSystem {
      */
     public Observer.characterSlot[] getAllEnemies() {
         return new Observer.characterSlot[]{enemySlot, enemySlot2, enemySlot3};
+    }
+    /**
+     * Get all alive enemy slots as an array
+     */
+    public ArrayList<Observer.characterSlot> getAllAliveEnemies() {
+        ArrayList<Observer.characterSlot> result = new ArrayList<>();
+        for(Observer.characterSlot slot : getAllEnemies()) {
+            if(slot!=null&&slot.getCurrentHp()>0){
+                result.add(slot);
+            }
+        }
+        return result;
+    }
+    /**
+     * Get all enemy with prey
+     */
+    public Observer.characterSlot getPreyEnemies() {
+        for(Observer.characterSlot slot : getAllEnemies()) {
+            if(slot!=null&&slot.containsBuffDebuff("Prey")){
+                return slot;
+            }
+        }
+        return null;
     }
     
     /**
@@ -249,86 +273,7 @@ public class BattleSystem {
         slot.getLine().setEndX(barX);
     }
     
-    /**
-     * Handle special skills that require unique processing
-     * @param attacker The character using the skill
-     * @param target The target of the skill
-     * @param skill The skill being used
-     * @return true if skill processing should end early, false to continue with normal processing
-     */
-    private boolean handleSpecialSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
-        // Handle "Let me absorb you" skill
-        if(skill.getName().equals("Let me absorb you")){
-            if(timeStopSlot != null){
-                if(timeStopSlot.getCharacter().getName().equals("Ina")) {
-                    if (target.getCurrentHp() <= target.getCharacter().getHp() * 0.4 || target.getCharacter() == attacker.getCharacter()) {
-                        timeStop += (float) 0.5;
-                        resetLine(attacker);
-                    } else {
-                        target.heal(-target.getCharacter().getHp() * (float)0.4);
-                        battleUI.updateHealthUI(target);
-                        timeStop = Math.min(200, timeStop + 100);
-                        resetLine(attacker);
-                    }
-                    return true; // End skill processing early
-                }
-            } else {
-                target.heal(-target.getCurrentHp() / 2);
-                attacker.regenerateMp(3);
-            }
-            battleUI.updateHealthUI(target);
-            battleUI.updateBurningRageBar(target);
-            return true; // End skill processing early
-        }
-        
-        // Handle "Absolute teleportation" skill
-        else if(skill.getName().equals("Absolute teleportation")){
-            //Buff
-            BuffDebuff teleBuff = BuffDebuff.getByName("Conserve").copy();
-            teleBuff.setStack(attacker.getBuffCount()+1);
-            attacker.addBuffDebuff(teleBuff);
-            attacker.regenerateMp(-skill.getMpCost());
-            // Set timeStopSlot to attacker and initialize timeStop with black action bar length
-            timeStopSlot = attacker;
-            timeStop = (float)battleUI.getBarWidth();
-            // Create the timeStop bar in the UI
-            battleUI.createTimeStopBar();
-            return true; // End skill processing early
-        }else if(skill.getName().equals("Moon wave")){
-            resetLine(target);
-            battleUI.updateHealthUI(target);
-            battleUI.updateBurningRageBar(target);
-            return false; // End skill processing early
-        }else if(skill.getName().equals("Amber sacrifice")){
-            if(target.getCurrentHp()>1) {
-                applyDamage(target, target.getCurrentHp() / 2);
-            }
-        }
-        else if(skill.getName().equals("Rage empowerment")){
-            //Buff
-            BuffDebuff rageBuff = BuffDebuff.getByName("Rage empowerment host").copy();
-            attacker.addBuffDebuff(rageBuff);
-        }
-        else if(skill.getName().equals("Burning guts")){
-            //Buff
-            if(attacker.getBuffDebuffByName("Burning guts cd")==null){
-                for(Observer.characterSlot slot : getAllHeroes()){
-                    if(slot!=null){
-                        slot.getCharacter().addToUniqueValue("Guts",1);
-                    }
 
-                }
-                BuffDebuff cd = BuffDebuff.getByName("Burning guts cd").copy();
-                cd.setStack(1000);
-                attacker.addBuffDebuff(cd);
-            }
-
-        }
-        
-        // No special skill handled, continue with normal processing
-        return false;
-    }
-    
     /**
      * Execute AOE (Area of Effect) skill that targets multiple characters
      * @param attacker The character using the skill
@@ -585,9 +530,9 @@ public class BattleSystem {
 
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
 
-        SimpleLine attackerLine = attacker.getLine();
+        Line attackerLine = attacker.getLine();
         if(attackerLine == null || turnOf == null || 
-           attackerLine.getFxLine() != turnOf) {
+           attackerLine != turnOf) {
             return;
         }
         
@@ -652,6 +597,7 @@ public class BattleSystem {
                 BuffDebuff effectCopy = effect.getBuffDebuff().copy();
                 effectCopy.setStack(effect.getStack());
                 effectCopy.setDuration(effect.getDuration());
+                effectCopy.setSource(attacker.getCharacter().getName());
                 // Apply the effect to the target
                 characters.SpecialTalents.applyBuffDebuff(target, effectCopy);
             }
@@ -670,6 +616,16 @@ public class BattleSystem {
         }
         // Reduce duration of buff/debuff effects at the end of turn
         characters.SpecialTalents.onTurnEnd(attacker);
+        //Visual fix
+        if(skill.getAVScale()==0.0f){
+            for(Observer.characterSlot slot: getAllCharacters()){
+                if(slot!=null&&slot!=attacker){
+                    pushCharacterLine(slot,getSpeedForCharacter(slot));
+                }
+            }
+        }
+
+        System.out.println(attacker.getCharacter().getName()+" use skill at "+ target.getCharacter().getName());
     }
     
     /**
@@ -757,14 +713,7 @@ public class BattleSystem {
         if (availableSkills.isEmpty()) {
             // Fallback: try to give basic attack (Slash)
             Ability.skill basicAttack = Ability.SkillRegistry.getById(1);
-            if (basicAttack != null) {
-                Observer.characterSlot targetHero = getRandomAliveHero();
-                if (targetHero != null) {
-                    useSkill(actingEnemy, targetHero, basicAttack);
-                }
-            }
-            moving = true;
-            return;
+            availableSkills.add(basicAttack);
         }
         
         // Choose random skill from available skills
@@ -785,6 +734,10 @@ public class BattleSystem {
             executeAoeSkill(actingEnemy, chosenSkill);
         }else {
             Observer.characterSlot targetHero = getRandomAliveHero();
+
+            if(actingEnemy.containsBuffDebuff("Taunt")){
+                targetHero = getHeroByName(actingEnemy.getBuffDebuffByName("Taunt").getSource());
+            }
             if (targetHero == null) {
                 // No heroes alive, shouldn't happen but handle gracefully
                 moving = true;
@@ -839,6 +792,45 @@ public class BattleSystem {
                     Flatina2.getActiveEffects().remove(Flatina2.getBuffDebuffByName("Burning guts cd"));
                 }
 
+            }
+        }
+
+
+
+        // Handle prey mechanics
+        //Handle Dragon breath
+        if(hasHeroName("Chigon")){
+            Observer.characterSlot prey = getPreyEnemies();
+            Observer.characterSlot Chigon = getHeroByName("Chigon");
+            if(prey!=null&&!prey.containsBuffDebuff("Brave")){
+                if(prey.getLine().getStartX()-4<= battleUI.getBarX()) {
+                    if(!Chigon.containsBuffDebuff("Dragon breath")) {
+                        resetLine(Chigon);
+                    }else{
+                        applyDamage(prey,Chigon.getCharacter().getAtk());
+                    }
+                    Chigon.addBuffDebuff(BuffDebuff.getByName("Swap").copy());
+                    prey.removeBuffDebuffByName("Prey");
+                    prey.addBuffDebuff(BuffDebuff.getByName("Brave").copy());
+                }
+            }
+            if(prey!=null&&prey.containsBuffDebuff("Brave")){
+                prey.removeBuffDebuffByName("Prey");
+            }
+            if(Chigon.containsBuffDebuff("Dragon breath")){
+                if(partyMp>0) {
+                    SpecialTalents.applyStatModifications(Chigon, null);
+                    for (Observer.characterSlot enemy : getAllAliveEnemies()) {
+                        if(enemy!=prey) {
+                            applyDamage(enemy, Chigon.getCharacter().getAtk() * 0.01);
+                        }else{
+                            applyDamage(enemy, Chigon.getCharacter().getAtk() * 0.02);
+                        }
+                    }
+                    partyMp--;
+                }else{
+                    Chigon.getActiveEffects().remove(Chigon.getBuffDebuffByName("Dragon breath"));
+                }
             }
         }
 
@@ -969,6 +961,11 @@ public class BattleSystem {
         // Handle special talents after damage is applied
         if (amount > 0) { // Damage taken
             characters.SpecialTalents.onDamageTaken(slot, actualAmount);
+            //Chigon party mp
+            if(hasHeroName("Chigon")&&isEnemy(slot)){
+                setPartyMp(getPartyMp()+(int)amount*0.1f);
+            }
+
         } else if (amount < 0) { // Healing received
             characters.SpecialTalents.onHealingReceived(slot, Math.abs((float)amount));
         }
@@ -1217,4 +1214,95 @@ public class BattleSystem {
     }
 
 //------------------------------------------------SPECIAL SKILLS------------------------------------------------------------------
+    /**
+     * Handle special skills that require unique processing
+     * @param attacker The character using the skill
+     * @param target The target of the skill
+     * @param skill The skill being used
+     * @return true if skill processing should end early, false to continue with normal processing
+     */
+    private boolean handleSpecialSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
+        // Handle "Let me absorb you" skill
+        if(skill.getName().equals("Let me absorb you")){
+            if(timeStopSlot != null){
+                if(timeStopSlot.getCharacter().getName().equals("Ina")) {
+                    if (target.getCurrentHp() <= target.getCharacter().getHp() * 0.4 || target.getCharacter() == attacker.getCharacter()) {
+                        timeStop += (float) 0.5;
+                        resetLine(attacker);
+                    } else {
+                        target.heal(-target.getCharacter().getHp() * (float)0.4);
+                        battleUI.updateHealthUI(target);
+                        timeStop = Math.min(200, timeStop + 100);
+                        resetLine(attacker);
+                    }
+                    return true; // End skill processing early
+                }
+            } else {
+                target.heal(-target.getCurrentHp() / 2);
+                attacker.regenerateMp(3);
+            }
+            battleUI.updateHealthUI(target);
+            battleUI.updateBurningRageBar(target);
+            return true; // End skill processing early
+        }
+
+        // Handle "Absolute teleportation" skill
+        else if(skill.getName().equals("Absolute teleportation")){
+            //Buff
+            BuffDebuff teleBuff = BuffDebuff.getByName("Conserve").copy();
+            teleBuff.setStack(attacker.getBuffCount()+1);
+            attacker.addBuffDebuff(teleBuff);
+            attacker.regenerateMp(-skill.getMpCost());
+            // Set timeStopSlot to attacker and initialize timeStop with black action bar length
+            timeStopSlot = attacker;
+            timeStop = (float)battleUI.getBarWidth();
+            // Create the timeStop bar in the UI
+            battleUI.createTimeStopBar();
+            return true; // End skill processing early
+        }else if(skill.getName().equals("Moon wave")){
+            resetLine(target);
+            battleUI.updateHealthUI(target);
+            battleUI.updateBurningRageBar(target);
+            return false; // End skill processing early
+        }else if(skill.getName().equals("Amber sacrifice")){
+            if(target.getCurrentHp()>1) {
+                applyDamage(target, target.getCurrentHp() / 2);
+            }
+        }
+        else if(skill.getName().equals("Rage empowerment")){
+            //Buff
+            BuffDebuff rageBuff = BuffDebuff.getByName("Rage empowerment host").copy();
+            attacker.addBuffDebuff(rageBuff);
+        }
+        else if(skill.getName().equals("Burning guts")){
+            //Buff
+            if(attacker.getBuffDebuffByName("Burning guts cd")==null){
+                for(Observer.characterSlot slot : getAllHeroes()){
+                    if(slot!=null){
+                        slot.getCharacter().addToUniqueValue("Guts",1);
+                    }
+
+                }
+                BuffDebuff cd = BuffDebuff.getByName("Burning guts cd").copy();
+                cd.setStack(1000);
+                attacker.addBuffDebuff(cd);
+            }
+        }
+        else if(skill.getName().equals("Tiger claw")){
+            applyDamage(attacker,-skill.getAtkScale()*attacker.getCharacter().getAtk()*0.2);
+        }
+        else if(skill.getName().equals("Dragon tail")){
+            pushCharacterLine(target,attacker.getCharacter().getAtk()*0.1);
+        }
+        else if(skill.getName().equals("Push")){
+            pushCharacterLine(target,attacker.getCharacter().getAtk()/target.getCharacter().getAtk()*target.getCharacter().getAV());
+        }
+        else if(skill.getName().equals("Dragon breath")){
+            pushCharacterLine(attacker,200);
+        }
+
+        // No special skill handled, continue with normal processing
+        return false;
+    }
+
 }

@@ -448,6 +448,11 @@ public class SpecialTalents {
      * Apply a buff/debuff effect to a character
      */
     public static void applyBuffDebuff(characterSlot slot, BuffDebuff effect) {
+        if(effect.getName().equals("Prey")){
+            if(battleSystem.getPreyEnemies()!=null){
+                battleSystem.getPreyEnemies().removeBuffDebuffByName(effect.getName());
+            }
+        }
         if (slot.getActiveEffects() == null) {
             slot.setActiveEffects(new java.util.ArrayList<>());
         }

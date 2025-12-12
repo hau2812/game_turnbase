@@ -51,11 +51,11 @@ public class    RandomMapGenerator {
     
     // Pool enemy templates
     private static final EnemyTemplate[] FOREST_ENEMIES = {
-        new EnemyTemplate("Forest Wolf", 300, 25, 15, 18, 0, new String[]{"1", "0", "0", "0"}, null),
-        new EnemyTemplate("Wild Bear", 500, 35, 20, 12, 0, new String[]{"1", "0", "0", "0"}, null),
-        new EnemyTemplate("Giant Spider", 400, 30, 18, 20, 0, new String[]{"1", "0", "0", "0"}, null),
-        new EnemyTemplate("Forest Troll", 600, 40, 25, 10, 0, new String[]{"1", "4", "0", "0"}, null),
-        new EnemyTemplate("Shadow Beast", 450, 45, 15, 22, 0, new String[]{"1", "0", "0", "0"}, null)
+        new EnemyTemplate("Forest Wolf", 300, 25, 15, 10, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Wild Bear", 500, 35, 20, 8, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Giant Spider", 400, 30, 18, 10, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Forest Troll", 600, 40, 25, 6, 0, new String[]{"1", "4", "0", "0"}, null),
+        new EnemyTemplate("Shadow Beast", 250, 45, 15, 20, 0, new String[]{"1", "0", "0", "0"}, null)
     };
     
     private static final EnemyTemplate[] MOUNTAIN_ENEMIES = {

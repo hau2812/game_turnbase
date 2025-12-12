@@ -3,6 +3,7 @@ package characters;
 import abilities.Ability;
 import battle.BattleSystem;
 import items.EquipmentItem;
+import javafx.scene.shape.Line;
 import ui.SimpleLine;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public interface Observer {
         ArrayList<EquipmentItem> equipments;
         float currentHp;
         float currentMp;
-        SimpleLine line;
+        Line line;
 
 
         public characterSlot(int id, Characters.character character, Characters.character baseCharacter,
@@ -68,11 +69,14 @@ public interface Observer {
             this.equipments.remove(equipment);
         }
 
-        public SimpleLine getLine() {return line;}
-        public void setLine(SimpleLine line) {this.line = line;}
+        public Line getLine() {return line;}
+        public void setLine(Line line) {this.line = line;}
 
         public ArrayList<Ability.skill> getSkills() { return skills; }
         public void setSkills(ArrayList<Ability.skill> skills) { this.skills = skills; }
+        public void addSkills(ArrayList<Ability.skill> skills) {
+            this.skills.addAll(skills);
+        }
         
         public ArrayList<BuffDebuff> getActiveEffects() { return activeEffects; }
         public void setActiveEffects(ArrayList<BuffDebuff> activeEffects) { this.activeEffects = activeEffects; }
@@ -101,7 +105,7 @@ public interface Observer {
                 // When mana is consumed (amount < 0), increase party MP by the amount consumed
                 if(battleSystemInstance[0] != null) {
                     float currentPartyMp = battleSystemInstance[0].getPartyMp();
-                    battleSystemInstance[0].setPartyMp(currentPartyMp - amount); // -amount because amount is negative
+                    battleSystemInstance[0].setPartyMp(currentPartyMp - amount/10); // -amount because amount is negative
                 }
             }
         }
@@ -113,6 +117,14 @@ public interface Observer {
                 }
             }
             return null; // Return null if not found
+        }
+        public void removeBuffDebuffByName(String name){
+            for (BuffDebuff effect : activeEffects) {
+                if (effect.getName().equals(name)) {
+                    activeEffects.remove(effect);
+                    return;
+                }
+            }
         }
 
         public float getFloatBuffDebuffByName(String name){
@@ -248,6 +260,13 @@ public interface Observer {
             createCharacterSlot("Ina", "Light attack", "Energy charge", "Let me absorb you", "Absolute teleportation");
             createCharacterSlot("Leuna", "Charge attack", "Moon light", "Moon wave", "Absolute barrier");
             createCharacterSlot("Flatina", "Rage Strike", "Amber sacrifice", "Rage empowerment", "Burning guts");
+
+            createCharacterSlot("Chigon", "Tiger claw", "Dragon tail", "Eagle fang", "Dragon breath");
+            addSkillToList(registry.get("Chigon").getSkills(),"Weakening","Chigon");
+            addSkillToList(registry.get("Chigon").getSkills(),"Push","Chigon");
+            addSkillToList(registry.get("Chigon").getSkills(),"Taunt","Chigon");
+            addSkillToList(registry.get("Chigon").getSkills(),"Backstep","Chigon");
+
 
 
 

@@ -445,7 +445,7 @@ public class  BattleUI {
             Observer.characterSlot character = allCharacters[i];
             Line line = allLineRefs[i];
             if (character != null && character.getCurrentHp() > 0 && line != null) {
-                character.setLine(SimpleLine.fromFxLine(line));
+                character.setLine(line);
             }
         }
     }
@@ -718,10 +718,16 @@ public class  BattleUI {
                             .append("\n");
                     hasBuffDebuffEffects = true;
                 } else {
-                    debuffText.append(effectIcon).append(" ").append(effect.getName())
-                            .append(" (").append(effect.getDuration()).append(" turns)")
-                            .append(": ").append(effectDescription).append("\n");
-                    hasBuffDebuffEffects = true;
+                    if(effect.getName().equals("Taunt")&&effect.getDuration()==1){
+
+                    }else {
+                        debuffText.append(effectIcon).append(" ").append(effect.getName())
+                                .append(" (")
+                                .append(effect.getName().equals("Taunt") ? effect.getDuration() - 1 : effect.getDuration())
+                                .append(" turns)")
+                                .append(" ").append(effectDescription).append("\n");
+                        hasBuffDebuffEffects = true;
+                    }
                 }
             }
         }
@@ -788,7 +794,7 @@ public class  BattleUI {
                 case "DEF": return "🩸";
                 case "SPD": return "🐌";
                 case "DOT": return "☠️";
-                default: return "💀";
+                default: return "";
             }
         }
         return "❓";
@@ -846,7 +852,7 @@ public class  BattleUI {
                 return stack + " barrier points" + barrierStackInfo;
             default:
                 String defaultStackInfo = stack > 1 ? " (x" + stack + ")" : "";
-                return "Effect: " + effects + " (" + totalValue + ")" + defaultStackInfo;
+                return  defaultStackInfo;
         }
     }
     
@@ -1917,6 +1923,13 @@ public class  BattleUI {
         Ability.skill s2 = hero.getSkills().size() > 1 ? hero.getSkills().get(1) : Ability.SkillRegistry.getByName("N/A");
         Ability.skill s3 = hero.getSkills().size() > 2 ? hero.getSkills().get(2) : Ability.SkillRegistry.getByName("N/A");
         Ability.skill s4 = hero.getSkills().size() > 3 ? hero.getSkills().get(3) : Ability.SkillRegistry.getByName("N/A");
+        if(hero.getBuffDebuffByName("Swap")!=null){
+            s1 = hero.getSkills().size() > 4 ? hero.getSkills().get(4) : Ability.SkillRegistry.getByName("N/A");
+            s2 = hero.getSkills().size() > 5 ? hero.getSkills().get(5) : Ability.SkillRegistry.getByName("N/A");
+            s3 = hero.getSkills().size() > 6 ? hero.getSkills().get(6) : Ability.SkillRegistry.getByName("N/A");
+            s4 = hero.getSkills().size() > 7 ? hero.getSkills().get(7) : Ability.SkillRegistry.getByName("N/A");
+
+        }
         skill1Box = createSkillBox(hero, s1, 50, 550, Color.LIGHTBLUE, null);
         skill2Box = createSkillBox(hero, s2, 100, 550, Color.CYAN, null);
         skill3Box = createSkillBox(hero, s3, 150, 550, Color.DARKBLUE, null);

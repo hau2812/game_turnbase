@@ -28,7 +28,7 @@ public class testing extends GameApplication {
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Change these values to configure your battle settings
     private static final boolean HIDE_TALENTS = false;  // Set to true to hide talent text, false to show
-    private static final boolean SKIP_PICKING = false;
+    private static final boolean SKIP_PICKING = true;
     public static boolean EASY_MODE = false;
     public static boolean SKIP_TO_BOSS = false;
     // Available heroes to choose from (you can select multiple)
@@ -39,18 +39,20 @@ public class testing extends GameApplication {
         "Pieberry",
         "Ina",
         "Leuna",
-        "Flatina"
+        "Flatina",
+        "Chigon"
     };
 
     // Selected heroes for battle (will be set by hero selection UI)
     private String[] selectedHeroes = {
-            "Flamita",
-            "Flatina",
+            //"Flamita",
+            //"Flatina",
             //"Hero",
             //"Hero2",
             //"Pieberry",
             //"Ina",
             //"Leuna",
+            "Chigon"
     };
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
