@@ -1,5 +1,6 @@
 package ui;
 
+import dialog.DialogRegistrations;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -145,6 +146,7 @@ public class BossSelectionUI {
             isVisible = false;
             FXGL.getGameScene().removeUINode(mainContainer);
             System.out.println("Boss Selection UI hidden!");
+
         }
     }
     

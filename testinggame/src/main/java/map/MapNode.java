@@ -13,7 +13,8 @@ public class MapNode {
         EVENT,
         SHOP,
         REST,
-        BOSS
+        BOSS,
+        RECRUIT
     }
 
     private String id;
@@ -77,6 +78,8 @@ public class MapNode {
                 if (event != null) {
                     event.trigger();
                 }
+                break;
+            case RECRUIT:
                 break;
             case SHOP:
                 // Open shop interface

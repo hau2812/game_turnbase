@@ -171,7 +171,10 @@ public class  BattleUI {
     private double barHeight = 20;
     private double healthBarWidth = 200;
     private double healthBarHeight = 20;
-    
+
+    Rectangle blackBar = new Rectangle(barWidth, barHeight, Color.BLACK);
+
+
     // Magic projectile animation constants
     private double magicProjectileWidth = 300;  // ADJUST THIS to change projectile size
     private double magicProjectileHeight = 300; // ADJUST THIS to change projectile size
@@ -384,7 +387,6 @@ public class  BattleUI {
     
     private void createTimingBar() {
         // Background black bar
-        Rectangle blackBar = new Rectangle(barWidth, barHeight, Color.BLACK);
         blackBar.setTranslateX(barX);
         blackBar.setTranslateY(barY);
         getGameScene().addUINode(blackBar);
@@ -2502,7 +2504,7 @@ public class  BattleUI {
     }
     
     public void clearAllBattleUI() {
-        
+        getGameScene().removeUINode(blackBar);
         // Remove health bar elements from scene
         for (HealthBarData healthBarData : healthBars) {
             if (healthBarData.healthBorder != null) {

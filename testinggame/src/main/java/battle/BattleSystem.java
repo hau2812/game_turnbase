@@ -128,6 +128,7 @@ public class BattleSystem {
         }
         return result;
     }
+
     /**
      * Get all enemy with prey
      */
@@ -137,6 +138,7 @@ public class BattleSystem {
                 return slot;
             }
         }
+
         return null;
     }
     
@@ -195,7 +197,9 @@ public class BattleSystem {
     private Observer.characterSlot[] getAllCharacters() {
         return new Observer.characterSlot[]{heroSlot, heroSlot2, heroSlot3, enemySlot, enemySlot2, enemySlot3};
     }
-    
+    public void removeAllCharacters(){
+        heroSlot = heroSlot2 = heroSlot3 = enemySlot = enemySlot2 = enemySlot3 = null;
+    }
     /**
      * Get the corresponding line for a character slot
      */
@@ -444,9 +448,6 @@ public class BattleSystem {
             //"Electra", () -> audioManager.playElectraMusic()
     );
     public void playBattleMusic() {
-//        if(true){
-//            return;
-//        }
         for (Observer.characterSlot enemy : getAllEnemies()) {
 
             if (enemy!=null) {

@@ -160,6 +160,18 @@ public class    RandomMapGenerator {
         
         return battleNode;
     }
+
+    public static MapNode createRecruitNode(String pathPrefix, int nodeNumber, MapPath.PathType pathType) {
+        MapNode recruitNode = new MapNode(
+                pathPrefix + "_recruit" + nodeNumber,
+                "Random Recruit",
+                "You found an ally",
+                MapNode.NodeType.RECRUIT,
+                100 + (nodeNumber * 50),
+                200 + (random.nextInt(200) - 100)
+        );
+        return recruitNode;
+    }
     
     /**
      * Tao random event node
@@ -616,4 +628,6 @@ public class    RandomMapGenerator {
             }
         };
     }
+
+
 }

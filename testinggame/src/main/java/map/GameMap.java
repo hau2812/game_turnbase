@@ -68,17 +68,33 @@ public class GameMap {
 
 
         // Random nodes (4-6 nodes) - RANDOM
-        int nodeCount = 5 + (int)(Math.random() * 3); // 4-6 random nodes
+        int nodeCount = 2 + (int)(Math.random() * 3); // 4-6 random nodes
         if(testing.SKIP_TO_BOSS){
             nodeCount = 0;
         }
-        for (int i = 1; i <= nodeCount; i++) {
+        //create Node
+        int i=1;
+        for (; i <= nodeCount/2; i++) {
+            MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
+            //randomNode = RandomMapGenerator.createRandomBattleNode(pathName,i,path.getPathType(),1);
+            path.addNode(randomNode);
+            if(path.getId().equals("forest")) {
+                currentNodeNumber++;
+            }
+        }
+        //create recruit
+        MapNode recruitNode = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
+        path.addNode(recruitNode);
+        i++;
+        //create more Node
+        for (; i <= nodeCount*2; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
             path.addNode(randomNode);
             if(path.getId().equals("forest")) {
                 currentNodeNumber++;
             }
         }
+
 
         // Final event/battle - CO DINH (nhung khac nhau cho moi path)
         if(!testing.SKIP_TO_BOSS){

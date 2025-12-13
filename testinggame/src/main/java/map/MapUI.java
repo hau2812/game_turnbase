@@ -1,6 +1,9 @@
 package map;
 
 import audio.AudioManager;
+import dialog.DialogRegistrations;
+import dialog.DialogSystem;
+import dialog.DialogUI;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -38,6 +41,9 @@ public class MapUI {
     private ShopUI shopUI;
     private Inventory inventory;
 
+    //Dialog system
+    private DialogSystem dialogSystem;
+    private DialogRegistrations dialogRegistrations;
 
     public MapUI(GameMap gameMap) {
         this.gameMap = gameMap;
@@ -53,6 +59,10 @@ public class MapUI {
     
     public void setBattleSystem(BattleSystem battleSystem) {
         this.battleSystem = battleSystem;
+    }
+    public void setDialogSystem(DialogSystem dialogSystem,DialogRegistrations dialogRegistrations) {
+        this.dialogSystem = dialogSystem;
+        this.dialogRegistrations = dialogRegistrations;
     }
     
     public void setOnBattleModeRequested(Runnable callback) {
@@ -263,6 +273,9 @@ public class MapUI {
             case REST:
                 nodeCircle.setStroke(Color.CYAN);
                 break;
+            case RECRUIT:
+                nodeCircle.setStroke(Color.ORANGE);
+                break;
             case BOSS:
                 nodeCircle.setStroke(Color.DARKRED);
                 nodeCircle.setRadius(20);
@@ -372,12 +385,16 @@ public class MapUI {
 
                 }
                 break;
+            case RECRUIT:
+                DialogRegistrations.registerRecruitDialogs();
+                DialogRegistrations.showRandomDialogWithPurpose("recruitDialog");
+                break;
             case SHOP:
                 System.out.println("Opened shop at: " + node.getName());
                 // Open shop UI
                 if (shopUI != null) {
-                    shop.refreshShop(); // Generate new items
-                    shopUI.show();
+                    //shop.refreshShop(); // Generate new items
+                    //shopUI.show();
                 } else {
                     // Fallback: Apply shop benefits to current active heroes
                     if (battleSystem != null) {
@@ -430,7 +447,7 @@ public class MapUI {
         }
         
         // Only refresh the UI if it's not a battle node (battle nodes switch to battle mode)
-        if (node.getType() != MapNode.NodeType.BATTLE) {
+        if (node.getType() != MapNode.NodeType.BATTLE && node.getType() != MapNode.NodeType.RECRUIT) {
             // Refresh the UI to show updated status
             showSelectedPath();
         }

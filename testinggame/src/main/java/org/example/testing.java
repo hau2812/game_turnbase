@@ -17,9 +17,13 @@ import ui.ShopUI;
 import ui.SimpleTestUI;
 import ui.HeroSelectionUI;
 import ui.BossSelectionUI;
+import ui.MenuUI;
 import items.Inventory;
 import items.ItemRegistry;
 import shop.Shop;
+import dialog.DialogSystem;
+import dialog.DialogUI;
+import dialog.DialogRegistrations;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
@@ -28,11 +32,13 @@ public class testing extends GameApplication {
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Change these values to configure your battle settings
     private static final boolean HIDE_TALENTS = false;  // Set to true to hide talent text, false to show
-    private static final boolean SKIP_PICKING = true;
+    private static final boolean SKIP_PICKING = false;
     public static boolean EASY_MODE = false;
     public static boolean SKIP_TO_BOSS = false;
+    public static int gold_coin = 0;
+    public static boolean skip_opening = false;
     // Available heroes to choose from (you can select multiple)
-    private static final String[] AVAILABLE_HEROES = {
+    public static String[] AVAILABLE_HEROES = {
         "Flamita",
         //"Hero",
         "Hero2",
@@ -42,10 +48,24 @@ public class testing extends GameApplication {
         "Flatina",
         "Chigon"
     };
+    
+    /**
+     * Get available heroes array
+     */
+    public static String[] getAvailableHeroes() {
+        return AVAILABLE_HEROES;
+    }
+    
+    /**
+     * Set available heroes array (used when loading save)
+     */
+    public static void setAvailableHeroes(String[] heroes) {
+        AVAILABLE_HEROES = heroes;
+    }
 
     // Selected heroes for battle (will be set by hero selection UI)
-    private String[] selectedHeroes = {
-            //"Flamita",
+    public String[] selectedHeroes = {
+            "Flamita",
             //"Flatina",
             //"Hero",
             //"Hero2",
@@ -54,6 +74,19 @@ public class testing extends GameApplication {
             //"Leuna",
             "Chigon"
     };
+    
+    /**
+     * Set selected heroes array (used by MenuUI)
+     */
+    public void setSelectedHeroes(String[] heroes) {
+        this.selectedHeroes = heroes;
+        // Also update battle system if it's already configured
+        if (battleSystem != null) {
+            //System.out.println("ok");
+            battleSystem.configureBattle(HIDE_TALENTS, selectedHeroes);
+            battleSystem.removeAllCharacters();
+        }
+    }
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
     private BattleSystem battleSystem;
@@ -82,6 +115,13 @@ public class testing extends GameApplication {
     // Selection UIs
     private HeroSelectionUI heroSelectionUI;
     private BossSelectionUI bossSelectionUI;
+    
+    // Dialog system
+    private DialogUI dialogUI;
+    private DialogSystem dialogSystem;
+    private DialogRegistrations dialogRegistrations;
+    // Menu UI
+    private MenuUI menuUI;
 
     @Override
     protected void initSettings(GameSettings settings) {
@@ -122,6 +162,34 @@ public class testing extends GameApplication {
         // Initialize test UI
         testUI = new SimpleTestUI();
         System.out.println("Test UI initialized");
+
+        // Initialize dialog system
+        dialogUI = new DialogUI();
+        dialogSystem = DialogSystem.getInstance();
+        dialogSystem.setDialogUI(dialogUI);
+        
+        // Set callbacks to clear/hide UIs when dialog runs
+        dialogSystem.setOnDialogStart(() -> {
+            // Clear BattleUI and MapUI when dialog starts
+            if (battleUI != null) {
+                battleUI.clearAllBattleUI();
+            }
+            if (mapUI != null) {
+                mapUI.hide();
+                inMapMode=false;
+            }
+        });
+        dialogSystem.setOnDialogEnd(() -> {
+            if (mapUI != null) {
+                mapUI.showSelectedPath();
+            }
+        });
+        
+
+        
+        // Register all dialogs
+        DialogRegistrations.registerAllDialogs();
+        System.out.println("Dialog system initialized");
 
         // Test UI visibility (temporary)
         System.out.println("Testing UI visibility...");
@@ -167,35 +235,48 @@ public class testing extends GameApplication {
 
             // Start with hero selection
             heroSelectionUI.show();
+            // Initialize dialog system with references to game systems
         }
-
         // Start menu music
         audioManager.playMenuMusic();
-
     }
 
     @Override
     protected void initInput() {
         // N key to exit map mode and start battle
         onKeyDown(KeyCode.N, () -> {
-            if (inMapMode) {
-                exitMapMode();
+            try {
+                // Clear old enemy data to prevent showing dead enemies in next battle
+                battleSystem.clearEnemyData();
+                // Stop the battle loop properly
+                battleSystem.stopBattleLoop();
+                battleUI.clearAllBattleUI();
+                mapUI.hide();
+                menuUI.show();
+                AudioManager.getInstance().playMenuMusic();
+                startGame();
+                //create new link
+
+            }catch (Exception e) {
+
             }
         });
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
             //System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
-            System.out.println(battleSystem.getHeroSlot().getCharacter().toString());
+            DialogRegistrations.registerRecruitDialogs();
+            DialogRegistrations.showRandomDialogWithPurpose("recruitDialog");
 
 
         });
 
         // M key to return to map mode from battle
         onKeyDown(KeyCode.M, () -> {
-            if (!inMapMode) {
-                enterMapMode();
+            if(mapUI!=null){
+                mapUI.hide();
             }
+
         });
 
         // F1 key to toggle audio settings
@@ -247,6 +328,13 @@ public class testing extends GameApplication {
                 System.out.println("Test UI is null!");
             }
         });
+
+        // D key to show random smallTalk dialog and print all registered dialogs
+        onKeyDown(KeyCode.D, () -> {
+            //System.out.println("D key pressed - showing random smallTalk dialog");
+            DialogRegistrations.printAllRegisteredDialogs();
+            //DialogRegistrations.showRandomDialogWithPurpose("smallTalk");
+        });
     }
 
     private void enterMapMode() {
@@ -285,24 +373,7 @@ public class testing extends GameApplication {
     }
 
     private void exitMapMode() {
-//        inMapMode = false;
-//
-//        // Hide map UI
-//        mapUI.hide();
-//
-//        // Initialize battle if not already done
-//        if (!battleSystem.isMoving()) {
-//            battleSystem.initializeBattle();
-//            battleUI.initializeUI();
-//            battleSystem.startBattleLoop();
-//            battleUI.renderHeroSkillsFor(battleSystem.getCurrentActingHero());
-//            battleSystem.setMoving(true);
-//
-//        } else {
-//            // Show combat UI elements again
-//            battleUI.showAllCombatUI();
-//            battleSystem.setMoving(true); // Resume combat
-//        }
+
     }
 
     private void handleBattleVictory() {
@@ -323,6 +394,9 @@ public class testing extends GameApplication {
         // Stop the battle loop properly
         battleSystem.stopBattleLoop();
 
+        // Show victory dialog
+
+
         // Return to map mode - show the selected path instead of path selection
         inMapMode = true;
         if (gameMap.getSelectedPath() != null) {
@@ -332,6 +406,8 @@ public class testing extends GameApplication {
             // Fallback to path selection if no path is selected
             mapUI.showPathSelection();
         }
+        // Show victory dialog
+        DialogRegistrations.showBattleVictoryDialog(battleSystem);
     }
 
     private void giveStartingItems() {
@@ -390,7 +466,25 @@ public class testing extends GameApplication {
         
         // Start with map mode
         inMapMode = true;
-        mapUI.showPathSelection();
+        //mapUI.showPathSelection();
+        
+        // Initialize menu UI if not already done
+        if (menuUI == null) {
+            menuUI = new MenuUI();
+            menuUI.setNeededUI(mapUI, battleSystem, battleUI);
+            menuUI.setTestingInstance(this); // Pass testing instance for selectedHeroes access
+        }
+
+        mapUI.setBattleSystem(battleSystem);
+        mapUI.setDialogSystem(dialogSystem,dialogRegistrations);
+
+        menuUI.setNeededUI(mapUI, battleSystem, battleUI);
+        DialogRegistrations.initializeSystems(battleSystem, battleUI, mapUI, menuUI);
+
+        if(!skip_opening) {
+            DialogRegistrations.showDialogByTitle("intro");
+            skip_opening = true;
+        }
     }
     
     private void startGameWithoutBossSelection() {

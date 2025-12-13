@@ -1,5 +1,6 @@
 package ui;
 
+import dialog.DialogRegistrations;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
@@ -182,6 +183,7 @@ public class HeroSelectionUI {
         if (isVisible) {
             isVisible = false;
             FXGL.getGameScene().removeUINode(mainContainer);
+
             System.out.println("Hero Selection UI hidden!");
         }
     }
