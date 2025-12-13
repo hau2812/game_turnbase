@@ -44,6 +44,9 @@ public class MapUI {
     //Dialog system
     private DialogSystem dialogSystem;
     private DialogRegistrations dialogRegistrations;
+    
+    // Reference to testing instance for resetBackToMenu
+    private org.example.testing testingInstance;
 
     public MapUI(GameMap gameMap) {
         this.gameMap = gameMap;
@@ -73,6 +76,13 @@ public class MapUI {
         this.shop = shop;
         this.shopUI = shopUI;
         this.inventory = inventory;
+    }
+    
+    /**
+     * Set the testing instance reference for resetBackToMenu functionality
+     */
+    public void setTestingInstance(org.example.testing testingInstance) {
+        this.testingInstance = testingInstance;
     }
 
     public void showPathSelection() {
@@ -393,8 +403,8 @@ public class MapUI {
                 System.out.println("Opened shop at: " + node.getName());
                 // Open shop UI
                 if (shopUI != null) {
-                    //shop.refreshShop(); // Generate new items
-                    //shopUI.show();
+                    shop.refreshShop(); // Generate new items
+                    shopUI.show();
                 } else {
                     // Fallback: Apply shop benefits to current active heroes
                     if (battleSystem != null) {
@@ -424,18 +434,25 @@ public class MapUI {
                 }
                 break;
             case BOSS:
-                System.out.println("Boss battle begins!");
-                // Start boss battle
-                // Start battle with enemies in this node
-                System.out.println("Starting battle at: " + node.getName());
-                if (battleSystem != null && !node.getEnemies().isEmpty()) {
-                    // Set up battle with map enemies
-                    setupBattleWithMapEnemies(node);
+//                System.out.println("Boss battle begins!");
+//                // Start boss battle
+//                // Start battle with enemies in this node
+//                System.out.println("Starting battle at: " + node.getName());
+//                if (battleSystem != null && !node.getEnemies().isEmpty()) {
+//                    // Set up battle with map enemies
+//                    setupBattleWithMapEnemies(node);
+//
+//                    // Automatically switch to battle mode
+//                    switchToBattleMode();
+//                }
 
-                    // Automatically switch to battle mode
-                    switchToBattleMode();
+                // Reset back to menu using the testing instance
+                if (testingInstance != null) {
+                    testingInstance.setReturn_time(testingInstance.getReturn_time()+1);
+                    testingInstance.resetBackToMenu();
+                } else {
+                    System.out.println("Error: testingInstance is null, cannot reset to menu");
                 }
-
                 break;
         }
         
@@ -447,7 +464,7 @@ public class MapUI {
         }
         
         // Only refresh the UI if it's not a battle node (battle nodes switch to battle mode)
-        if (node.getType() != MapNode.NodeType.BATTLE && node.getType() != MapNode.NodeType.RECRUIT) {
+        if (node.getType() != MapNode.NodeType.BATTLE && node.getType() != MapNode.NodeType.RECRUIT && node.getType() != MapNode.NodeType.SHOP && node.getType() != MapNode.NodeType.BOSS) {
             // Refresh the UI to show updated status
             showSelectedPath();
         }

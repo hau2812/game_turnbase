@@ -8,6 +8,7 @@ import java.util.List;
 public class SaveData {
     private List<String> availableCharacters;
     private int goldCoin;
+    private int returnTime;
     private String status;
     
     // Default constructor for JSON deserialization
@@ -15,9 +16,10 @@ public class SaveData {
     }
     
     // Constructor with parameters
-    public SaveData(List<String> availableCharacters, int goldCoin, String status) {
+    public SaveData(List<String> availableCharacters, int goldCoin, int returnTime, String status) {
         this.availableCharacters = availableCharacters;
         this.goldCoin = goldCoin;
+        this.returnTime = returnTime;
         this.status = status;
     }
     
@@ -36,6 +38,14 @@ public class SaveData {
     
     public void setGoldCoin(int goldCoin) {
         this.goldCoin = goldCoin;
+    }
+    
+    public int getReturnTime() {
+        return returnTime;
+    }
+    
+    public void setReturnTime(int returnTime) {
+        this.returnTime = returnTime;
     }
     
     public String getStatus() {

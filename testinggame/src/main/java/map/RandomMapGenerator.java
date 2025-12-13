@@ -153,6 +153,9 @@ public class    RandomMapGenerator {
         
         // Tao 1-3 enemies random
         int enemyCount = 1 + random.nextInt(3); // 1-3 enemies
+        if(nodeNumber < 3) {
+            enemyCount = 1;
+        }
         for (int i = 0; i < enemyCount; i++) {
             Observer.characterSlot enemy = createRandomEnemy(pathType, difficultyLevel);
             battleNode.addEnemy(enemy);

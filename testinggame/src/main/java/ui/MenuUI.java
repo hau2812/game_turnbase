@@ -2,6 +2,7 @@ package ui;
 
 import battle.BattleSystem;
 import battle.BattleUI;
+import dialog.DialogRegistrations;
 import javafx.scene.Group;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
@@ -40,6 +41,8 @@ public class MenuUI {
     private Group callPartyContainer;
     private Rectangle callPartyButton;
     private Text callPartyButtonText;
+    private Text goldCoinText;
+    private Text returnTimeText;
     private Rectangle callPartyBackground;
     private Group characterListContainer;
     private Rectangle[] characterButtons;
@@ -95,6 +98,10 @@ public class MenuUI {
     private static final double CALL_PARTY_BUTTON_HEIGHT = 40;
     private static final double CALL_PARTY_BUTTON_X = 10;
     private static final double CALL_PARTY_BUTTON_Y = 10;
+    private static final double GOLD_DISPLAY_X = CALL_PARTY_BUTTON_X + CALL_PARTY_BUTTON_WIDTH + 20; // To the right of Call Party button
+    private static final double GOLD_DISPLAY_Y = CALL_PARTY_BUTTON_Y + 5;
+    private static final double RETURN_TIME_DISPLAY_X = GOLD_DISPLAY_X;
+    private static final double RETURN_TIME_DISPLAY_Y = CALL_PARTY_BUTTON_Y + 25;
     private static final double CALL_PARTY_BACKGROUND_WIDTH = 300;
     private static final double CALL_PARTY_BACKGROUND_HEIGHT = 500;
     private static final double CALL_PARTY_BACKGROUND_X = 10;
@@ -248,6 +255,22 @@ public class MenuUI {
         callPartyButton.setOnMouseEntered(e -> callPartyButton.setFill(Color.rgb(170, 120, 220)));
         callPartyButton.setOnMouseExited(e -> callPartyButton.setFill(Color.rgb(150, 100, 200)));
         
+        // Gold coin display (to the right of Call Party button)
+        goldCoinText = new Text("Gold: 0");
+        goldCoinText.setFont(new Font(14));
+        goldCoinText.setFill(Color.BLACK);
+        goldCoinText.setTranslateX(GOLD_DISPLAY_X);
+        goldCoinText.setTranslateY(GOLD_DISPLAY_Y);
+        goldCoinText.setMouseTransparent(true);
+        
+        // Return time display (below gold coin)
+        returnTimeText = new Text("Return Time: 0");
+        returnTimeText.setFont(new Font(14));
+        returnTimeText.setFill(Color.BLACK);
+        returnTimeText.setTranslateX(RETURN_TIME_DISPLAY_X);
+        returnTimeText.setTranslateY(RETURN_TIME_DISPLAY_Y);
+        returnTimeText.setMouseTransparent(true);
+        
         // Background for character list (scrollable area)
         callPartyBackground = new Rectangle(CALL_PARTY_BACKGROUND_WIDTH, CALL_PARTY_BACKGROUND_HEIGHT, Color.rgb(60, 60, 60, 0.9));
         callPartyBackground.setStroke(Color.BLACK);
@@ -352,6 +375,8 @@ public class MenuUI {
         callPartyContainer.getChildren().addAll(
             callPartyButton,
             callPartyButtonText,
+            goldCoinText,
+            returnTimeText,
             callPartyBackground,
             characterListContainer,
             optionsContainer
@@ -485,9 +510,16 @@ public class MenuUI {
      * Handle "Have a walk" option
      */
     private void haveAWalk() {
-        // Currently does nothing and returns to menu
-        System.out.println("Having a walk with " + selectedCharacter + "...");
-        hideCallParty();
+        if (selectedCharacter != null) {
+            // Start dialog with format "HeronameHaveAWalk_Start"
+            String dialogTitle = selectedCharacter + "HaveAWalk_Start";
+            System.out.println("Starting walk dialog: " + dialogTitle);
+            
+            // Show the dialog
+            DialogRegistrations.showDialogByTitle(dialogTitle);
+            
+            hideCallParty();
+        }
     }
     
     /**
@@ -627,9 +659,22 @@ public class MenuUI {
     public void show() {
         if (!isVisible) {
             isVisible = true;
+            updateGoldAndReturnTime(); // Update values when showing
             FXGL.getGameScene().addUINode(mainContainer);
             FXGL.getGameScene().addUINode(saveLoadContainer);
             FXGL.getGameScene().addUINode(callPartyContainer);
+        }
+    }
+    
+    /**
+     * Update gold coin and return time display
+     */
+    public void updateGoldAndReturnTime() {
+        if (goldCoinText != null) {
+            goldCoinText.setText("Gold: " + org.example.testing.gold_coin);
+        }
+        if (returnTimeText != null) {
+            returnTimeText.setText("Return Time: " + org.example.testing.return_time);
         }
     }
     
@@ -693,12 +738,14 @@ public class MenuUI {
         String[] availableHeroesArray = org.example.testing.getAvailableHeroes();
         List<String> availableHeroes = Arrays.asList(availableHeroesArray);
         int goldCoin = org.example.testing.gold_coin;
+        int returnTime = org.example.testing.return_time;
         String status = ""; // TODO: Get actual status string from game state
         
         // Create save data
         SaveData saveData = new SaveData(
             availableHeroes,
             goldCoin,
+            returnTime,
             status
         );
         
@@ -743,6 +790,7 @@ public class MenuUI {
         if (saveData != null) {
             System.out.println("Game loaded successfully from " + saveName + "!");
             System.out.println("Gold: " + saveData.getGoldCoin());
+            System.out.println("Return Time: " + saveData.getReturnTime());
             System.out.println("Characters: " + saveData.getAvailableCharacters());
             System.out.println("Status: " + saveData.getStatus());
             
@@ -757,6 +805,12 @@ public class MenuUI {
             
             // Update gold coin
             org.example.testing.gold_coin = saveData.getGoldCoin();
+            
+            // Update return time
+            org.example.testing.return_time = saveData.getReturnTime();
+            
+            // Update display
+            updateGoldAndReturnTime();
             
             // TODO: Apply status string to game state
             // String status = saveData.getStatus();

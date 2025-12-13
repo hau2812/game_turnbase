@@ -65,7 +65,8 @@ public class SaveManager {
             // Write save data as a simple text format
             // Format: Line 1: Available characters (comma-separated)
             //         Line 2: Gold coin
-            //         Line 3: Status string
+            //         Line 3: Return time
+            //         Line 4: Status string (last)
             try (PrintWriter writer = new PrintWriter(new FileWriter(savePath.toFile()))) {
                 // Write available characters
                 if (saveData.getAvailableCharacters() != null && !saveData.getAvailableCharacters().isEmpty()) {
@@ -77,7 +78,10 @@ public class SaveManager {
                 // Write gold coin
                 writer.println(saveData.getGoldCoin());
                 
-                // Write status string
+                // Write return time
+                writer.println(saveData.getReturnTime());
+                
+                // Write status string (last)
                 if (saveData.getStatus() != null) {
                     writer.println(saveData.getStatus());
                 } else {
@@ -145,7 +149,20 @@ public class SaveManager {
                 saveData.setGoldCoin(0);
             }
             
-            // Read status string (line 3)
+            // Read return time (line 3)
+            String returnTimeLine = reader.readLine();
+            if (returnTimeLine != null && !returnTimeLine.trim().isEmpty()) {
+                try {
+                    saveData.setReturnTime(Integer.parseInt(returnTimeLine.trim()));
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid return time value in save file, defaulting to 0");
+                    saveData.setReturnTime(0);
+                }
+            } else {
+                saveData.setReturnTime(0);
+            }
+            
+            // Read status string (line 4, last)
             String statusLine = reader.readLine();
             if (statusLine != null) {
                 saveData.setStatus(statusLine);

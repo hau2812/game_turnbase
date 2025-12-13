@@ -2,6 +2,7 @@ package ui;
 
 import shop.Shop;
 import items.*;
+import map.MapUI;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
@@ -9,6 +10,7 @@ import javafx.scene.text.Text;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.input.MouseButton;
 import com.almasb.fxgl.dsl.FXGL;
 
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.List;
 public class ShopUI {
     private Shop shop;
     private Inventory inventory;
+    private MapUI mapUI;
     private boolean isVisible = false;
     
     // UI Components
@@ -27,11 +30,20 @@ public class ShopUI {
     private VBox shopItems;
     private Text goldText;
     private Text title;
+    private Rectangle exitButton;
+    private Text exitButtonText;
     
     public ShopUI(Shop shop, Inventory inventory) {
         this.shop = shop;
         this.inventory = inventory;
         initializeUI();
+    }
+    
+    /**
+     * Set the MapUI reference for the exit button
+     */
+    public void setMapUI(MapUI mapUI) {
+        this.mapUI = mapUI;
     }
     
     private void initializeUI() {
@@ -63,6 +75,34 @@ public class ShopUI {
         // Add to main container
         mainContainer.getChildren().addAll(title, goldText, shopItems);
         
+        // Exit button (top right of screen)
+        exitButton = new Rectangle(40, 40, Color.rgb(200, 50, 50));
+        exitButton.setStroke(Color.BLACK);
+        exitButton.setStrokeWidth(1);
+        exitButton.setTranslateX(750); // Top right: 800 - 40 - 10 (margin)
+        exitButton.setTranslateY(10);
+        
+        exitButtonText = new Text("X");
+        exitButtonText.setFont(new Font(20));
+        exitButtonText.setFill(Color.WHITE);
+        exitButtonText.setTranslateX(760); // Center the X in the button
+        exitButtonText.setTranslateY(35);
+        exitButtonText.setMouseTransparent(true); // Make text non-interactive
+        
+        // Exit button click handler
+        exitButton.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                hide();
+                if (mapUI != null) {
+                    mapUI.showSelectedPath();
+                }
+            }
+        });
+        
+        // Hover effects
+        exitButton.setOnMouseEntered(e -> exitButton.setFill(Color.rgb(220, 70, 70)));
+        exitButton.setOnMouseExited(e -> exitButton.setFill(Color.rgb(200, 50, 50)));
+        
         // Initially hidden
         hide();
     }
@@ -74,6 +114,8 @@ public class ShopUI {
             // Add to UI layer to ensure it's on top
             FXGL.getGameScene().addUINode(background);
             FXGL.getGameScene().addUINode(mainContainer);
+            FXGL.getGameScene().addUINode(exitButton);
+            FXGL.getGameScene().addUINode(exitButtonText);
             System.out.println("Shop UI shown! Background: " + background + ", Container: " + mainContainer);
         }
     }
@@ -83,6 +125,8 @@ public class ShopUI {
             isVisible = false;
             FXGL.getGameScene().removeUINode(background);
             FXGL.getGameScene().removeUINode(mainContainer);
+            FXGL.getGameScene().removeUINode(exitButton);
+            FXGL.getGameScene().removeUINode(exitButtonText);
         }
     }
     

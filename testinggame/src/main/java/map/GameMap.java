@@ -47,7 +47,7 @@ public class GameMap {
         Characters.character boss = createBossCharacter();
         // Boss co skills manh me
         bossNode.addEnemy(createEnemySlotWithSkills(boss, 2, 12, 13, 0));
-
+        forestPath.addNode(bossNode);
 
 
     }
@@ -67,13 +67,15 @@ public class GameMap {
 
 
 
-        // Random nodes (4-6 nodes) - RANDOM
+        // Random number of nodes (4-6 nodes) - RANDOM
         int nodeCount = 2 + (int)(Math.random() * 3); // 4-6 random nodes
         if(testing.SKIP_TO_BOSS){
             nodeCount = 0;
         }
+
         //create Node
         int i=1;
+
         for (; i <= nodeCount/2; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
             //randomNode = RandomMapGenerator.createRandomBattleNode(pathName,i,path.getPathType(),1);
@@ -86,6 +88,10 @@ public class GameMap {
         MapNode recruitNode = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
         path.addNode(recruitNode);
         i++;
+        //create shop
+        MapNode shopNode = RandomMapGenerator.createRandomShopNode(pathName,i);
+        path.addNode(shopNode);
+        i++;
         //create more Node
         for (; i <= nodeCount*2; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
@@ -94,6 +100,7 @@ public class GameMap {
                 currentNodeNumber++;
             }
         }
+        currentNodeNumber+=2;
 
 
         // Final event/battle - CO DINH (nhung khac nhau cho moi path)

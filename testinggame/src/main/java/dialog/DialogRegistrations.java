@@ -70,6 +70,7 @@ public class DialogRegistrations {
         // Register battle victory dialogs
         registerBattleVictoryDialogs();
         registerIntroDialog();
+        registerFlamitaHaveAWalk();
         // Register small talk dialogs
         //registerAzarLeunaDialog();
         //registerAzarFlamitaDialog();
@@ -91,7 +92,7 @@ public class DialogRegistrations {
         
         // Create a mutable copy of the list
         List<String> available = new ArrayList<>(heroList);
-        
+
         // Remove heroes that are already in the party
         // Use getSelectedHeroes() instead of getAllHeroes() because hero slots
         // might not be initialized yet (they're only created in initializeBattle())
@@ -103,7 +104,7 @@ public class DialogRegistrations {
                 }
             }
         }
-        
+
         // If no heroes available after filtering, return empty list
         if (available.isEmpty()) {
             return new ArrayList<>();
@@ -116,10 +117,10 @@ public class DialogRegistrations {
         int count = Math.min(3, available.size());
         return available.subList(0, count);
     }
-    
+
     public static void registerRecruitDialogs(){
         // Get available heroes and create a mutable list
-        List<String> availableHeroes = new ArrayList<>(Arrays.asList(testing.getAvailableHeroes()));
+        List<String> availableHeroes = new ArrayList<>(Arrays.asList(testing.getAllHeros()));
 
         
         // Get 3 random heroes for recruitment options
@@ -188,6 +189,12 @@ public class DialogRegistrations {
         // Update battle system
         String[] updatedHeroes = newHeroes.toArray(new String[0]);
         battleSystem.configureBattle(battleSystem.getHideTalents(), updatedHeroes);
+        //Update available Hero
+        List<String> availableHeroes = new ArrayList<>(Arrays.asList(testing.getAvailableHeroes()));
+        if(!availableHeroes.contains(heroName)){
+            availableHeroes.add(heroName);
+            testing.setAvailableHeroes(availableHeroes.toArray(new String[0]));
+        }
 
         dialogMakerHelper("recruitDialog-1;:"+heroName+" have been added to your party");
         System.out.println("Added " + heroName + " to the party! Party now has: " + Arrays.toString(updatedHeroes));
@@ -326,12 +333,38 @@ public class DialogRegistrations {
         dialogMakerHelper(dialogString);
     }
 
-    /**
-     * Register Azar and Flamita small talk dialog (linear, same purpose: smallTalk)
-     */
-    private static void registerAzarFlamitaDialog() {
-        String dialogString = "azar_flamita;Azar:Hey Flamita.;Flamita:Hey Azar!;Azar:How's the fire?;Flamita:Always burning bright.";
-        dialogMakerHelperWithPurpose(dialogString, "smallTalk");
+    private static void registerFlamitaHaveAWalk(){
+
+
+        dialogMakerHelper("FlamitaHaveAWalk_Start;Flamita:Lucky for you I'm kinda free right now...So what are you calling me for?");
+        dialogMakerHelper("FlamitaHaveAWalk_Other;Flamita:Well the dev is tired for these kind of dialog... choose another one");
+        dialogMakerHelper("FlamitaHaveAWalk_Ignari;" +
+                "Flamita:Eh...How long did you know I'm a Ignari;" +
+                "Flamita:Anyway...Ignari is just human with the Phoenix blessing;" +
+                "Flamita:We not only cannot die by normal mean but also can use Phoenix energy to heal or cast some spell;" +
+                "Flamita:But we still could die by old age and the Phoenix energy regeneration speed is not that fast;" +
+                "Azar:That still doesn't seem fair...;" +
+                "Flamita:Don't worry only pure royal of Pyro kingdom are Ignari;" +
+                "Azar:Why you guy don't make massive army then...?;" +
+                "Flamita:THAT...sound not ethical...And also Phoenix blessing is weaker for each people it bless;" +
+                "Azar:Sorry...So how many Ignari are there left?;" +
+                "Flamita:Hmmm...3...and...'him'... if he's count;" +
+                "Azar:'him'?;" +
+                "Flamita:Just forget it...3 Ignari are left;" +
+                "Azar:They are all your family hah?;" +
+                "Flamita:Correct;" +
+                "Azar:(I remember king of Pyro kingdom still alive so maybe her mother still alive...or she have a sibling...);" +
+                "Azar:Well...Thanks for your info...I'll call you later when we need to go to Lost Dungeon;" +
+                "Flamita:Okay...I've never miss a chance to getting stronger");
+
+        DialogLibrary library = DialogLibrary.getInstance();
+        linkChainTo("FlamitaHaveAWalk_Other","FlamitaHaveAWalk_Start_1");
+        DialogEntry branchEntry = library.getDialog("FlamitaHaveAWalk_Start_1");
+        if (branchEntry != null) {
+            branchEntry.getOptions().clear();
+            branchEntry.withOption(new DialogOption("Talk about other").withNextDialog("FlamitaHaveAWalk_Other_1"));
+            branchEntry.withOption(new DialogOption("Ask about Ignari").withNextDialog("FlamitaHaveAWalk_Ignari_1"));
+        }
     }
     
     /**
@@ -552,7 +585,7 @@ public class DialogRegistrations {
         system.startDialog(dialogIds, context);
 
         //If intro then show the menu
-        if(title.equals("intro")){
+        if(title.equals("intro")||title.contains("Walk")){
             system.setOnDialogEnd(() -> {
                 // Show menu UI instead of map
                 if (menuUI != null) {

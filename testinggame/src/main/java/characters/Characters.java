@@ -198,7 +198,7 @@ public interface Characters {
                     20,  // def
                     10,  // res
                     15,  // spd
-                    3000, // hp
+                    300, // hp
                     200   // mp
             ));
             

@@ -109,6 +109,11 @@ public class BattleSystem {
     public Observer.characterSlot[] getAllHeroes() {
         return new Observer.characterSlot[]{heroSlot, heroSlot2, heroSlot3};
     }
+
+    public void resetHeroes() {
+        removeAllBuffsDebuffsFromHeroes();
+        healToFullAllHeroes();
+    }
     
     /**
      * Get all enemy slots as an array
@@ -164,6 +169,14 @@ public class BattleSystem {
                     battleUI.updateHealthUI(hero);
                     battleUI.updateBarrierBar(hero);
                 }
+            }
+        }
+    }
+    public void healToFullAllHeroes() {
+        for(Observer.characterSlot slot : getAllHeroes()) {
+            if(slot!=null){
+                slot.setCurrentHp(slot.getCharacter().getHp());
+                slot.setCurrentMp(slot.getCharacter().getMp());
             }
         }
     }

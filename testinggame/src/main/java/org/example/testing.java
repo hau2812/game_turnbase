@@ -36,18 +36,32 @@ public class testing extends GameApplication {
     public static boolean EASY_MODE = false;
     public static boolean SKIP_TO_BOSS = false;
     public static int gold_coin = 0;
+    public static int return_time = 0;
     public static boolean skip_opening = false;
+
+    // Available heroes to choose from (you can select multiple)
+    public static String[] ALL_HEROES = {
+            "Flamita",
+            "Hero",
+            "Hero2",
+            "Pieberry",
+            "Ina",
+            "Leuna",
+            "Flatina",
+            "Chigon"
+    };
     // Available heroes to choose from (you can select multiple)
     public static String[] AVAILABLE_HEROES = {
         "Flamita",
-        //"Hero",
-        "Hero2",
-        "Pieberry",
-        "Ina",
-        "Leuna",
-        "Flatina",
-        "Chigon"
+        "Hero",
+//        "Hero2",
+//        "Pieberry",
+//        "Ina",
+//        "Leuna",
+//        "Flatina",
+//        "Chigon"
     };
+
     
     /**
      * Get available heroes array
@@ -63,16 +77,20 @@ public class testing extends GameApplication {
         AVAILABLE_HEROES = heroes;
     }
 
+    public static String[] getAllHeros() {return ALL_HEROES;}
+
+    public static void setAllHeros(String[] allHeros) {ALL_HEROES = allHeros;}
+
     // Selected heroes for battle (will be set by hero selection UI)
     public String[] selectedHeroes = {
-            "Flamita",
+            //"Flamita",
             //"Flatina",
-            //"Hero",
+            "Hero",
             //"Hero2",
             //"Pieberry",
             //"Ina",
             //"Leuna",
-            "Chigon"
+            //"Chigon"
     };
     
     /**
@@ -87,6 +105,12 @@ public class testing extends GameApplication {
             battleSystem.removeAllCharacters();
         }
     }
+
+    public int getGold_coin() {return gold_coin;}
+    public void setGold_coin(int gold_coin) {testing.gold_coin = gold_coin;}
+    public int getReturn_time() {return return_time;}
+    public void setReturn_time(int return_time) {testing.return_time = return_time;}
+
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
     private BattleSystem battleSystem;
@@ -178,6 +202,7 @@ public class testing extends GameApplication {
                 mapUI.hide();
                 inMapMode=false;
             }
+            menuUI.hide();
         });
         dialogSystem.setOnDialogEnd(() -> {
             if (mapUI != null) {
@@ -234,7 +259,7 @@ public class testing extends GameApplication {
             });
 
             // Start with hero selection
-            heroSelectionUI.show();
+            showBossSelection();
             // Initialize dialog system with references to game systems
         }
         // Start menu music
@@ -245,21 +270,7 @@ public class testing extends GameApplication {
     protected void initInput() {
         // N key to exit map mode and start battle
         onKeyDown(KeyCode.N, () -> {
-            try {
-                // Clear old enemy data to prevent showing dead enemies in next battle
-                battleSystem.clearEnemyData();
-                // Stop the battle loop properly
-                battleSystem.stopBattleLoop();
-                battleUI.clearAllBattleUI();
-                mapUI.hide();
-                menuUI.show();
-                AudioManager.getInstance().playMenuMusic();
-                startGame();
-                //create new link
-
-            }catch (Exception e) {
-
-            }
+            resetBackToMenu();
         });
 
         onKeyDown(KeyCode.B, () -> {
@@ -375,6 +386,31 @@ public class testing extends GameApplication {
     private void exitMapMode() {
 
     }
+    
+    /**
+     * Reset game back to menu - resets heroes, clears battle data, and restarts game
+     * Can be called from MapUI when clicking on boss node or from N key
+     */
+    public void resetBackToMenu() {
+        try {
+            battleSystem.resetHeroes();
+            setSelectedHeroes(new String[]{"Hero"});
+            // Clear old enemy data to prevent showing dead enemies in next battle
+            battleSystem.clearEnemyData();
+            // Stop the battle loop properly
+            battleSystem.stopBattleLoop();
+            battleUI.clearAllBattleUI();
+            mapUI.hide();
+            menuUI.show();
+            AudioManager.getInstance().playMenuMusic();
+            startGame();
+            //create new link
+
+        } catch (Exception e) {
+            System.out.println("Error in resetBackToMenu: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     private void handleBattleVictory() {
         //Gain gold
@@ -443,6 +479,7 @@ public class testing extends GameApplication {
         mapUI = new MapUI(gameMap);
         mapUI.setBattleSystem(battleSystem);
         mapUI.setShopSystem(shop, shopUI, inventory);
+        shopUI.setMapUI(mapUI);
         mapUI.setOnBattleModeRequested(() -> {
             // This callback is called when a battle node is clicked
             enterBattleMode();
@@ -477,6 +514,7 @@ public class testing extends GameApplication {
 
         mapUI.setBattleSystem(battleSystem);
         mapUI.setDialogSystem(dialogSystem,dialogRegistrations);
+        mapUI.setTestingInstance(this);
 
         menuUI.setNeededUI(mapUI, battleSystem, battleUI);
         DialogRegistrations.initializeSystems(battleSystem, battleUI, mapUI, menuUI);
@@ -496,6 +534,7 @@ public class testing extends GameApplication {
         mapUI = new MapUI(gameMap);
         mapUI.setBattleSystem(battleSystem);
         mapUI.setShopSystem(shop, shopUI, inventory);
+        shopUI.setMapUI(mapUI);
         mapUI.setOnBattleModeRequested(() -> {
             // This callback is called when a battle node is clicked
             enterBattleMode();
