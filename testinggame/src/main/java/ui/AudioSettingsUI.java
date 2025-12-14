@@ -22,17 +22,26 @@ import javafx.scene.text.Text;
 public class AudioSettingsUI {
     
     private AudioManager audioManager;
+    private battle.BattleUI battleUI; // Reference to BattleUI for AV value updates
     private VBox settingsContainer;
     private Slider musicVolumeSlider;
     private Slider soundVolumeSlider;
     private CheckBox musicEnabledCheckbox;
     private CheckBox soundEnabledCheckbox;
+    private CheckBox showAVValueCheckbox;
     private Button closeButton;
     
     public AudioSettingsUI() {
         this.audioManager = AudioManager.getInstance();
         createUI();
         setupEventHandlers();
+    }
+    
+    /**
+     * Set the BattleUI reference for AV value updates
+     */
+    public void setBattleUI(battle.BattleUI battleUI) {
+        this.battleUI = battleUI;
     }
     
     private void createUI() {
@@ -71,6 +80,11 @@ public class AudioSettingsUI {
         soundEnabledCheckbox.setSelected(audioManager.isSoundEnabled());
         soundEnabledCheckbox.setTextFill(Color.BLACK);
         
+        // Show AV Value checkbox
+        showAVValueCheckbox = new CheckBox("Show AV Value");
+        showAVValueCheckbox.setSelected(battle.BattleUI.showAVValue);
+        showAVValueCheckbox.setTextFill(Color.BLACK);
+        
         // Close button
         closeButton = new Button("Close");
         closeButton.setPrefWidth(100);
@@ -83,6 +97,7 @@ public class AudioSettingsUI {
             musicEnabledCheckbox,
             soundSettings,
             soundEnabledCheckbox,
+            showAVValueCheckbox,
             closeButton
         );
         
@@ -136,6 +151,15 @@ public class AudioSettingsUI {
         // Sound enable/disable
         soundEnabledCheckbox.setOnAction(e -> {
             audioManager.setSoundEnabled(soundEnabledCheckbox.isSelected());
+        });
+        
+        // Show AV Value checkbox
+        showAVValueCheckbox.setOnAction(e -> {
+            battle.BattleUI.showAVValue = showAVValueCheckbox.isSelected();
+            // Update AV values display if battle UI exists
+            if (battleUI != null) {
+                battleUI.toggleAVValueDisplay();
+            }
         });
         
         // Close button

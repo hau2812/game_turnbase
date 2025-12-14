@@ -7,6 +7,7 @@ import org.example.testing;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class GameMap {
     private List<MapPath> paths;
@@ -104,10 +105,9 @@ public class GameMap {
 
 
         // Final event/battle - CO DINH (nhung khac nhau cho moi path)
-        if(!testing.SKIP_TO_BOSS){
-            MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
-            path.addNode(finalNode);
-        }
+        MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
+        path.addNode(finalNode);
+        createRandomBossFight(pathName);
 
 
     }
@@ -294,7 +294,14 @@ public class GameMap {
         System.out.println("Added custom node '" + nodeName + "' to path '" + pathId + "'");
         return customNode;
     }
-    
+    public void createRandomBossFight(String pathId){
+        Random random = new Random();
+        int randomInt = 1 + random.nextInt(3);
+        if(randomInt == 1){addFlamitaBossFight(pathId);}
+        else if(randomInt == 2){addMabelBossFight(pathId);}
+        else {addOufuuBossFight(pathId);}
+    }
+
     /**
      * Convenience method to add the Flamita Boss Fight node
      * @param pathId The path to add the Flamita boss to

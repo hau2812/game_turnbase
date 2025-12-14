@@ -148,7 +148,7 @@ public class    RandomMapGenerator {
             "Mot cuoc chien bat ngo!",
             MapNode.NodeType.BATTLE,
             100 + (nodeNumber * 50),
-            200 + (random.nextInt(200) - 100)
+            200 + (random.nextInt(200))
         );
         
         // Tao 1-3 enemies random
@@ -171,7 +171,7 @@ public class    RandomMapGenerator {
                 "You found an ally",
                 MapNode.NodeType.RECRUIT,
                 100 + (nodeNumber * 50),
-                200 + (random.nextInt(200) - 100)
+                200 + (random.nextInt(200))
         );
         return recruitNode;
     }
@@ -186,7 +186,7 @@ public class    RandomMapGenerator {
             "Mot su kien bat ngo!",
             MapNode.NodeType.EVENT,
             100 + (nodeNumber * 50),
-            200 + (random.nextInt(200) - 100)
+            200 + (random.nextInt(200))
         );
         
         // Random event type dua tren path

@@ -46,49 +46,49 @@ public class BossSelectionUI {
         background.setStroke(Color.BLACK);
         background.setStrokeWidth(3);
         background.setTranslateX(150);
-        background.setTranslateY(100);
+        background.setTranslateY(50);
         background.setArcWidth(10);
         background.setArcHeight(10);
         
         // Title
-        title = new Text("Select Custom Boss Fights (Optional)");
+        title = new Text("Select game mode(optional)");
         title.setFont(new Font(20));
         title.setFill(Color.BLACK);
         title.setTranslateX(250);
-        title.setTranslateY(140);
+        title.setTranslateY(90);
         
-        // Instruction
-        instruction = new Text("Select which boss fights to add to the forest path");
-        instruction.setFont(new Font(14));
-        instruction.setFill(Color.BLACK);
-        instruction.setTranslateX(200);
-        instruction.setTranslateY(170);
-        mainContainer.getChildren().addAll(background, title, instruction);
+
+//        instruction = new Text("Select game mode");
+//        instruction.setFont(new Font(14));
+//        instruction.setFill(Color.BLACK);
+//        instruction.setTranslateX(200);
+//        instruction.setTranslateY(170);
+        mainContainer.getChildren().addAll(background, title);
         // Create boss checkboxes
         double startY = 220;
         double spacing = 50;
         
-        for (int i = 0; i < BOSS_OPTIONS.length; i++) {
-            CheckBox checkbox = new CheckBox(BOSS_OPTIONS[i]);
-            checkbox.setFont(new Font(16));
-            checkbox.setTranslateX(200);
-            checkbox.setTranslateY(startY + i * spacing);
-            bossCheckboxes.add(checkbox);
-            mainContainer.getChildren().add(checkbox);
-        }
+//        for (int i = 0; i < BOSS_OPTIONS.length; i++) {
+//            CheckBox checkbox = new CheckBox(BOSS_OPTIONS[i]);
+//            checkbox.setFont(new Font(16));
+//            checkbox.setTranslateX(200);
+//            checkbox.setTranslateY(startY + i * spacing);
+//            bossCheckboxes.add(checkbox);
+//            mainContainer.getChildren().add(checkbox);
+//        }
         
         // Easy Mode checkbox
         easyModeCheckbox = new CheckBox("Easy Mode");
         easyModeCheckbox.setFont(new Font(16));
         easyModeCheckbox.setTranslateX(200);
-        easyModeCheckbox.setTranslateY(startY + BOSS_OPTIONS.length * spacing + 10);
+        easyModeCheckbox.setTranslateY(120);
         mainContainer.getChildren().add(easyModeCheckbox);
         
         // Skip to Boss checkbox
         skipToBossCheckbox = new CheckBox("Skip to Boss");
         skipToBossCheckbox.setFont(new Font(16));
         skipToBossCheckbox.setTranslateX(200);
-        skipToBossCheckbox.setTranslateY(startY + BOSS_OPTIONS.length * spacing + 60);
+        skipToBossCheckbox.setTranslateY(150);
         mainContainer.getChildren().add(skipToBossCheckbox);
         
         // Continue button
@@ -96,7 +96,7 @@ public class BossSelectionUI {
         continueButton.setPrefWidth(200);
         continueButton.setPrefHeight(50);
         continueButton.setTranslateX(300);
-        continueButton.setTranslateY(520);
+        continueButton.setTranslateY(470);
         continueButton.setFont(new Font(18));
         continueButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
         continueButton.setOnAction(e -> {

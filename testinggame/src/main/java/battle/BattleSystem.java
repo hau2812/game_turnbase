@@ -52,7 +52,7 @@ public class BattleSystem {
      * @param partyMp New party MP value
      */
     public void setPartyMp(float partyMp) {
-        this.partyMp = Math.min(partyMp,maxPartyMp);
+        this.partyMp = Math.max(0,Math.min(partyMp,maxPartyMp));
         // Update the party MP bar in the UI
         if (battleUI != null) {
             battleUI.updatePartyMpBar();
@@ -811,7 +811,7 @@ public class BattleSystem {
 
 
 
-        // Handle prey mechanics
+        //Handle prey mechanics
         //Handle Dragon breath
         if(hasHeroName("Chigon")){
             Observer.characterSlot prey = getPreyEnemies();
@@ -833,15 +833,16 @@ public class BattleSystem {
             }
             if(Chigon.containsBuffDebuff("Dragon breath")){
                 if(partyMp>0) {
+                    setPartyMp(getPartyMp()-1);
                     SpecialTalents.applyStatModifications(Chigon, null);
                     for (Observer.characterSlot enemy : getAllAliveEnemies()) {
+
                         if(enemy!=prey) {
                             applyDamage(enemy, Chigon.getCharacter().getAtk() * 0.01);
                         }else{
                             applyDamage(enemy, Chigon.getCharacter().getAtk() * 0.02);
                         }
                     }
-                    partyMp--;
                 }else{
                     Chigon.getActiveEffects().remove(Chigon.getBuffDebuffByName("Dragon breath"));
                 }
@@ -1094,7 +1095,6 @@ public class BattleSystem {
         // Gain Burning Rage after using skill
         if (rageGained > 0) {
             characters.SpecialTalents.gainBurningRage(attacker, rageGained);
-
         }
         
         // Update Burning Rage bar if it changed
@@ -1274,10 +1274,12 @@ public class BattleSystem {
             battleUI.createTimeStopBar();
             return true; // End skill processing early
         }else if(skill.getName().equals("Moon wave")){
-            resetLine(target);
-            battleUI.updateHealthUI(target);
-            battleUI.updateBurningRageBar(target);
-            return false; // End skill processing early
+            if(!target.getCharacter().getName().equals("Leuna")) {
+                resetLine(target);
+                battleUI.updateHealthUI(target);
+                battleUI.updateBurningRageBar(target);
+                return false; // End skill processing early
+            }
         }else if(skill.getName().equals("Amber sacrifice")){
             if(target.getCurrentHp()>1) {
                 applyDamage(target, target.getCurrentHp() / 2);

@@ -64,7 +64,7 @@ public class DialogSystem {
      * @param initialDialogIds List of dialog IDs to start with
      * @param context Context object with heroes and other data
      */
-    public void startDialog(List<String> initialDialogIds, DialogContext context) {
+    public boolean startDialog(List<String> initialDialogIds, DialogContext context) {
         this.currentContext = context;
         this.dialogQueue.clear();
         
@@ -74,6 +74,8 @@ public class DialogSystem {
             DialogEntry entry = library.getDialog(id);
             if (entry != null) {
                 dialogQueue.offer(entry);
+            }else{
+                return false;
             }
         }
         
@@ -85,6 +87,7 @@ public class DialogSystem {
         }
         
         processNextDialog();
+        return true;
     }
     
     /**

@@ -298,64 +298,64 @@ public class DialogRegistrations {
 
     private static void registerIntroDialog(){
         String dialogString = "intro;" +
-                ":In a world that anything can happened...;" +
-                ":depending on the author's creativity...;" +
-                ":there are the one who is wondering...;" +
-                "???:There're nothing interesting this week...and they said this is the city of mystic...;" +
-                ":(The door suddenly open);" +
-                "???:Hey Azar I got something you might be interested ;" +
-                "Azar:Please tell me you got a big one Clint;" +
-                "Clint:Indeed...(Sit down).So currently a dungeon is found and people are excited about it;" +
-                "Azar:And why this one is special...?;" +
-                "Clint:They name it Lost Dungeon;" +
+                ":In a world that literally anything can happen...;" +
+                ":depends on the author's creativity...;" +
+                ":there are someone who is wondering...;" +
+                "???:Damn it.Nothing interesting this week...and they said this is the city of mystery...;" +
+                ":(The door suddenly open behind him);" +
+                "???:Hey Azar I got something that might catch your interest ;" +
+                "Azar:Please tell me you got a big one Clint...;" +
+                "Clint:Obviously.(Take a seat).So currently people located the dungeon and they are excited about it;" +
+                "Azar:And why do you think this would make me feel the same thing like them?;" +
+                "Clint:They named it Lost Dungeon;" +
                 "Azar:Like... the Lost Forest?;" +
-                "Clint:Ye... it work the same as the Lost Forest;" +
-                "Clint:When you enter, after a while of walking you got teleport to a random place that look nothing alike a dungeon;" +
-                "Clint:And people even while standing next to each other could get teleport to a different place so there are no way you can build up a party when come in;" +
-                "Azar:And are there a way out?;" +
-                "Clint:Some guy could get out... they said they just walk until get to the right place and teleport back to the entry of the dungeon;" +
-                "Azar:Normal teleport spell don't work?;" +
-                "Clint:Yes... expert said they cannot identify the current location to cast a teleport spell nor have the ability to use mana to reach and select a point out side the dungeon;" +
-                "Azar:So basically coming there is suicide, why people still go there...;" +
-                "Clint:They found a lot of unique and special equipment and relic which sell at VERY GREAT prize;" +
-                "Azar:But the chance of getting out of there is ?;" +
-                "Clint:Well...a report said for 100 guy get in... 4 could get out;" +
-                "Azar:No fucking way im going in there;" +
-                "Clint:Chill out...I don't want to lose a good detective too. The reason I call you in is because I have this (Show a piece of device that even me don't know wtf is that);" +
-                "Clint:This...Thing can make so that you could create a map of the surrounding area and also be able to teleport out at anytime;" +
-                "Azar:That too useful!? How much did you put to buy this thing;" +
-                "Clint:Your month salary :P. Oh and it can let one party member to be able to get teleport at the same place as you too;" +
+                "Clint:Ye... it worked just like the Lost Forest;" +
+                "Clint:When you entered, you will find yourself in a random place that look nothing alike a normal dungeon;" +
+                "Clint:Even when you formed a party and head inside the dungeon,each person in your party would still get teleported to a different location so there’s no way you can build up a party when once you come inside;" +
+                "Azar:And is there a way out?;" +
+                "Clint:You could get out in a few ways... one of them is simply just walk until you get to the right place and teleport back to the entry of the dungeon;" +
+                "Azar:Normal teleport spell won’t work in there?;" +
+                "Clint:Yes... many experts said they cannot identify their current location to cast a teleport spell nor have the ability to use mana to reach and select a point outside the dungeon;" +
+                "Azar:So basically coming there is basically suicide, why do people still go there?;" +
+                "Clint:Actually they found a lot of unique and special equipment and relic which have a HUGGGGGGE price on industry;" +
+                "Azar:That promising? How about the chance of getting out of there?;" +
+                "Clint:Well… there’s a report that every 100 guys get in... only 4 could get out;" +
+                "Azar:There’s no fucking way I’m risking my life for wealth;" +
+                "Clint:Chill out...I don't want to lose my best detective too. The reason I called you in is because I have something you might want to check. (Show a piece of device that even the dev doesn't even know wtf is that thing?);" +
+                "Clint:This...Thing can create a map of the surrounding area and also be able to teleport out at anytime;" +
+                "Azar:Isn’t that too useful!? Just how much did you invest to this expedition?;" +
+                "Clint:By taking your monthly salary :3. Oh and it allows you to let you bring one more with you to get teleport at the same place as you too!;" +
                 "Azar:How to use it then?;" +
-                "Clint:You just need to use teleport spell with this as one of the target for location and it will fill the other as entry of dungeon to get out;" +
-                "Azar:Fine...I'll take this case then;" +
-                "Clint:Well then...Good luck Azar;" +
-                ":And then our Azar decide to go to a place that will change his life forever...again";
+                "Clint:Just use teleport spell with this device as starting target and it will fill out the end target for you at the entry of dungeon.;" +
+                "Azar:Fine...I'll take this case then.;" +
+                "Clint:Well then...Wish you luck, Azar!;" +
+                ":And then our Azar decides to go to a place that will change his life forever...again?";
         dialogMakerHelper(dialogString);
     }
 
     private static void registerFlamitaHaveAWalk(){
 
 
-        dialogMakerHelper("FlamitaHaveAWalk_Start;Flamita:Lucky for you I'm kinda free right now...So what are you calling me for?");
+        dialogMakerHelper("FlamitaHaveAWalk_Start;Flamita:Lucky for you I have some free time right now...So what are you calling me for?");
         dialogMakerHelper("FlamitaHaveAWalk_Other;Flamita:Well the dev is tired for these kind of dialog... choose another one");
         dialogMakerHelper("FlamitaHaveAWalk_Ignari;" +
-                "Flamita:Eh...How long did you know I'm a Ignari;" +
-                "Flamita:Anyway...Ignari is just human with the Phoenix blessing;" +
-                "Flamita:We not only cannot die by normal mean but also can use Phoenix energy to heal or cast some spell;" +
-                "Flamita:But we still could die by old age and the Phoenix energy regeneration speed is not that fast;" +
-                "Azar:That still doesn't seem fair...;" +
+                "Flamita:Eh...How long did you know I'm an Ignari;" +
+                "Flamita:Anyway, an Ignari is just a human with blessing of Phoenix;" +
+                "Flamita:Not only we cannot die under any normal circumstances but we also can use Phoenix energy to heal or cast some powerful spell;" +
+                "Flamita:But we can still die by age and the Phoenix energy regeneration speed is not that fast;" +
+                "Azar:It still doesn't seem fair for others...;" +
                 "Flamita:Don't worry only pure royal of Pyro kingdom are Ignari;" +
-                "Azar:Why you guy don't make massive army then...?;" +
-                "Flamita:THAT...sound not ethical...And also Phoenix blessing is weaker for each people it bless;" +
-                "Azar:Sorry...So how many Ignari are there left?;" +
-                "Flamita:Hmmm...3...and...'him'... if he's count;" +
+                "Azar:Why don’t you make a massive army then...?;" +
+                "Flamita:THAT... doesn’t sound ethical...And also Phoenix blessing is weaker for each people it bless;" +
+                "Azar:I’m sorry...So how many Ignari are there left?;" +
+                "Flamita:Hmmm...3...and...'him'... if he doesn’t count;" +
                 "Azar:'him'?;" +
                 "Flamita:Just forget it...3 Ignari are left;" +
-                "Azar:They are all your family hah?;" +
-                "Flamita:Correct;" +
-                "Azar:(I remember king of Pyro kingdom still alive so maybe her mother still alive...or she have a sibling...);" +
-                "Azar:Well...Thanks for your info...I'll call you later when we need to go to Lost Dungeon;" +
-                "Flamita:Okay...I've never miss a chance to getting stronger");
+                "Azar:They are all your family to you, right?;" +
+                "Flamita:That would be correct;" +
+                "Azar:(I remember the king of Pyro kingdom is still alive. If she has a mother...or a sibling...);" +
+                "Azar:Well...That’s good to know...I'll call you later when I need to go to Lost Dungeon together with me;" +
+                "Flamita:You know I never miss a chance to be stronger. You can count on me");
 
         DialogLibrary library = DialogLibrary.getInstance();
         linkChainTo("FlamitaHaveAWalk_Other","FlamitaHaveAWalk_Start_1");
@@ -582,8 +582,8 @@ public class DialogRegistrations {
         String firstDialogId = title + "_1";
         List<String> dialogIds = new ArrayList<>();
         dialogIds.add(firstDialogId);
-        system.startDialog(dialogIds, context);
-
+        boolean run = system.startDialog(dialogIds, context);
+        if(!run){return;}
         //If intro then show the menu
         if(title.equals("intro")||title.contains("Walk")){
             system.setOnDialogEnd(() -> {
@@ -598,6 +598,7 @@ public class DialogRegistrations {
                 });
             });
         }
+
     }
     
     /**

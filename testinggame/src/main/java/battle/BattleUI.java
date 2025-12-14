@@ -10,6 +10,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -69,6 +70,9 @@ public class  BattleUI {
     /**
      * Helper class to hold Health bar data
      */
+    // AV value display setting
+    public static boolean showAVValue = false;
+    
     private static class HealthBarData {
         public Observer.characterSlot characterSlot;
         public Rectangle healthBar;
@@ -78,6 +82,7 @@ public class  BattleUI {
         public Text hpText;
         public Text mpText;
         public Text nameText;
+        public Text avValueText; // AV value text displayed next to name
         public ImageView idleSprite; // Sprite animation for idle animation
         public Timeline spriteAnimation; // Animation timeline for sprite
         public ImageView skillSprite; // Sprite for skill animation (temporary)
@@ -95,7 +100,7 @@ public class  BattleUI {
         public Polygon turnIndicator; // Green triangle to indicate current turn
         
         public HealthBarData(Observer.characterSlot slot, Rectangle healthBar, Rectangle healthBorder, 
-                           Rectangle mpBar, Rectangle mpBorder, Text hpText, Text mpText, Text nameText, 
+                           Rectangle mpBar, Rectangle mpBorder, Text hpText, Text mpText, Text nameText, Text avValueText, 
                            ImageView idleSprite, Timeline spriteAnimation, double x, double y) {
             this.characterSlot = slot;
             this.healthBar = healthBar;
@@ -105,6 +110,7 @@ public class  BattleUI {
             this.hpText = hpText;
             this.mpText = mpText;
             this.nameText = nameText;
+            this.avValueText = avValueText;
             this.idleSprite = idleSprite;
             this.spriteAnimation = spriteAnimation;
             this.skillSprite = null;
@@ -158,6 +164,16 @@ public class  BattleUI {
     private Rectangle skill2Box;
     private Rectangle skill3Box;
     private Rectangle skill4Box;
+    // Store skill detail texts for easy access
+    private Text skill1Detail;
+    private Text skill2Detail;
+    private Text skill3Detail;
+    private Text skill4Detail;
+    // Store skill display texts for cleanup
+    private Text skill1DisplayText;
+    private Text skill2DisplayText;
+    private Text skill3DisplayText;
+    private Text skill4DisplayText;
     
     // Item buttons
     private Rectangle item1Button;
@@ -346,6 +362,11 @@ public class  BattleUI {
         
         // Update health and MP bars with current values for all characters
         updateAllHealthAndMpBars();
+        
+        // Create AV values if enabled
+        if (showAVValue) {
+            toggleAVValueDisplay();
+        }
     }
     
     private void updateAllHealthAndMpBars() {
@@ -383,6 +404,8 @@ public class  BattleUI {
                 }
             }
         }
+        // Update AV values if enabled
+        updateAllAVValues();
     }
     
     private void createTimingBar() {
@@ -461,12 +484,12 @@ public class  BattleUI {
         
         // Position data: [healthX, healthY, mpX, mpY]
         double[][] positions = {
-                {50, 300, 50, 325},   // Hero (blue)
-                {50, 375+25, 50, 400+25},   // Hero2 (green)
-                {50, 450+50, 50, 475+50},   // Hero3 (purple)
-                {550, 300, 550, 325}, // Enemy (red)
-                {550, 375+25, 550, 375+25}, // Enemy2 (yellow)
-                {550, 450+50, 550, 425+50}  // Enemy3 (orange)
+                {50, 200, 50, 225},   // Hero (blue) - moved up 100px
+                {50, 275+25, 50, 300+25},   // Hero2 (green) - moved up 100px
+                {50, 350+50, 50, 375+50},   // Hero3 (purple) - moved up 100px
+                {550, 200, 550, 225}, // Enemy (red) - moved up 100px
+                {550, 275+25, 550, 275+25}, // Enemy2 (yellow) - moved up 100px
+                {550, 350+50, 550, 325+50}  // Enemy3 (orange) - moved up 100px
         };
         
         // Health bar colors
@@ -544,7 +567,7 @@ public class  BattleUI {
 
             // Add to health bars list
             HealthBarData healthBarData = new HealthBarData(slot, healthBar, healthBorder, 
-                mpBar, mpBorder, hpText, mpText, nameText, idleSprite, spriteAnimation, healthX, healthY);
+                mpBar, mpBorder, hpText, mpText, nameText, null, idleSprite, spriteAnimation, healthX, healthY);
             
             // Set enemy sprite and animation if created
             if (enemySprite != null) {
@@ -897,6 +920,111 @@ public class  BattleUI {
             nameText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
             nameText.setMouseTransparent(true); // Allow mouse events to pass through
             healthBarData.nameText = nameText;
+            
+            // Create AV value text if showAVValue is enabled
+            if (showAVValue) {
+                Text avValueText = new Text();
+                avValueText.setFont(new Font(14));
+                avValueText.setFill(Color.DARKSLATEGRAY);
+                // Position to the right of character name
+                double nameWidth = nameText.getLayoutBounds().getWidth();
+                avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4 + nameWidth + 10);
+                avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+                avValueText.setMouseTransparent(true);
+                healthBarData.avValueText = avValueText;
+                getGameScene().addUINode(avValueText);
+                updateAVValue(slot);
+            }
+        }
+    }
+    
+    /**
+     * Get the line for a character slot
+     */
+    private Line getLineForCharacter(Observer.characterSlot slot) {
+        if (slot == null) return null;
+        if (slot == battleSystem.getHeroSlot()) return blueLine;
+        if (slot == battleSystem.getHeroSlot2()) return greenLine;
+        if (slot == battleSystem.getHeroSlot3()) return purpleLine;
+        if (slot == battleSystem.getEnemySlot()) return redLine;
+        if (slot == battleSystem.getEnemySlot2()) return yellowLine;
+        if (slot == battleSystem.getEnemySlot3()) return orangeLine;
+        return null;
+    }
+    
+    /**
+     * Update AV value for a character
+     */
+    private void updateAVValue(Observer.characterSlot slot) {
+        if (!showAVValue) return;
+        
+        HealthBarData healthBarData = findHealthBarData(slot);
+        if (healthBarData == null || healthBarData.avValueText == null) return;
+        
+        Line characterLine = getLineForCharacter(slot);
+        if (characterLine != null) {
+            double characterLineX = characterLine.getStartX();
+            int avValue = (int)(characterLineX - barX);
+            healthBarData.avValueText.setText("AV: " + avValue);
+        } else {
+            healthBarData.avValueText.setText("AV: --");
+        }
+    }
+    
+    /**
+     * Update AV values for all characters
+     */
+    public void updateAllAVValues() {
+        if (!showAVValue) return;
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.characterSlot != null) {
+                updateAVValue(healthBarData.characterSlot);
+            }
+        }
+    }
+    
+    /**
+     * Show or hide AV values based on showAVValue setting
+     * Creates AV text elements if they don't exist, or shows/hides existing ones
+     */
+    public void toggleAVValueDisplay() {
+        for (HealthBarData healthBarData : healthBars) {
+            Observer.characterSlot slot = healthBarData.characterSlot;
+            if (slot == null) continue;
+            
+            if (showAVValue) {
+                // Show AV value - create if it doesn't exist
+                if (healthBarData.avValueText == null) {
+                    // Create AV value text
+                    Text avValueText = new Text();
+                    avValueText.setFont(new Font(14));
+                    avValueText.setFill(Color.DARKSLATEGRAY);
+                    
+                    // Position to the right of character name
+                    if (healthBarData.nameText != null) {
+                        double nameWidth = healthBarData.nameText.getLayoutBounds().getWidth();
+                        avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4 + nameWidth + 10);
+                        avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+                    } else {
+                        // Fallback positioning if nameText doesn't exist
+                        //avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
+                        //avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+                    }
+                    avValueText.setMouseTransparent(true);
+                    healthBarData.avValueText = avValueText;
+                    getGameScene().addUINode(avValueText);
+                } else {
+                    // Just make it visible if it exists
+                    healthBarData.avValueText.setVisible(true);
+                }
+                // Update the value
+                updateAVValue(slot);
+            } else {
+                // Hide AV value
+                if (healthBarData.avValueText != null) {
+                    healthBarData.avValueText.setVisible(false);
+                }
+            }
         }
     }
     
@@ -1898,25 +2026,89 @@ public class  BattleUI {
     }
     
     private void createAndRenderHeroSkillBoxes(Observer.characterSlot hero) {
+        // Remove existing skill display texts first
+        if (skill1DisplayText != null) {
+            getGameScene().removeUINode(skill1DisplayText);
+            skill1DisplayText = null;
+        }
+        if (skill2DisplayText != null) {
+            getGameScene().removeUINode(skill2DisplayText);
+            skill2DisplayText = null;
+        }
+        if (skill3DisplayText != null) {
+            getGameScene().removeUINode(skill3DisplayText);
+            skill3DisplayText = null;
+        }
+        if (skill4DisplayText != null) {
+            getGameScene().removeUINode(skill4DisplayText);
+            skill4DisplayText = null;
+        }
+        
+        // Remove existing skill detail texts
+        if (skill1Detail != null) {
+            getGameScene().removeUINode(skill1Detail);
+            skill1Detail = null;
+        }
+        if (skill2Detail != null) {
+            getGameScene().removeUINode(skill2Detail);
+            skill2Detail = null;
+        }
+        if (skill3Detail != null) {
+            getGameScene().removeUINode(skill3Detail);
+            skill3Detail = null;
+        }
+        if (skill4Detail != null) {
+            getGameScene().removeUINode(skill4Detail);
+            skill4Detail = null;
+        }
+        
         // Remove existing boxes if already created
         if (skill1Box != null) {
             Object ud = skill1Box.getUserData();
-            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (javafx.scene.Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
             getGameScene().removeUINode(skill1Box);
         }
         if (skill2Box != null) {
             Object ud = skill2Box.getUserData();
-            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (javafx.scene.Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
             getGameScene().removeUINode(skill2Box);
         }
         if (skill3Box != null) {
             Object ud = skill3Box.getUserData();
-            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (javafx.scene.Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
             getGameScene().removeUINode(skill3Box);
         }
         if (skill4Box != null) {
             Object ud = skill4Box.getUserData();
-            if (ud instanceof Text) getGameScene().removeUINode((Text) ud);
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (javafx.scene.Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
             getGameScene().removeUINode(skill4Box);
         }
 
@@ -1932,10 +2124,15 @@ public class  BattleUI {
             s4 = hero.getSkills().size() > 7 ? hero.getSkills().get(7) : Ability.SkillRegistry.getByName("N/A");
 
         }
-        skill1Box = createSkillBox(hero, s1, 50, 550, Color.LIGHTBLUE, null);
-        skill2Box = createSkillBox(hero, s2, 100, 550, Color.CYAN, null);
-        skill3Box = createSkillBox(hero, s3, 150, 550, Color.DARKBLUE, null);
-        skill4Box = createSkillBox(hero, s4, 200, 550, Color.PURPLE, null);
+        // Create large skill boxes with skill name and target text on them (stacked left to right, sticking together)
+        double skillY = 550; // Same Y position for all skills
+        double skillWidth = 120; // Narrower width
+        double skillSpacing = skillWidth+1; // No gap - boxes stick together
+        // All skill boxes use the same color (LIGHTBLUE)
+        skill1Box = createSkillBox(hero, s1, 10, skillY, Color.LIGHTBLUE, null, skillWidth, 1);
+        skill2Box = createSkillBox(hero, s2, 10 + skillSpacing, skillY, Color.LIGHTBLUE, null, skillWidth, 2);
+        skill3Box = createSkillBox(hero, s3, 10 + skillSpacing * 2, skillY, Color.LIGHTBLUE, null, skillWidth, 3);
+        skill4Box = createSkillBox(hero, s4, 10 + skillSpacing * 3, skillY, Color.LIGHTBLUE, null, skillWidth, 4);
         // Create item buttons
         createItemButtons(hero);
         // Visually disable boxes if MP insufficient
@@ -1947,18 +2144,43 @@ public class  BattleUI {
     
     private Rectangle createSkillBox(Observer.characterSlot attacker, Ability.skill skill,
                                      double x, double y, Color color,
-                                     Observer.characterSlot target) {
-        Rectangle box = new Rectangle(30, 30, color);
+                                     Observer.characterSlot target, double width, int skillNumber) {
+
+        // Create narrow and long rectangle for skill box
+        double height = 80; // Longer height
+        Rectangle box = new Rectangle(width, height, color);
         box.setTranslateX(x);
         box.setTranslateY(y);
+        box.setStroke(Color.BLACK);
+        box.setStrokeWidth(2);
 
+        // Get skill name and target text
+        String skillName = "No skill";
+        String targetText = "target";
+        if (skill != null && !skill.getName().equals("N/A")) {
+            skillName = skill.getName();
+            targetText = skill.getTarget();
+        }
+        
+        // Create a single text element with skill name and target (no prefixes)
+        String displayText = skillName + "\n" + targetText;
+        Text skillDisplayText = new Text(displayText);
+        skillDisplayText.setFont(new Font(12));
+        skillDisplayText.setFill(Color.BLACK);
+        skillDisplayText.setWrappingWidth(width - 10); // Wrap text to fit in narrower box
+        skillDisplayText.setTextAlignment(TextAlignment.CENTER);
+        skillDisplayText.setTranslateX(x + 5);
+        skillDisplayText.setTranslateY(y +15);
+        skillDisplayText.setMouseTransparent(true); // Make text non-hoverable
+
+        // Create detail text for hover (still show full details on hover)
         String detailText;
         if (skill == null || skill.getName().equals("N/A")) {
             detailText = "No skill assigned";
         } else {
             detailText = skill.getName() + "\n" +
                     "Damage: " + (int)(attacker.getCharacter().getAtk() * skill.getAtkScale()) + "\n" +
-                    "Push: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())+ "\n";
+                    "AV: " + (int)(attacker.getCharacter().getAV() * skill.getAVScale())+ "\n";
             
             // Show costs
             if (skill.getBurningRageRequired() > 0) {
@@ -1987,9 +2209,26 @@ public class  BattleUI {
 
         getGameScene().addUINode(skillDetail);
 
-        // Show / hide when hovering
-        box.setOnMouseEntered(e -> skillDetail.setVisible(true));
-        box.setOnMouseExited(e -> skillDetail.setVisible(false));
+        // Store original stroke color for hover effect
+        final Color[] originalStroke = {Color.BLACK}; // Use array to allow modification
+        
+        // Show / hide detail when hovering and change rim color
+        box.setOnMouseEntered(e -> {
+            // Hide all other skill details first
+            hideAllSkillDetails();
+            skillDetail.setVisible(true);
+            // Re-add to scene to bring to front
+            getGameScene().removeUINode(skillDetail);
+            getGameScene().addUINode(skillDetail);
+            skillDetail.toFront(); // Bring to front to ensure visibility
+            originalStroke[0] = (Color) box.getStroke(); // Save current stroke before changing
+            box.setStroke(Color.GOLD); // Change rim color to gold on hover
+
+        });
+        box.setOnMouseExited(e -> {
+            skillDetail.setVisible(false);
+            box.setStroke(originalStroke[0]); // Restore original stroke color
+        });
 
         // On click -> use skill
         box.setOnMouseClicked(e -> {
@@ -2030,7 +2269,7 @@ public class  BattleUI {
                         return; // Not enough MP
                     }
                     // Check Party MP affordability
-                    if (battleSystem.getPartyMp() < skill.getPartyMpCost()) {
+                    if (battleSystem.getPartyMp() < skill.getPartyMpCost()&&skill.getPartyMpCost() > 0) {
                         return; // Not enough Party MP
                     }
                     // Check Burning Rage affordability
@@ -2056,11 +2295,11 @@ public class  BattleUI {
                 }
 
                 // Determine which skill number this is (1, 2, 3, or 4)
-                int skillNumber = 0;
+                int skillNum = 0;
                 if (attacker.getSkills() != null) {
                     for (int i = 0; i < attacker.getSkills().size() && i < 4; i++) {
                         if (attacker.getSkills().get(i) != null && attacker.getSkills().get(i).equals(skill)) {
-                            skillNumber = i + 1; // 1-based index
+                            skillNum = i + 1; // 1-based index
                             break;
                         }
                     }
@@ -2078,16 +2317,16 @@ public class  BattleUI {
                 boolean isMagicSkill = "Magic".equalsIgnoreCase(skillType);
 
                 // Play skill animation for all skills (1-4)
-                if (skillNumber > 0 && isHero(attacker)) {
+                if (skillNum > 0 && isHero(attacker)) {
                     if (isMagicSkill && isEnemyTargeting && isEnemy(resolvedTarget)) {
                         // Magic skill targeting enemy - play projectile animation
                         playMagicProjectileAnimation(attacker, resolvedTarget, skill);
                     } else if (isEnemyTargeting && isEnemy(resolvedTarget) && !isMagicSkill) {
                         // Physical skill targeting enemy - move to enemy and play animation
-                        playSkillAnimationSequence(attacker, resolvedTarget, skillNumber, true);
+                        playSkillAnimationSequence(attacker, resolvedTarget, skillNum, true);
                     } else {
                         // Non-enemy target or other cases - play animation at current position (no movement)
-                        playSkillAnimationSequence(attacker, null, skillNumber, false);
+                        playSkillAnimationSequence(attacker, null, skillNum, false);
                     }
                 }
 
@@ -2110,17 +2349,52 @@ public class  BattleUI {
             }
         });
 
-        // Attach detail ref to the box so we can remove it later
-        box.setUserData(skillDetail);
+
+        
+        // Store skill detail and display text references based on skill number
+        switch (skillNumber) {
+            case 1: 
+                skill1Detail = skillDetail;
+                skill1DisplayText = skillDisplayText;
+                break;
+            case 2: 
+                skill2Detail = skillDetail;
+                skill2DisplayText = skillDisplayText;
+                break;
+            case 3: 
+                skill3Detail = skillDetail;
+                skill3DisplayText = skillDisplayText;
+                break;
+            case 4: 
+                skill4Detail = skillDetail;
+                skill4DisplayText = skillDisplayText;
+                break;
+        }
+        
+        // Attach detail ref and text elements to the box so we can remove them later
+        // Store all text elements in a group or array for cleanup
+        Group textGroup = new Group(skillDisplayText, skillDetail);
+        box.setUserData(textGroup);
 
         getGameScene().addUINode(box);
+        getGameScene().addUINode(skillDisplayText);
         return box;
+    }
+    
+    /**
+     * Hide all skill detail texts
+     */
+    private void hideAllSkillDetails() {
+        if (skill1Detail != null) skill1Detail.setVisible(false);
+        if (skill2Detail != null) skill2Detail.setVisible(false);
+        if (skill3Detail != null) skill3Detail.setVisible(false);
+        if (skill4Detail != null) skill4Detail.setVisible(false);
     }
     
     private void updateSkillAffordabilityVisual(Rectangle box, Observer.characterSlot hero, Ability.skill skill) {
         boolean available = skill != null && !skill.getName().equals("N/A");
         boolean hasEnoughMp = available && hero.getCurrentMp() >= skill.getMpCost();
-        boolean hasEnoughPartyMp = available && battleSystem.getPartyMp() >= skill.getPartyMpCost();
+        boolean hasEnoughPartyMp = available && (battleSystem.getPartyMp() >= skill.getPartyMpCost()||skill.getPartyMpCost()==0);
         boolean hasEnoughRage = available && characters.SpecialTalents.hasEnoughBurningRage(hero, skill.getBurningRageRequired());
         boolean affordable = hasEnoughMp && hasEnoughRage && hasEnoughPartyMp;
         
@@ -2209,18 +2483,16 @@ public class  BattleUI {
      * @param currentHero The hero whose turn it is
      */
     private void updateTurnIndicator(Observer.characterSlot currentHero) {
-        if (currentHero == null) {
-            // Hide all turn indicators if no hero is acting
-            for (HealthBarData healthBarData : healthBars) {
-                if (healthBarData.turnIndicator != null) {
-                    healthBarData.turnIndicator.setVisible(false);
-                }
+        // Hide all turn indicators first
+        for (HealthBarData healthBarData : healthBars) {
+            if (healthBarData.turnIndicator != null) {
+                healthBarData.turnIndicator.setVisible(false);
             }
-            return;
         }
         
-        // Only show indicator for heroes (not enemies)
-        if (isEnemy(currentHero)) {
+        // Only show indicator when conditions are met
+        if (currentHero == null || isEnemy(currentHero) || 
+            battleSystem.isMoving() || battleSystem.isEnemyActionTime()) {
             return;
         }
         
@@ -2230,18 +2502,11 @@ public class  BattleUI {
             return;
         }
         
-        // Hide all turn indicators first
-        for (HealthBarData healthBarData : healthBars) {
-            if (healthBarData.turnIndicator != null) {
-                healthBarData.turnIndicator.setVisible(false);
-            }
-        }
-        
         // Create or show the turn indicator for the current hero
         if (heroData.turnIndicator == null) {
             // Create a small green triangle pointing up
             double triangleSize = 15;
-            double centerX = heroData.baseX + healthBarWidth / 2.0;
+            double centerX = heroData.baseX + healthBarWidth -20;
             double topY = heroData.baseY - triangleSize - 5; // Position above health bar
             
             // Triangle points: bottom point (pointing up), top left, top right
@@ -2258,7 +2523,7 @@ public class  BattleUI {
             getGameScene().addUINode(triangle);
         }
         
-        // Show the turn indicator
+        // Show the turn indicator only when conditions are met
         heroData.turnIndicator.setVisible(true);
     }
     
@@ -2528,6 +2793,10 @@ public class  BattleUI {
             if (healthBarData.nameText != null) {
                 getGameScene().removeUINode(healthBarData.nameText);
             }
+            if (healthBarData.avValueText != null) {
+                getGameScene().removeUINode(healthBarData.avValueText);
+                healthBarData.avValueText = null;
+            }
             
             // Stop and remove sprite animations
             if (healthBarData.spriteAnimation != null) {
@@ -2628,15 +2897,19 @@ public class  BattleUI {
         // Remove skill boxes
         if (skill1Box != null) {
             getGameScene().removeUINode(skill1Box);
+            getGameScene().removeUINode(skill1DisplayText);
         }
         if (skill2Box != null) {
             getGameScene().removeUINode(skill2Box);
+            getGameScene().removeUINode(skill2DisplayText);
         }
         if (skill3Box != null) {
             getGameScene().removeUINode(skill3Box);
+            getGameScene().removeUINode(skill3DisplayText);
         }
         if (skill4Box != null) {
             getGameScene().removeUINode(skill4Box);
+            getGameScene().removeUINode(skill4DisplayText);
         }
         
         // Remove item buttons
@@ -2965,10 +3238,13 @@ public class  BattleUI {
             getGameScene().removeUINode(item3Button);
         }
 
-        // Create item buttons (positioned below skill buttons, with more spacing)
-        item1Button = createItemButton(hero, 0, 50+300, 550, Color.ORANGE);
-        item2Button = createItemButton(hero, 1, 110+300, 550, Color.ORANGE); // Increased spacing: 100->110
-        item3Button = createItemButton(hero, 2, 170+300, 550, Color.ORANGE); // Increased spacing: 150->170
+        // Create item buttons (positioned all the way to the right, stacked left to right)
+        double itemY = 550; // Same Y position for all items
+        double itemSpacing = 60; // 50 width + 10 spacing
+        double itemStartX = getAppWidth() - 200; // Position at right side with some margin
+        item1Button = createItemButton(hero, 0, itemStartX, itemY, Color.ORANGE);
+        item2Button = createItemButton(hero, 1, itemStartX + itemSpacing, itemY, Color.ORANGE);
+        item3Button = createItemButton(hero, 2, itemStartX + itemSpacing * 2, itemY, Color.ORANGE);
     }
 
     /**

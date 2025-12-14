@@ -52,14 +52,14 @@ public class testing extends GameApplication {
     };
     // Available heroes to choose from (you can select multiple)
     public static String[] AVAILABLE_HEROES = {
-        "Flamita",
+        //"Flamita",
         "Hero",
 //        "Hero2",
 //        "Pieberry",
 //        "Ina",
 //        "Leuna",
 //        "Flatina",
-//        "Chigon"
+        //"Chigon"
     };
 
     
@@ -232,6 +232,11 @@ public class testing extends GameApplication {
         SpecialTalents.setInventory(inventory);
         battleSystem.setBattleUI(battleUI);
         SpecialTalents.setBattleSystem(battleSystem);
+        
+        // Connect BattleUI to AudioSettingsUI for AV value updates
+        if (audioSettingsUI != null) {
+            audioSettingsUI.setBattleUI(battleUI);
+        }
         battleSystem.setOnBattleWon(() -> {
             // This callback is called when all enemies are defeated
             handleBattleVictory();
@@ -485,15 +490,15 @@ public class testing extends GameApplication {
             enterBattleMode();
         });
         // Apply boss selections to game map
-        if (bossSelectionUI.isOufuuSelected()) {
-            gameMap.addOufuuBossFight("forest");
-        }
-        if (bossSelectionUI.isFlamitaSelected()) {
-            gameMap.addFlamitaBossFight("forest");
-        }
-        if (bossSelectionUI.isMabelSelected()) {
-            gameMap.addMabelBossFight("forest");
-        }
+//        if (bossSelectionUI.isOufuuSelected()) {
+//            gameMap.addOufuuBossFight("forest");
+//        }
+//        if (bossSelectionUI.isFlamitaSelected()) {
+//            gameMap.addFlamitaBossFight("forest");
+//        }
+//        if (bossSelectionUI.isMabelSelected()) {
+//            gameMap.addMabelBossFight("forest");
+//        }
         if(bossSelectionUI.isEasyModeSelected()){
             EASY_MODE=true;
         }
