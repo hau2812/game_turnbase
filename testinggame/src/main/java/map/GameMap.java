@@ -5,6 +5,7 @@ import characters.Observer;
 import abilities.Ability;
 import org.example.testing;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
@@ -41,13 +42,15 @@ public class GameMap {
         initializeRandomPath(mountainPath);
         initializeRandomPath(villagePath);
 
+        createRandomBossFight(forestPath.getId());
+
         // Create Boss Node (chung cho tat ca paths) - CO DINH
         bossNode = new MapNode("boss", "Dragon's Lair", "Hang cua rong boss cuoi cung", 
                               MapNode.NodeType.BOSS, 400, 100);
         // Add boss enemy - CO DINH
         Characters.character boss = createBossCharacter();
         // Boss co skills manh me
-        bossNode.addEnemy(createEnemySlotWithSkills(boss, 2, 12, 13, 0));
+        bossNode.addEnemy(createEnemySlotWithSkills(boss, 2, 12, 13, 0,0,0));
         forestPath.addNode(bossNode);
 
 
@@ -72,6 +75,7 @@ public class GameMap {
         int nodeCount = 2 + (int)(Math.random() * 3); // 4-6 random nodes
         if(testing.SKIP_TO_BOSS){
             nodeCount = 0;
+            return;
         }
 
         //create Node
@@ -101,13 +105,17 @@ public class GameMap {
                 currentNodeNumber++;
             }
         }
-        currentNodeNumber+=2;
+        //create recruit
+        MapNode recruitNode2 = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
+        path.addNode(recruitNode2);
+        i++;
+        currentNodeNumber+=1;
 
 
         // Final event/battle - CO DINH (nhung khac nhau cho moi path)
         MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
         path.addNode(finalNode);
-        createRandomBossFight(pathName);
+
 
 
     }
@@ -140,13 +148,13 @@ public class GameMap {
             case FOREST:
                 // Forest Guardian - CO DINH
                 MapNode forestFinal = new MapNode(pathName + "_final", "Forest Guardian", "Thu ho rung", 
-                                                 MapNode.NodeType.BATTLE, 100 + (currentNodeNumber * 50), 220);
+                                                 MapNode.NodeType.BATTLE, 200 + (currentNodeNumber * 50), 220);
                 currentNodeNumber++;
                 Characters.character forestGuardian = new Characters.character(
-                    (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 5, 800, 0, new ArrayList<>()
+                    (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 10, 800, 0, new ArrayList<>()
                 );
                 forestGuardian.setUniqueValue("Regeneration","200");
-                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,0,0,0));
+                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,0,0,0,0,0));
                 return forestFinal;
                 // Forest Guardian - CO DINH
 
@@ -187,7 +195,7 @@ public class GameMap {
                 Characters.character banditLeader = new Characters.character(
                     (int)(Math.random() * 1000), "Bandit Leader", 45, 25, 15, 8, 20, 700, 0, new ArrayList<>()
                 );
-                villageFinal.addEnemy(createEnemySlotWithSkills(banditLeader,1,4,0,0));
+                villageFinal.addEnemy(createEnemySlotWithSkills(banditLeader,1,4,0,0,0,0));
                 return villageFinal;
                 
             default:
@@ -279,15 +287,19 @@ public class GameMap {
                     int skill2 = skillIds[i].length > 1 ? skillIds[i][1] : 0;
                     int skill3 = skillIds[i].length > 2 ? skillIds[i][2] : 0;
                     int skill4 = skillIds[i].length > 3 ? skillIds[i][3] : 0;
+                    int skill5 = skillIds[i].length > 4 ? skillIds[i][4] : 0;
+                    int skill6 = skillIds[i].length > 5 ? skillIds[i][5] : 0;
                     
-                    customNode.addEnemy(createEnemySlotWithSkills(enemyCharacters[i], skill1, skill2, skill3, skill4));
+                    customNode.addEnemy(createEnemySlotWithSkills(enemyCharacters[i], skill1, skill2, skill3, skill4,skill5,skill6));
                 }
             }
         }
         
         // Add the node to the path
-        targetPath.addNode(customNode);
-        currentNodeNumber++;
+        if(nodeId!="flamita_boss2") {
+            targetPath.addNode(customNode);
+            currentNodeNumber++;
+        }
 
 
         
@@ -297,9 +309,26 @@ public class GameMap {
     public void createRandomBossFight(String pathId){
         Random random = new Random();
         int randomInt = 1 + random.nextInt(3);
-        if(randomInt == 1){addFlamitaBossFight(pathId);}
-        else if(randomInt == 2){addMabelBossFight(pathId);}
-        else {addOufuuBossFight(pathId);}
+        //randomInt = 1;
+        if(randomInt == 1&&!testing.getSelectedHeroes().equals("Flamita")){
+            addFlamitaBossFight(pathId);
+            testing.hasFlamitaBoss = true;
+            List<String> newAvaliable = new ArrayList<>(Arrays.asList(testing.getAvailableHeroes()));
+            newAvaliable.remove("Flamita");
+            testing.setAvailableHeroes(newAvaliable.toArray(new String[0]));
+        }
+        else if(randomInt == 2){
+            testing.hasFlamitaBoss = false;
+            addMabelBossFight(pathId);
+        }
+        else if(randomInt == 4){
+            testing.hasFlamitaBoss = false;
+            addFlamitaTheImmortalPhoenixBossFight(pathId);
+        }
+        else {
+            testing.hasFlamitaBoss = false;
+            addOufuuBossFight(pathId);
+        }
     }
 
     /**
@@ -321,8 +350,30 @@ public class GameMap {
         int[][] skillIds = {{6, 7, 8, 9}};
         System.out.println(currentNodeNumber);
         // Add the custom node
-        return addCustomNode(pathId, "flamita_boss", "?", "Internal Burning", 
+        return addCustomNode(pathId, "flamita_boss", "flamita ?", "Internal Burning",
                            MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
+    }
+    public MapNode addFlamitaTheImmortalPhoenixBossFight(String pathId) {
+        // Create corrupted Flamita character
+        Characters.character corruptedFlamita = new Characters.character(
+                (int)(Math.random() * 1000), "Flamita The Immortal Phoenix", 200, 30, 20, 10, 10, 5000, 0, new ArrayList<>()
+        );
+        corruptedFlamita.setUniqueValue("Burning rage", "0");
+        corruptedFlamita.setUniqueValue("Guts", "1");
+        corruptedFlamita.setUniqueValue("Phase 1", "1");
+        corruptedFlamita.setUniqueValue("Phase 2", "0");
+        corruptedFlamita.setUniqueValue("Phase 3", "0");
+        corruptedFlamita.setUniqueValue("actionCount", "30");
+        corruptedFlamita.setUniqueValue("action46", "50");
+        corruptedFlamita.setUniqueValue("action47", "75");
+
+        // Skill IDs: 6, 7, 8, 9
+        Characters.character[] enemies = {corruptedFlamita};
+        int[][] skillIds = {{6, 7, 8, 9,46,47}};
+        System.out.println(currentNodeNumber);
+        // Add the custom node
+        return addCustomNode(pathId, "flamita_boss2", "flamita ?", "Internal Burning",
+                MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
     }
     
     /**
@@ -341,7 +392,7 @@ public class GameMap {
         int[][] skillIds = {{15, 16, 17, 0}};
         
         // Add the custom node
-        MapNode mabelNode = addCustomNode(pathId, "mabel_boss", "?", "?",
+        MapNode mabelNode = addCustomNode(pathId, "mabel_boss", "Mabel", "?",
                                         MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 370, enemies, skillIds);
         
         // Set custom MP for Mabel (as specified in your code)
@@ -401,7 +452,7 @@ public class GameMap {
     }
     
     // Helper method to create character slots with skills for map enemies
-    private Observer.characterSlot createEnemySlotWithSkills(Characters.character character,int skill1, int skill2, int skill3, int skill4) {
+    private Observer.characterSlot createEnemySlotWithSkills(Characters.character character,int skill1, int skill2, int skill3, int skill4,int skill5,int skill6) {
         // Initialize skills registry if not already done
         Ability.SkillRegistry.init();
         Characters.character baseCharacter = new Characters.character(character);
@@ -421,6 +472,14 @@ public class GameMap {
         }
         if(skill4 != 0){
             Ability.skill skill = Ability.SkillRegistry.getById(skill4);
+            if(skill != null) enemySkills.add(skill);
+        }
+        if(skill5 != 0){
+            Ability.skill skill = Ability.SkillRegistry.getById(skill5);
+            if(skill != null) enemySkills.add(skill);
+        }
+        if(skill6 != 0){
+            Ability.skill skill = Ability.SkillRegistry.getById(skill6);
             if(skill != null) enemySkills.add(skill);
         }
 

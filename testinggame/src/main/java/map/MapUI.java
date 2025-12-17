@@ -84,6 +84,13 @@ public class MapUI {
     public void setTestingInstance(org.example.testing testingInstance) {
         this.testingInstance = testingInstance;
     }
+    
+    /**
+     * Get the game map reference
+     */
+    public GameMap getGameMap() {
+        return gameMap;
+    }
 
     public void showPathSelection() {
         clearUI();
@@ -386,13 +393,26 @@ public class MapUI {
                 // Start battle with enemies in this node
                 System.out.println("Starting battle at: " + node.getName());
                 if (battleSystem != null && !node.getEnemies().isEmpty()) {
-
-                    // Set up battle with map enemies
-                    setupBattleWithMapEnemies(node);
-
-                    // Automatically switch to battle mode
-                    switchToBattleMode();
-
+                    if(node.getId().equals("flamita_boss")){
+                        DialogRegistrations.registerFlamitaBossFight();
+                        // After the Flamita intro dialog ends, start the battle,
+                        // then restore the normal dialog-end behavior (showSelectedPath).
+                        DialogSystem dialogSystem = DialogSystem.getInstance();
+                        dialogSystem.setOnDialogEnd(() -> {
+                            // Start battle after intro dialog
+                            setupBattleWithMapEnemies(node);
+                            switchToBattleMode();
+                            // Restore default: when future dialogs end (like victory dialog),
+                            // the map path is shown/updated.
+                            dialogSystem.setOnDialogEnd(() -> showSelectedPath());
+                        });
+                        DialogRegistrations.showDialogByTitle("FlamitaBossFightBegin",null);
+                    }else {
+                        // Set up battle with map enemies
+                        setupBattleWithMapEnemies(node);
+                        // Automatically switch to battle mode
+                        switchToBattleMode();
+                    }
                 }
                 break;
             case RECRUIT:
@@ -457,7 +477,6 @@ public class MapUI {
         }
         
         node.activate();
-        
         // Move to next node if current is completed
         if (node.isCompleted()) {
             gameMap.getSelectedPath().moveToNextNode();
@@ -558,6 +577,7 @@ public class MapUI {
         
         // Update battle system with map enemies
         if (battleSystem != null) {
+            battleSystem.clearEnemyData();
             battleSystem.setMapEnemies(enemy1, enemy2, enemy3);
         }
     }
@@ -578,5 +598,12 @@ public class MapUI {
         } else {
             System.out.println("No battle mode callback set!");
         }
+    }
+    
+    /**
+     * Public method to switch to battle mode (for external use)
+     */
+    public void requestBattleMode() {
+        switchToBattleMode();
     }
 }

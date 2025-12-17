@@ -34,8 +34,10 @@ public interface Characters {
         float AV;
         float hp;
         float mp;
+        String talentDiscription;
         ArrayList<uniqueValue> uniqueValues;
 
+        // Original constructor (no talent description)
         public character(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, ArrayList<uniqueValue> uniqueValues) {
             this.id = id;
             this.name = name;
@@ -48,6 +50,14 @@ public interface Characters {
             this.hp = hp;
             this.mp = mp;
             this.uniqueValues = uniqueValues;
+            this.talentDiscription = "";
+        }
+
+        // New constructor with talent description
+        public character(int id, String name, float atk, float matk, float def, float res, float spd,
+                         float hp, float mp, String talentDiscription, ArrayList<uniqueValue> uniqueValues) {
+            this(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+            this.talentDiscription = talentDiscription;
         }
         // In Characters.java
         public character(character other) {
@@ -103,7 +113,15 @@ public interface Characters {
 
         public ArrayList<uniqueValue> getUniqueValues() { return uniqueValues; }
         public void setUniqueValues(ArrayList<uniqueValue> uniqueValues) { this.uniqueValues = uniqueValues; }
-        
+
+        public String getTalentDiscription() {
+            return talentDiscription;
+        }
+
+        public void setTalentDiscription(String talentDiscription) {
+            this.talentDiscription = talentDiscription;
+        }
+
         // Helper methods for managing unique values
         public uniqueValue getUniqueValue(String name) {
             if (uniqueValues == null) return null;
@@ -133,7 +151,7 @@ public interface Characters {
             if (existing != null) {
                 try {
                     float currentValue = Float.parseFloat(existing.getValue());
-                    existing.setValue(String.valueOf(currentValue + amount));
+                    existing.setValue(String.valueOf(Math.max(0,currentValue + amount)));
                 } catch (NumberFormatException e) {
                     // If not a number, treat as 0
                     existing.setValue(String.valueOf(amount));
@@ -199,7 +217,8 @@ public interface Characters {
                     10,  // res
                     15,  // spd
                     300, // hp
-                    200   // mp
+                    200,  // mp
+                    "No...You see...I don't even have a name"    // talentDiscription template (fill later)
             ));
             
             // Create and register Hero2 with mana shield talent using utility method
@@ -212,39 +231,41 @@ public interface Characters {
                     12,   // res
                     12,   // spd
                     180, // hp
-                    500   // mp
+                    500,  // mp
+                    "Have Regeneration 25(Heal 25 Hp at the start of the turn)\n" +
+                    "Have MpRegeneration 25(Regen 25 Mp at the start of the turn)"    // talentDiscription template (fill later)
             );
             hero2.setUniqueValue("Regeneration","25");
             hero2.setUniqueValue("MpRegeneration","25");
             register(hero2);
 
             // Create and register Enemy
-            register(new Characters.character(
-                    2,
-                    "Enemy",
-                    50,  // atk
-                    30,  // matk
-                    20,  // def
-                    10,  // res
-                    15,  // spd
-                    2000, // hp
-                    50,  // mp
-                    new ArrayList<>()
-            ));
-
-            // Create and register Enemy2
-            register(new Characters.character(
-                    3,
-                    "Enemy2",
-                    50,  // atk
-                    30,  // matk
-                    20,  // def
-                    10,  // res
-                    15,  // spd
-                    2000, // hp
-                    50,  // mp
-                    new ArrayList<>()
-            ));
+//            register(new Characters.character(
+//                    2,
+//                    "Enemy",
+//                    50,  // atk
+//                    30,  // matk
+//                    20,  // def
+//                    10,  // res
+//                    15,  // spd
+//                    2000, // hp
+//                    50,  // mp
+//                    new ArrayList<>()
+//            ));
+//
+//            // Create and register Enemy2
+//            register(new Characters.character(
+//                    3,
+//                    "Enemy2",
+//                    50,  // atk
+//                    30,  // matk
+//                    20,  // def
+//                    10,  // res
+//                    15,  // spd
+//                    2000, // hp
+//                    50,  // mp
+//                    new ArrayList<>()
+//            ));
             
             // Create and register Hero3 (Flamita) with Burning Rage
             register(new Characters.character(
@@ -257,6 +278,7 @@ public interface Characters {
                     12,   // spd
                     500, // hp
                     0,   // mp
+                    "Has Burning rage: Increase for each point of Hp reduce,reduce burning rage instead of Hp if Hp=1",  // talentDiscription template (fill later)
                     new ArrayList<uniqueValue>() {{
                         add(new uniqueValue("Burning rage", "0"));
                     }}
@@ -273,6 +295,7 @@ public interface Characters {
                     10,   // spd
                     300, // hp
                     500,   // mp
+                    "Have MpRegeneration 100(Regen 100 Mp at the start of the turn)",  // talentDiscription template (fill later)
                     new ArrayList<>(){{
                         add(new uniqueValue("MpRegeneration", "100"));
                     }}
@@ -289,6 +312,7 @@ public interface Characters {
                     10,   // spd
                     300, // hp
                     15,// mp
+                    "Her Mp will always stay at 5 at the start of the battle",  // talentDiscription template (fill later)
                     new ArrayList<>()
             ));
 
@@ -303,6 +327,8 @@ public interface Characters {
                     10,   // spd
                     300, // hp
                     300,// mp
+                    "Have MpRegeneration 100(Regen 100 Mp at the start of the turn)\n" +
+                            "With her in party, for each 10 point of Mp consume by allies increase 1 point of PartyMp",  // talentDiscription template (fill later)
                     new ArrayList<uniqueValue>() {{
                         add(new uniqueValue("MpRegeneration", "100"));
                     }}
@@ -318,6 +344,7 @@ public interface Characters {
                     10,   // spd
                     400, // hp
                     0,// mp
+                    "Has Burning rage: Increase for each point Hp reduce,reduce burning rage instead of Hp if Hp=1",  // talentDiscription template (fill later)
                     new ArrayList<uniqueValue>() {{
                         add(new uniqueValue("Burning rage", "0"));
                     }}
@@ -332,7 +359,24 @@ public interface Characters {
                     10,   // spd
                     400, // hp
                     0,// mp
+                    "With her in party for each 10 point of damage by allies increase 1 point of PartyMp",  // talentDiscription template (fill later)
                     new ArrayList<uniqueValue>()
+            ));
+
+            register(new Characters.character(
+                    11,
+                    "Lucia",
+                    200,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    2000, // hp
+                    500,// mp
+                    "If you can read this line, then the dev are fuck",  // talentDiscription template (fill later)
+                    new ArrayList<uniqueValue>() {{
+                        add(new uniqueValue("Elysion Regeneration", "0"));
+                    }}
             ));
         }
     }

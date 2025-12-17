@@ -3,10 +3,12 @@ package dialog;
 import battle.BattleSystem;
 import battle.BattleUI;
 import map.MapUI;
+import org.example.testing;
 
 import java.util.List;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.function.Predicate;
 
 /**
  * Manages running dialogs and their execution
@@ -20,6 +22,7 @@ public class DialogSystem {
     private boolean isRunning;
     private Runnable onDialogStart;
     private Runnable onDialogEnd;
+    private Predicate<String> nextDialogFilter; // Filter for next dialog IDs
 
     private MapUI mapUI;
     private BattleUI battleUI;
@@ -136,6 +139,9 @@ public class DialogSystem {
         
         currentDialog = dialogQueue.poll();
         
+        // Update testing.status with dialog title (without _1 suffix)
+        updateStatusWithDialogTitle(currentDialog.getId());
+        
         // Execute on-show actions
         for (var action : currentDialog.getOnShowActions()) {
             action.apply(currentContext);
@@ -156,6 +162,47 @@ public class DialogSystem {
     }
     
     /**
+     * Extract base title from dialog ID (remove _1, _2, etc.) and update testing.status
+     * @param dialogId The dialog ID (e.g., "dialogTitle_1")
+     */
+    private void updateStatusWithDialogTitle(String dialogId) {
+        if (dialogId == null || dialogId.isEmpty()) {
+            return;
+        }
+        
+        // Extract base title by removing the _number suffix
+        String baseTitle = dialogId;
+        int lastUnderscore = dialogId.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+            // Check if after underscore is a number
+            String afterUnderscore = dialogId.substring(lastUnderscore + 1);
+            try {
+                Integer.parseInt(afterUnderscore);
+                // If it's a number, extract base title
+                baseTitle = dialogId.substring(0, lastUnderscore);
+            } catch (NumberFormatException e) {
+                // Not a number, use full ID as base title
+                baseTitle = dialogId;
+            }
+        }
+        
+        // Check if status already contains this base title
+        String currentStatus = testing.getStatus();
+        if (currentStatus == null) {
+            currentStatus = "";
+        }
+        
+        if (!currentStatus.contains(baseTitle)) {
+            // Add base title to status
+            if (currentStatus.isEmpty()) {
+                testing.setStatus(baseTitle);
+            } else {
+                testing.setStatus(currentStatus + " " + baseTitle);
+            }
+        }
+    }
+    
+    /**
      * Continue to next dialog (called when player clicks continue)
      */
     public void continueDialog() {
@@ -164,11 +211,15 @@ public class DialogSystem {
             return;
         }
         
-        // If dialog has next dialogs, add them to queue
+        // If dialog has next dialogs, add them to queue (filtered if filter is set)
         List<String> nextIds = currentDialog.getNextDialogIds();
         if (!nextIds.isEmpty()) {
             DialogLibrary library = DialogLibrary.getInstance();
             for (String id : nextIds) {
+                // Apply filter if set
+                if (nextDialogFilter != null && !nextDialogFilter.test(id)) {
+                    continue; // Skip this dialog if it doesn't pass the filter
+                }
                 DialogEntry entry = library.getDialog(id);
                 if (entry != null) {
                     dialogQueue.offer(entry);
@@ -177,6 +228,15 @@ public class DialogSystem {
         }
         
         processNextDialog();
+    }
+    
+    /**
+     * Set a filter for next dialog IDs. Only dialogs whose IDs pass the filter will be added to the queue.
+     * Set to null to disable filtering.
+     * @param filter Predicate that returns true for dialog IDs that should be allowed
+     */
+    public void setNextDialogFilter(Predicate<String> filter) {
+        this.nextDialogFilter = filter;
     }
     
     /**
@@ -195,12 +255,16 @@ public class DialogSystem {
             option.getAction().apply(currentContext);
         }
         
-        // Add next dialog if specified
+        // Add next dialog if specified (filtered if filter is set)
         if (option.getNextDialogId() != null) {
-            DialogLibrary library = DialogLibrary.getInstance();
-            DialogEntry nextEntry = library.getDialog(option.getNextDialogId());
-            if (nextEntry != null) {
-                dialogQueue.offer(nextEntry);
+            String nextDialogId = option.getNextDialogId();
+            // Apply filter if set
+            if (nextDialogFilter == null || nextDialogFilter.test(nextDialogId)) {
+                DialogLibrary library = DialogLibrary.getInstance();
+                DialogEntry nextEntry = library.getDialog(nextDialogId);
+                if (nextEntry != null) {
+                    dialogQueue.offer(nextEntry);
+                }
             }
         }
         

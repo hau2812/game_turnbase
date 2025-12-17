@@ -36,6 +36,7 @@ public class BuffDebuff {
     
     public int getDuration() { return duration; }
     public void setDuration(int duration) { this.duration = duration; }
+    public BuffDebuff withDuration(int duration) { this.duration = duration; return this; }
     
     public String getEffects() { return effects; }
     public void setEffects(String effects) { this.effects = effects; }
@@ -89,6 +90,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Oufuu atk up", "Buff", 999, "ATK", 0.5f, 1, 4, "Skill"));
         register(new BuffDebuff("Charging", "Buff", 3, "ATK", 0.2f, 1, 5, "Skill"));
         register(new BuffDebuff("Boiling blood", "Buff", 2, "ATK", 0.5f, 1, 1, "Skill"));
+        register(new BuffDebuff("Combustion", "Buff", 999, "ATK", 0.2f, 1, 999, "Skill"));
 
         // DEF Buffs
         register(new BuffDebuff("Iron Skin", "Buff", 4, "DEF", 0.3f, 1, 2, "Skill"));
@@ -100,7 +102,7 @@ public class BuffDebuff {
         // SPD Buffs
         register(new BuffDebuff("Haste", "Buff", 3, "SPD", 0.4f, 1, 2, "Skill"));
         register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 0.6f, 1, 1, "Skill"));
-        register(new BuffDebuff("Gathering", "Buff", 10, "SPD", 20.0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Gathering", "Buff", 20, "SPD", 100.0f, 1, 1, "Skill"));
         register(new BuffDebuff("Conserve", "Buff", 1, "SPD", 0.2f, 5, 999, "Skill"));
         register(new BuffDebuff("Judgment", "Buff", 1, "SPD", 0.0f, 1, 999, "Skill"));
 
@@ -113,7 +115,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Expose", "Debuff", 2, "DEF", 0.5f, 1, 1, "Skill"));
         
         // SPD Debuffs
-        register(new BuffDebuff("Slow", "Debuff", 3, "SPD", 0.8f, 1, 2, "Skill"));
+        register(new BuffDebuff("Slow", "Debuff", 3, "SPD", -0.3f, 1, 1, "Skill"));
         register(new BuffDebuff("Paralyze", "Debuff", 2, "SPD", 0.6f, 1, 1, "Skill"));
         
         // Special Effects
@@ -134,6 +136,14 @@ public class BuffDebuff {
         register(new BuffDebuff("Swap", "Buff", 1, "", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Taunt", "Buff", 2, "Taunt", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Dragon breath", "Buff", 1, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Invulnerable", "Buff", 2, "Invulnerable", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Vulnerable", "Buff", 2, "Vulnerable", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Rage absorption", "Buff", 2, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Stunned", "Debuff", 1, "Stunned", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Resurrection", "Buff", 1, "", 0f, 1, 1, "Skill"));
+
+        register(new BuffDebuff("Arua's charge", "Buff", 999, "", 0f, 1, 3, "Skill"));
+        register(new BuffDebuff("Elysion break down", "Debuff", 5, "", 0f, 1, 1, "Skill"));
 
     }
     

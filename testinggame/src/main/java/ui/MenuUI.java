@@ -12,6 +12,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import com.almasb.fxgl.dsl.FXGL;
 import map.MapUI;
+import org.example.testing;
 import save.SaveData;
 import save.SaveManager;
 
@@ -36,6 +37,7 @@ public class MenuUI {
     private BattleSystem battleSystem;
     private BattleUI battleUI;
     private org.example.testing testingInstance; // Reference to testing instance
+    private LibraryUI libraryUI;
     
     // Call Party UI
     private Group callPartyContainer;
@@ -61,6 +63,10 @@ public class MenuUI {
     private static final double DUNGEON_BUTTON_SIZE = 200;
     private static final double DUNGEON_BUTTON_X = 600; // Lower right
     private static final double DUNGEON_BUTTON_Y = 200; // Moved up so it doesn't collapse with dialog
+    private static final double LIBRARY_BUTTON_WIDTH = 200;
+    private static final double LIBRARY_BUTTON_HEIGHT = 60;
+    private static final double LIBRARY_BUTTON_X = DUNGEON_BUTTON_X;
+    private static final double LIBRARY_BUTTON_Y = DUNGEON_BUTTON_Y + DUNGEON_BUTTON_SIZE + 20;
     private static final double SMALL_BUTTON_WIDTH = 100;
     private static final double SMALL_BUTTON_HEIGHT = 40;
     private static final double SAVE_BUTTON_X = 700; // Top right
@@ -139,6 +145,12 @@ public class MenuUI {
     
     private void initializeUI() {
         mainContainer = new Group();
+        libraryUI = new LibraryUI();
+        // When LibraryUI closes via its own Back button, also restore Call Party UI
+        libraryUI.setOnClose(() -> {
+            libraryUI.hide();
+            restoreCallPartyButton();
+        });
         initializeSaveLoadUI();
         initializeCallPartyUI();
         
@@ -214,14 +226,68 @@ public class MenuUI {
         loadButton.setOnMouseEntered(e -> loadButton.setFill(Color.rgb(220, 170, 120)));
         loadButton.setOnMouseExited(e -> loadButton.setFill(Color.rgb(200, 150, 100)));
         
+        // Create Library button below "Go to Dungeon"
+        Rectangle libraryButton = new Rectangle(LIBRARY_BUTTON_WIDTH, LIBRARY_BUTTON_HEIGHT, Color.rgb(160, 160, 220));
+        libraryButton.setStroke(Color.BLACK);
+        libraryButton.setStrokeWidth(2);
+        libraryButton.setTranslateX(LIBRARY_BUTTON_X);
+        libraryButton.setTranslateY(LIBRARY_BUTTON_Y);
+
+        Text libraryButtonText = new Text("Library");
+        libraryButtonText.setFont(new Font(18));
+        libraryButtonText.setFill(Color.WHITE);
+        libraryButtonText.setTextAlignment(TextAlignment.CENTER);
+        libraryButtonText.setTranslateX(LIBRARY_BUTTON_X + LIBRARY_BUTTON_WIDTH / 2 - 35);
+        libraryButtonText.setTranslateY(LIBRARY_BUTTON_Y + LIBRARY_BUTTON_HEIGHT / 2 + 5);
+        libraryButtonText.setMouseTransparent(true);
+
+        libraryButton.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                toggleLibrary();
+            }
+        });
+        libraryButton.setOnMouseEntered(e -> libraryButton.setFill(Color.rgb(180, 180, 240)));
+        libraryButton.setOnMouseExited(e -> libraryButton.setFill(Color.rgb(160, 160, 220)));
+
         mainContainer.getChildren().addAll(
-            dungeonButton,
-            dungeonButtonText,
-            saveButton,
-            saveButtonText,
-            loadButton,
-            loadButtonText
+                dungeonButton,
+                dungeonButtonText,
+                saveButton,
+                saveButtonText,
+                loadButton,
+                loadButtonText,
+                libraryButton,
+                libraryButtonText,
+                libraryUI.getRoot()
         );
+    }
+
+    private void toggleLibrary() {
+        if (libraryUI == null) {
+            return;
+        }
+        if (libraryUI.isVisible()) {
+            libraryUI.hide();
+            // Re-enable Call Party UI if it was disabled
+            restoreCallPartyButton();
+        } else {
+            // When opening library, hide Call Party panel and disable its toggle
+            if (isCallPartyVisible) {
+                hideCallParty();
+            }
+            disableCallPartyButtonForLibrary();
+            libraryUI.show();
+        }
+    }
+    
+    /**
+     * Hide the LibraryUI (called when dialog starts)
+     */
+    public void hideLibrary() {
+        if (libraryUI != null && libraryUI.isVisible()) {
+            libraryUI.hide();
+            restoreCallPartyButton();
+        }
     }
     
     /**
@@ -382,14 +448,45 @@ public class MenuUI {
             optionsContainer
         );
         
-        // Container and button should always be visible
+        // Container is visible, list/options hidden initially
         callPartyContainer.setVisible(true);
-        // Initially hidden (but button should be visible)
         callPartyBackground.setVisible(false);
         characterListContainer.setVisible(false);
         optionsContainer.setVisible(false);
         // Button itself is always visible
         updateCharacterList();
+    }
+
+    private void disableCallPartyButtonForLibrary() {
+        if (callPartyButton != null) {
+            callPartyButton.setDisable(true);
+            callPartyButton.setVisible(false);
+        }
+        if (callPartyButtonText != null) {
+            callPartyButtonText.setVisible(false);
+        }
+        if (goldCoinText != null) {
+            goldCoinText.setVisible(false);
+        }
+        if (returnTimeText != null) {
+            returnTimeText.setVisible(false);
+        }
+    }
+
+    private void restoreCallPartyButton() {
+        if (callPartyButton != null) {
+            callPartyButton.setDisable(false);
+            callPartyButton.setVisible(true);
+        }
+        if (callPartyButtonText != null) {
+            callPartyButtonText.setVisible(true);
+        }
+        if (goldCoinText != null) {
+            goldCoinText.setVisible(true);
+        }
+        if (returnTimeText != null) {
+            returnTimeText.setVisible(true);
+        }
     }
     
     /**
@@ -516,7 +613,7 @@ public class MenuUI {
             System.out.println("Starting walk dialog: " + dialogTitle);
             
             // Show the dialog
-            DialogRegistrations.showDialogByTitle(dialogTitle);
+            DialogRegistrations.showDialogByTitle(dialogTitle,"menu");
             
             hideCallParty();
         }
@@ -533,7 +630,7 @@ public class MenuUI {
             // Update through testing instance if available
             if (testingInstance != null) {
                 testingInstance.setSelectedHeroes(newSelectedHeroes);
-            } else {
+            //} else {
                 // Fallback: update battleSystem directly
                 if (battleSystem != null) {
                     battleSystem.configureBattle(false, newSelectedHeroes); // Using false as default for hideTalents
@@ -676,6 +773,7 @@ public class MenuUI {
         if (returnTimeText != null) {
             returnTimeText.setText("Return Time: " + org.example.testing.return_time);
         }
+
     }
     
     /**
@@ -739,7 +837,7 @@ public class MenuUI {
         List<String> availableHeroes = Arrays.asList(availableHeroesArray);
         int goldCoin = org.example.testing.gold_coin;
         int returnTime = org.example.testing.return_time;
-        String status = ""; // TODO: Get actual status string from game state
+        String status = testing.status; // TODO: Get actual status string from game state
         
         // Create save data
         SaveData saveData = new SaveData(
@@ -813,7 +911,7 @@ public class MenuUI {
             updateGoldAndReturnTime();
             
             // TODO: Apply status string to game state
-            // String status = saveData.getStatus();
+            testing.status = saveData.getStatus();
             
             cancelSaveLoad(); // Exit load mode after loading
         } else {

@@ -3,6 +3,7 @@ package battle;
 import abilities.Ability;
 import audio.AudioManager;
 import characters.BuffDebuff;
+import characters.Characters;
 import characters.Observer;
 import characters.SpecialTalents;
 import javafx.scene.shape.Line;
@@ -28,7 +29,8 @@ public class BattleSystem {
     private Observer.characterSlot selectedAllyTarget;
     private Observer.characterSlot selectedEnemyTarget;
     private Observer.characterSlot currentActingHero;
-    
+    public ArrayList<String> defeatEnemies = new ArrayList<>();
+
     // Combat state
     private boolean moving = false;
     private boolean autoEnemy = true;
@@ -58,7 +60,23 @@ public class BattleSystem {
             battleUI.updatePartyMpBar();
         }
     }
-    
+
+    public ArrayList<String> getDefeatEnemies() {
+        return defeatEnemies;
+    }
+    public boolean containDefeatEnemies(String name){
+        for(String deName: defeatEnemies){
+            if(deName.equals(name)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void setDefeatEnemies(ArrayList<String> defeatEnemies) {
+        this.defeatEnemies = defeatEnemies;
+    }
+
     // Speed settings
     private double lineSpeed = 0.5;
     private double blueLineSpeed = lineSpeed;
@@ -229,7 +247,7 @@ public class BattleSystem {
     /**
      * Get the corresponding speed for a character slot
      */
-    private double getSpeedForCharacter(Observer.characterSlot slot) {
+    public double getSpeedForCharacter(Observer.characterSlot slot) {
         if (slot == heroSlot) return blueLineSpeed;
         if (slot == heroSlot2) return greenLineSpeed;
         if (slot == heroSlot3) return purpleLineSpeed;
@@ -431,10 +449,27 @@ public class BattleSystem {
     public void configureBattle(boolean hideTalents, String[] selectedHeroes) {
         this.hideTalents = hideTalents;
         this.selectedHeroes = selectedHeroes.clone(); // Create a copy to avoid external modification
-        
         // Update BattleUI if it's already set
         if (battleUI != null) {
             battleUI.setHideTalents(hideTalents);
+        }
+
+        // Hero slots - use configured heroes
+        Observer.CharacterSlotRegistry.init();
+
+        heroSlot=null;
+        heroSlot2=null;
+        heroSlot3=null;
+        if(selectedHeroes.length > 0) {
+            heroSlot = Observer.CharacterSlotRegistry.getByName(selectedHeroes[0]);
+        }
+
+        if(selectedHeroes.length > 1) {
+            heroSlot2 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[1]);
+        }
+
+        if(selectedHeroes.length > 2) {
+            heroSlot3 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[2]);
         }
     }
     
@@ -457,6 +492,7 @@ public class BattleSystem {
 
     private static final Map<String, Runnable> SPECIAL_MUSIC = Map.of(
             "Flamita ?", () -> audioManager.playFlamitaMusic(),
+            "Flamita The Immortal Phoenix", () -> audioManager.playFlamitaMusic(),
             "Mabel", () -> audioManager.playMabelMusic()
             //"Electra", () -> audioManager.playElectraMusic()
     );
@@ -488,7 +524,8 @@ public class BattleSystem {
         Observer.CharacterSlotRegistry.init();
         timeStop=0;
         timeStopSlot=null;
-
+        //Remove list
+        setDefeatEnemies(new ArrayList<String>());
 
 
         // Hero slots - use configured heroes
@@ -639,7 +676,54 @@ public class BattleSystem {
             }
         }
 
-        System.out.println(attacker.getCharacter().getName()+" use skill at "+ target.getCharacter().getName());
+        System.out.println(attacker.getCharacter().getName()+" use "+skill.getName()+  " at "+ target.getCharacter().getName());
+    }
+    
+    /**
+     * Handle cleanup when an enemy dies (switch target, remove health bar, clear enemySlot)
+     * @param slot The character slot to check (should be an enemy)
+     */
+    private void handleDeadEnemyCleanup(Observer.characterSlot slot) {
+        if (slot == null || !isEnemy(slot) || slot.getCurrentHp() > 0) {
+            return; // Not an enemy or not dead
+        }
+        
+        // If the selected enemy target is the one that died, switch to another alive enemy
+        if (selectedEnemyTarget == slot) {
+            ArrayList<Observer.characterSlot> aliveEnemies = getAllAliveEnemies();
+            if (!aliveEnemies.isEmpty()) {
+                selectedEnemyTarget = aliveEnemies.get(0); // Select first alive enemy
+                selectedTarget = selectedEnemyTarget; // Keep for backward compatibility
+            } else {
+                selectedEnemyTarget = null;
+                selectedTarget = null;
+            }
+        }
+        //Add to list
+        defeatEnemies.add(slot.getCharacter().getName());
+        // Remove health bar for dead enemy
+        if (battleUI != null) {
+            battleUI.removeHealthBarForEnemy(slot);
+        }
+        //If fireOrb
+        if(slot.getCharacter().getName().contains("Fire Orb")){
+            if(enemySlot.getCharacter().getUniqueValueAsFloat("Phase 3") > 0){
+                pushCharacterLine(enemySlot,100);
+            }else {
+                enemySlot.getCharacter().addToUniqueValue("Burning rage", -enemySlot.getCharacter().getUniqueValueAsFloat("Burning rage") / 2);
+            }
+        }
+
+        // Clear the enemySlot reference
+        if (slot == enemySlot) {
+            enemySlot = null;
+        } else if (slot == enemySlot2) {
+            enemySlot2 = null;
+        } else if (slot == enemySlot3) {
+            enemySlot3 = null;
+        }
+        
+
     }
     
     /**
@@ -679,7 +763,13 @@ public class BattleSystem {
         if (battleUI != null) {
             battleUI.updateHealthUI(actingEnemy);
         }
-        
+        //Check Stunned
+        if(actingEnemy.containsBuffDebuff("Stunned")){
+            moving = true;
+            pushCharacterLine(actingEnemy,actingEnemy.getCharacter().getAV());
+            SpecialTalents.onTurnEnd(actingEnemy);
+            return;
+        }
         // Filter skills based on MP availability
         ArrayList<Ability.skill> availableSkills = new ArrayList<>();
         
@@ -729,10 +819,15 @@ public class BattleSystem {
             Ability.skill basicAttack = Ability.SkillRegistry.getById(1);
             availableSkills.add(basicAttack);
         }
-        
-        // Choose random skill from available skills
-        Ability.skill chosenSkill = availableSkills.get(random.nextInt(availableSkills.size()));
-        
+        Ability.skill chosenSkill;
+        if(actingEnemy.getCharacter().getName().equals("Flamita The Immortal Phoenix")){
+            ArrayList<Ability.skill>availableSkills2=getFlamitaBossSkill(actingEnemy,availableSkills);
+            chosenSkill = availableSkills.get(random.nextInt(availableSkills2.size()));
+            System.out.println(availableSkills);
+        }else {
+            // Choose random skill from available skills
+            chosenSkill = availableSkills.get(random.nextInt(availableSkills.size()));
+        }
         // Check if chosen skill is valid
         if (chosenSkill == null) {
             moving = true;
@@ -758,16 +853,71 @@ public class BattleSystem {
                 return;
             }
             useSkill(actingEnemy, targetHero, chosenSkill);
+
+        }
+        if(actingEnemy.getCharacter().getName().equals("Flamita The Immortal Phoenix")) {
+            afterFlamitaBossSkill(actingEnemy,chosenSkill);
+            if(actingEnemy.getCharacter().getUniqueValueAsFloat("Phase 3")>0&&enemySlot2==null&&enemySlot3==null){
+                spawnFireOrb();
+            }
         }
         moving = true;
-//        System.out.println("SPD: "+actingEnemy.getCharacter().getSpd());
-//        System.out.println("AV: "+actingEnemy.getCharacter().getAV());
-//        System.out.println("MP: "+actingEnemy.getCurrentMp());
-//        System.out.println(actingEnemy.getCharacter());
-//        System.out.println(actingEnemy.getBaseCharacter());
-//        System.out.println(actingEnemy.getActiveEffects());
     }
-    
+    private ArrayList<Ability.skill> getFlamitaBossSkill(Observer.characterSlot actingEnemy,ArrayList<Ability.skill> availableSkills){
+        if(actingEnemy.getCharacter().getUniqueValueAsFloat("Phase 3")>0){
+            availableSkills.removeIf(skill -> skill.getId() != 6);
+            SpecialTalents.applyBuffDebuff(actingEnemy,BuffDebuff.getByName("Combustion").copy());
+            return availableSkills;
+        }
+        int actionCount = (int)actingEnemy.getCharacter().getUniqueValueAsFloat("actionCount");
+        int action46 = (int)actingEnemy.getCharacter().getUniqueValueAsFloat("action46");
+        int action47 = (int)actingEnemy.getCharacter().getUniqueValueAsFloat("action47");
+        int chance46 = 0;
+        int chance47 = 0;
+        boolean use46 = false;
+        boolean use47 = false;
+        if(actionCount>action46){chance46=actionCount-action46;}
+        if(actionCount>action47){chance47=actionCount-action47;}
+        int ranInt;
+        if(chance46+chance47<=100){ranInt=random(1,100);}
+        else{ranInt=random(1,chance46+chance47);}
+        if(ranInt<chance46&&enemySlot2==null&&enemySlot3==null){
+            use46=true;
+        }else if(ranInt<chance46+chance47 && actingEnemy.getCharacter().getUniqueValueAsFloat("Phase 2")>0 && actingEnemy.getCharacter().getUniqueValueAsFloat("Burning rage")>300){
+            use47=true;
+        }
+        if (use46) {
+            availableSkills.removeIf(skill -> skill.getId() != 46);
+        }
+        else if (use47) {
+            availableSkills.removeIf(skill -> skill.getId() != 47);
+        }
+        else{
+            availableSkills.removeIf(skill -> skill.getId() == 46 || skill.getId() == 47);
+        }
+        return availableSkills;
+    }
+    private void afterFlamitaBossSkill(Observer.characterSlot attacker, Ability.skill skill){
+        if(skill.getId()<=7){
+            attacker.getCharacter().addToUniqueValue("actionCount",10);
+        }else if(skill.getId()==8){
+            attacker.getCharacter().addToUniqueValue("actionCount",0);
+        }else if(skill.getId()==9){
+            attacker.getCharacter().addToUniqueValue("actionCount",5);
+        }else if(skill.getId()==46){
+            attacker.getCharacter().addToUniqueValue("actionCount",-50);
+            if(attacker.getCharacter().getUniqueValueAsFloat("Phase 2")>0) {
+                attacker.getCharacter().addToUniqueValue("action46", +12);
+                attacker.getCharacter().addToUniqueValue("action47", -12);
+            }
+        }else if(skill.getId()==47){
+            attacker.getCharacter().addToUniqueValue("actionCount",-75);
+            if(attacker.getCharacter().getUniqueValueAsFloat("Phase 2")>0) {
+                attacker.getCharacter().addToUniqueValue("action47", +19);
+                attacker.getCharacter().addToUniqueValue("action46", -19);
+            }
+        }
+    }
     private void updateLines() {
         if (!moving || battleUI == null) {
             return;
@@ -809,7 +959,55 @@ public class BattleSystem {
             }
         }
 
-
+        //Handle Flamita boss fight
+        if(enemySlot!=null&&enemySlot.getCharacter().getName().equals("Flamita The Immortal Phoenix")){
+            if(enemySlot.getCharacter().getUniqueValueAsFloat("Burning rage") < enemySlot.getCharacter().getHp()&&enemySlot.getCharacter().getUniqueValueAsFloat("Phase 3")==0) {
+                if (enemySlot2 != null) {
+                    enemySlot.getCharacter().addToUniqueValue("Burning rage", 0.5f);
+                }
+                if (enemySlot3 != null) {
+                    enemySlot.getCharacter().addToUniqueValue("Burning rage", 0.5f);
+                }
+            }
+            if(enemySlot.getBuffDebuffByName("Rage absorption")!=null){
+                if(enemySlot.getLine().getStartX()-battleUI.getBarX()<2&&enemySlot.getBuffDebuffByName("Rage absorption").getDuration()>1){
+                    enemySlot.getBuffDebuffByName("Rage absorption").setDuration(1);
+                    pushCharacterLine(enemySlot,198);
+                }
+                if(enemySlot.getCharacter().getUniqueValueAsFloat("Burning rage") > 0) {
+                    enemySlot.getCharacter().setHp(enemySlot.getCharacter().getHp() + 3);
+                    enemySlot.getBaseCharacter().setHp(enemySlot.getBaseCharacter().getHp() + 3);
+                    enemySlot.getCharacter().addToUniqueValue("Burning rage", -1f);
+                }else{
+                    enemySlot.removeBuffDebuffByName("Rage absorption");
+                    enemySlot.addBuffDebuff(BuffDebuff.getByName("Stunned").copy());
+                }
+            }
+            battleUI.updateBurningRageBar(enemySlot);
+            battleUI.updateHealthUI(enemySlot);
+            if(enemySlot.getBuffDebuffByName("Resurrection")!=null){
+                enemySlot.getLine().setStartX(battleUI.getBarX()+200);
+                if(enemySlot2==null&&enemySlot3==null){
+                    enemySlot.removeBuffDebuffByName("Resurrection");
+                }else{
+                    enemySlot.heal(3);
+                }
+            }else if(enemySlot.getCharacter().getUniqueValueAsFloat("Phase 3")>0&&enemySlot.getCurrentHp()>0){
+                int burn = 1;
+                if(enemySlot.containsBuffDebuff("Combustion")){
+                    burn=enemySlot.getBuffDebuffByName("Combustion").getStack()/4;
+                }
+                burn=Math.max(burn, 1);
+                enemySlot.setCurrentHp(enemySlot.getCurrentHp()-burn);
+                if(enemySlot.getCurrentHp()<=0){
+                    applyDamage(enemySlot2,9999);
+                    applyDamage(enemySlot3,9999);
+                    defeatEnemies.add("Flamita The Immortal Phoenix");
+                    checkVictoryCondition();
+                    return;
+                }
+            }
+        }
 
         //Handle prey mechanics
         //Handle Dragon breath
@@ -956,7 +1154,8 @@ public class BattleSystem {
         line.setEndX(newX);
     }
 
-    private void applyDamage(Observer.characterSlot slot, double amount) {
+    public void applyDamage(Observer.characterSlot slot, double amount) {
+        if(slot == null) return;
         float oldHp = slot.getCurrentHp();
         float actualAmount = (float)amount;
 
@@ -980,6 +1179,10 @@ public class BattleSystem {
             if(hasHeroName("Chigon")&&isEnemy(slot)){
                 setPartyMp(getPartyMp()+(int)amount*0.1f);
             }
+            if(hasHeroName("Lucia")&&isEnemy(slot)){
+                Characters.character Lucia = getHeroByName("Lucia").getCharacter();
+                Lucia.addToUniqueValue("Elysion Regeneration",(float)amount/2);
+            }
 
         } else if (amount < 0) { // Healing received
             characters.SpecialTalents.onHealingReceived(slot, Math.abs((float)amount));
@@ -994,6 +1197,9 @@ public class BattleSystem {
             // Remove line if character dies
             if (slot.getCurrentHp() <= 0) {
                 removeCharacterLine(slot);
+                
+                // Handle dead enemy cleanup (switch target, remove health bar, clear enemySlot)
+                handleDeadEnemyCleanup(slot);
                 
                 // Check if all enemies are defeated
                 checkVictoryCondition();
@@ -1127,14 +1333,14 @@ public class BattleSystem {
                 }else {
                     // Rage Heal: healing = rage * (rage / (rage + currentHP))
                     float currentHp = attacker.getCurrentHp();
-                    float healingAmount = rageConsumed * (rageConsumed / (rageConsumed + currentHp));
+                    float healingAmount = rageConsumed * (rageConsumed / (rageConsumed + Math.min(1000,currentHp)));
                     dmg = -healingAmount; // Negative damage = healing
                     System.out.println(attacker.getCharacter().getName() + " used " + skill.getName() + "! Consumed " + rageConsumed + " rage to heal for " + healingAmount + " HP!");
                 }
             } else if (skill.getName().equals("Rage Burst")) {
                 float currentHp = Math.max(100, attacker.getCurrentHp());
                 float maxHp = attacker.getCharacter().getHp();
-                dmg = 3 * maxHp * (rageConsumed / (10*currentHp + rageConsumed));
+                dmg =Math.min(1000, 3 * maxHp * (rageConsumed / (10*currentHp + rageConsumed)));
                 float heal = (float)dmg/2;
                 applyDamage(attacker,-heal);
                 battleUI.updateHealthUI(attacker);
@@ -1190,6 +1396,21 @@ public class BattleSystem {
                              "! HP: " + currentHp + " -> 1, MP: " + currentMp + " -> 0, " +
                              "Special Damage Bonus: +" + specialDmgBonus);
             battleUI.refreshAllCharacterUI();
+        }else if (skill.getName().equals("Aramute's obliterated")) {
+            float currentHp = attacker.getCurrentHp();
+            float currentMp = attacker.getCurrentMp();
+            int duration = 0;
+            if(attacker.getBuffDebuffByName("Invulnerable")!=null){
+                duration = attacker.getBuffDebuffByName("Invulnerable").getDuration();
+                attacker.removeBuffDebuffByName("Invulnerable");
+            }
+            applyDamage(attacker,currentHp);
+            attacker.regenerateMp(-currentMp);
+            specialDmgBonus = (currentHp+currentMp);
+            if(duration > 0) {
+                attacker.addBuffDebuff(BuffDebuff.getByName("Invulnerable").copy().withDuration(duration));
+            }
+            battleUI.updateMpUI(attacker);
         }
         else if (skill.getName().equals("Eternal darkness")) {
             for(Observer.characterSlot hero : getAllHeroes()){
@@ -1216,7 +1437,7 @@ public class BattleSystem {
             attacker.setCurrentHp(Math.max(1,attacker.getCurrentHp()-100));
             battleUI.updateHealthUI(attacker);
         }else if (skill.getId()==26){
-            specialDmgBonus = attacker.getFloatBuffDebuffByName("Judgment")*attacker.getCharacter().getAtk()/2;
+            specialDmgBonus = attacker.getFloatBuffDebuffByName("Judgment")*attacker.getCharacter().getAtk()/4;
         }
         
         // Add more special skills here in the future
@@ -1316,9 +1537,53 @@ public class BattleSystem {
         else if(skill.getName().equals("Dragon breath")){
             pushCharacterLine(attacker,200);
         }
+        else if(skill.getName().equals("Arua's Arrow")){
+            BuffDebuff arua = BuffDebuff.getByName("Arua's charge").copy();
+            SpecialTalents.applyBuffDebuff(attacker, arua);
+        }
+        else if(skill.getName().equals("Arua's Lighting Bolt")){
+            attacker.removeBuffDebuffByName("Arua's charge");
+        }
+        else if(skill.getName().equals("Channeling flame")){
+            spawnFireOrb();
+        }
 
         // No special skill handled, continue with normal processing
         return false;
     }
+    public void spawnFireOrb(){
+        if(enemySlot2!=null){
+            selectedEnemyTarget=enemySlot;
+            enemySlot2=null;
+        }
+        if(enemySlot3!=null){
+            selectedEnemyTarget=enemySlot;
+            enemySlot3=null;
+        }
+        Characters.character fireOrb1 = new Characters.character(36,"Fire Orb",0,0,0,0,1,1000,0,null);
+        Characters.character fireOrb2 = new Characters.character(37,"Fire Orb",0,0,0,0,1,1000,0,null);
+
+        Characters.character fireOrb1b = new Characters.character(38,"Fire Orb",0,0,0,0,1,1000,0,null);
+        Characters.character fireOrb2b= new Characters.character(39,"Fire Orb",0,0,0,0,1,1000,0,null);
+
+        Observer.characterSlot slotFireOrb1 = new Observer.characterSlot(99,fireOrb1,fireOrb1b,null,1000,0);
+        Observer.characterSlot slotFireOrb2 = new Observer.characterSlot(98,fireOrb2,fireOrb2b,null,1000,0);
+
+        if(enemySlot.getCharacter().getUniqueValueAsFloat("Phase 3")>0&&enemySlot.getBuffDebuffByName("Resurrection")!=null){
+            fireOrb1.setHp(3000);fireOrb2.setHp(3000);fireOrb1b.setHp(3000);fireOrb2b.setHp(3000);
+            slotFireOrb1.setCurrentHp(3000);slotFireOrb2.setCurrentHp(3000);
+        }
+
+        enemySlot2=slotFireOrb1;
+        enemySlot3=slotFireOrb2;
+
+        // Add health bars for newly spawned enemies in battleUI
+        if (battleUI != null) {
+            battleUI.addHealthBarForEnemySlot(enemySlot2, 4); // Index 4 for enemy2
+            battleUI.addHealthBarForEnemySlot(enemySlot3, 5); // Index 5 for enemy3
+        }
+
+    }
+
 
 }

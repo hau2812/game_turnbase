@@ -267,6 +267,9 @@ public interface Observer {
             addSkillToList(registry.get("Chigon").getSkills(),"Taunt","Chigon");
             addSkillToList(registry.get("Chigon").getSkills(),"Backstep","Chigon");
 
+            createCharacterSlot("Lucia", "Arua's Arrow", "Aimhard's Absolute Defense", "Durok's Gravity Field", "Aramute's obliterated");
+            addSkillToList(registry.get("Lucia").getSkills(),"Arua's Lighting Bolt","Lucia");
+
 
 
 

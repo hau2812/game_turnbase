@@ -71,6 +71,8 @@ public class DialogRegistrations {
         registerBattleVictoryDialogs();
         registerIntroDialog();
         registerFlamitaHaveAWalk();
+        registerFlamitaBossFight();
+        registerFirstRecruitDialogs("Flamita");
         // Register small talk dialogs
         //registerAzarLeunaDialog();
         //registerAzarFlamitaDialog();
@@ -102,9 +104,12 @@ public class DialogRegistrations {
                 if (heroName != null && !heroName.isEmpty()) {
                     available.remove(heroName);
                 }
+
             }
         }
-
+        if(testing.hasFlamitaBoss) {
+            available.remove("Flamita");
+        }
         // If no heroes available after filtering, return empty list
         if (available.isEmpty()) {
             return new ArrayList<>();
@@ -150,7 +155,9 @@ public class DialogRegistrations {
                         return null;
                     })
                     .withNextDialog("recruitDialog-1_1");
-                
+                if(registerFirstRecruitDialogs(selectedHero)&&library.getDialog("recruitDialog"+selectedHero+"_1")!=null){
+                    option.withNextDialog("recruitDialog"+selectedHero+"_1");
+                }
                 branchEntry.withOption(option);
             }
 
@@ -197,12 +204,86 @@ public class DialogRegistrations {
         }
 
         dialogMakerHelper("recruitDialog-1;:"+heroName+" have been added to your party");
+
+
+
+        if(!testing.getStatus().contains("met"+heroName)){
+            testing.addStatus("met"+heroName);
+        }
         System.out.println("Added " + heroName + " to the party! Party now has: " + Arrays.toString(updatedHeroes));
     }
     /**
      * Register battle victory dialogs
      * Registers the base "battle_victory" dialog structure
      */
+    private static boolean registerFirstRecruitDialogs(String heroName){
+        if(false&&testing.getStatus().contains("met"+heroName)){
+            return false;
+        }else{
+            if(heroName.equals("Flamita")) {
+                dialogMakerHelper("recruitDialogFlamita;" +
+                        ":From afar our party can see a female warrior welding a flame sword slashing her enemy;" +
+                        "???:Hmm...How can I getting stronger if these... thing are so weak...;" +
+                        "???:...;" +
+                        ":(suddenly she swing a flaming wave into our party...);" +
+                        "???:Who's there ?;" +
+                        "Azar:(Jumping out)Chill... we are just walking by...");
+
+                dialogMakerHelper("recruitDialogFlamitaBasic;" +
+                        "???:So you are those idiots who try to get some relic from here hah?;" +
+                        "Azar:Ehm...Ye... kinda like that;" +
+                        "???:Just stay out of my way...;" +
+                        "Azar:(So she came here not to get relic...and she doesn't look like she'd accidentally walk in here...that only mean...);" +
+                        "Azar:So...ehm...I've just loot a map pointing at somewhere...There could be a boss...Wanna come ?:>;" +
+                        "???:...Sure thing... just don't waste my time;" +
+                        "Azar:And your name are...?;" +
+                        "Flamita:Call me Flamita;");
+                dialogMakerHelper("recruitDialogFlamitaHaveMet;" +
+                        "Flamita:Oh...Azar...why need to be so sneaky;" +
+                        "Azar:How could I see you that far._.?;" +
+                        "Flamita:Have a slot?;" +
+                        "Azar:Of course;");
+                dialogMakerHelper("recruitDialogFlamitaHaveMet2;" +
+                        ":Ok the dialog should end here but what if Flamita have never met Azar then...");
+                dialogMakerHelper("recruitDialogFlamitaWithLeuna;" +
+                        "Leuna:Can't believe I find you here Flamita...;" +
+                        "Flamita:Of course you guy getting here too...;" +
+                        "Flamita:But who's this guy... where's your 'Master'?;" +
+                        "Leuna:He tell me to investigate this place...and this guy is a guinea pig;" +
+                        "Flamita:Cool...take me with you;" +
+                        "Azar:(whisper)Hey Leuna you know this girl?;" +
+                        "Leuna:She's a friend from work...Just don't stand in her way and you'll be fine...(or if you as strong as 'him')");
+
+                dialogMakerHelper("recruitDialogFlamitaWithChigon;" +
+                        "Chigon:Ah...that the 'Matchstick' girl, what'cha doin' here?;" +
+                        "Flamita:Oh...the 'Mixed Grill' seem very active ha? No crawling behind your 'Master' today?;" +
+                        "Chigon:Bah...too bad he's busy...don't worry this guy is 'fun' too, we're going to beat some big guy...wanna join ?;" +
+                        "Flamita:How about we do one round before we decide that ?;" +
+                        "Chigon:Nah...'Master' will be sad if I not focusing on duties...but we can 'play' after this >:];");
+
+                if(testing.getStatus().contains("metFlamita")){
+                    linkChainTo("recruitDialogFlamita", "recruitDialogFlamitaHaveMet_1");
+                    if(battleSystem!=null&&battleSystem.hasHeroName("Leuna")||battleSystem.hasHeroName("Chigon")){
+                        linkChainToTheEndOf("recruitDialogFlamita", "recruitDialogFlamitaHaveMet2_1");
+                    }
+                }else {
+                    linkChainTo("recruitDialogFlamita", "recruitDialogFlamitaBasic_1");
+                }
+                if(battleSystem!=null) {
+                    if (battleSystem.hasHeroName("Leuna")) {
+                        linkChainToTheEndOf("recruitDialogFlamita", "recruitDialogFlamitaWithLeuna_1");
+                    }
+                    if (battleSystem.hasHeroName("Chigon")) {
+                        linkChainToTheEndOf("recruitDialogFlamita", "recruitDialogFlamitaWithChigon_1");
+                    }
+                }
+                linkChainToTheEndOf("recruitDialogFlamitaWithChigon","recruitDialog-1_1");
+
+            }
+            return true;
+        }
+    }
+
     private static void registerBattleVictoryDialogs() {
         // Register base battle victory dialog structure
         // The actual hero-specific dialogs will be created dynamically in showBattleVictoryDialog()
@@ -257,12 +338,60 @@ public class DialogRegistrations {
             
             // Use dialogMakerHelper to create the dialog
             dialogMakerHelper(dialogString);
-            
             // Start the dialog sequence
-            showDialogByTitle("battle_victory");
+            showDialogByTitle("battle_victory",null);
+        }if(battleSystem.containDefeatEnemies("Flamita ?")){
+            showBattleVictoryDialogFlamitaBoss();
+        }else if(battleSystem.containDefeatEnemies("Flamita The Immortal Phoenix")){
+            showBattleVictoryDialogFlamitaBoss2();
+            testing.return_time+=1;
         }
     }
-    
+    public static void showBattleVictoryDialogFlamitaBoss(){
+        dialogMakerHelper("FlamitaBossBattleVictory;" +
+                "Azar:Ok she is stunned...let's get out of here before she get back up;" +
+                "Flamita?:(shit...I'm so careless)");
+        dialogMakerHelper("FlamitaBossBattleVictoryWithPieberry;" +
+                "Pieberry:You guy get out of here first, I'll catch up later;" +
+                "Azar:What?...No...What are you waiting for?;" +
+                "Pieberry:I have some business to do;" +
+                "Azar:(Shit... I started the teleport spell so there are no way to wait);" +
+                "Azar:(If I stop the spell then I could not have enough mana to cast it again);" +
+                "Azar:I have no idea what you're trying to do...but play safe please...;" +
+                "Pieberry:Don't worry I've face thing more dangerous than this;" +
+                ":After Azar and his party get out it's the time Flamita get back up;" +
+                "Flamita:I don't know If this is brave or stupid, but isn't get out of here is your goal?;" +
+                "Pieberry:No...Not while you are infected, leaving you here only make it worse for you...or the other;" +
+                "Flamita:What are you taking about?;" +
+                "Pieberry:Dark Magic Stone... a dangerous thing at my world somehow get to here, I hope you are the first and only one who have been infected;" +
+                "Flamita:What a nonsense...You are not my target so get out of my way!;" +
+                "Pieberry:No...I must cure you first;" +
+                "Pieberry:I...Piebe...no...I...Lucia...daughter of Temple Lord Elysion shall purify you");
+        if(battleSystem.hasHeroName("Pieberry")){
+            linkChainTo("FlamitaBossBattleVictory","FlamitaBossBattleVictoryWithPieberry_1");
+        }
+        showDialogByTitle("FlamitaBossBattleVictory","flamitaBossBattle");
+    }
+    public static void showBattleVictoryDialogFlamitaBoss2(){
+        dialogMakerHelper("FlamitaBoss2BattleVictory;" +
+                ":The sounds of burning fires, howling winds, and lightning strikes continue echoed everywhere;" +
+                "Flamita:This is the best you got ?;" +
+                "Lucia:Ha...(This is bad... she's more powerful than I though...);" +
+                "Flamita:Keep entertaining me!(Send multiple fire wave toward Lucia);" +
+                "Lucia:(narrowly dodge)(I can't fully use the Spring power due to lack of connection between me and my world);" +
+                "Lucia:(Beating her down seem not an option...I need to some how approach her and purify some dark energy then she will get weaker;" +
+                "Lucia:(But how...);" +
+                "???:Tch...guess it’s my turn to step in again;" +
+                ":From the ground, massive blocks of ice rose up, trapping Flamita up;" +
+                "Pieberry:Luna!!!;" +
+                "Luna:Looking at me don't solve the problem, hurry up and do your thing:/;" +
+                "Pieberry:Right...!;" +
+                ":Dashing through the flame she channel up her very last of her energy to cast her most proud spell;" +
+                ":The dazzling light shine up...too much that even the dev can't see anything and must shifts the scene to Azar;" +
+                "Azar:...;" +
+                ":Well Azar seem can't say anything so let's end the dialog here:P ");
+        showDialogByTitle("FlamitaBoss2BattleVictory","menu");
+    }
     /**
      * Register a test dialog between Azar and Leuna (10 lines)
      * Now uses dialogMakerHelper for easier dialog creation
@@ -366,13 +495,63 @@ public class DialogRegistrations {
             branchEntry.withOption(new DialogOption("Ask about Ignari").withNextDialog("FlamitaHaveAWalk_Ignari_1"));
         }
     }
-    
+
+    public static void registerFlamitaBossFight(){
+        dialogMakerHelper("FlamitaBossFightBegin;" +
+                ":You see a red hair girl standing next to the way out...");
+        dialogMakerHelper("FlamitaBossFightBeginHaveMet;" +
+                "Azar:Flamita? What are you doing here?;" +
+                "Flamita?:Azar...I'm waiting for you...;" +
+                "Azar:Me...? Why... ?;" +
+                "Flamita?:I know you have a map for this dungeon...give it to me and no one get hurt;" +
+                "Azar:No...you can't have it...it's our way out;" +
+                "Flamita?:I didn't ask...and I'll not say again! Leave it now!;" +
+                "Azar:Shit...she's crazy...but she is covering the way out...we need to get through her somehow;");
+        dialogMakerHelper("FlamitaBossFightBeginHaveNotMet;" +
+                "Azar:Ehm...Would you mind to stand aside...We kinda in a hurry;" +
+                "???:A...I'm watting for you;" +
+                "Azar:Me...? Why... ?;" +
+                "???:I know you have a map for this dungeon...give it to me and no one get hurt;" +
+                "Azar:No...you can't have it...it's our way out;" +
+                "???:I didn't ask...and I'll not say again! Leave it now!;" +
+                "Azar:Shit...she's crazy...but she is covering the way out...we need to get through her somehow;");
+        dialogMakerHelper("FlamitaBossFightBeginHaveLeuna;" +
+                "Leuna:Flamita? I know your reason but does it worth messing with us;" +
+                "Flamita?:I don't care...As long as I can become stronger;" +
+                "Leuna:Shit...this is not a battle we can win Azar... try escape somehow;");
+        dialogMakerHelper("FlamitaBossFightBeginHaveChigon;" +
+                "Chigon:A...the 'Matchstick' is burning...;" +
+                "Flamita:Get out of my way...this time I won't hold back;" +
+                "Chigon:Oh...ehm...my belly is not full so maybe I can't perform at my peak Azar :P;");
+        dialogMakerHelper("FlamitaBossFightBeginHavePieberry;" +
+                "Pieberry:Wait...some familiar energy is coming out from her;" +
+                "Pieberry:This...can't be...Azar you guy should get out of here quickly;");
+        dialogMakerHelper("FlamitaBossFightBegin2;" +
+                ":The battle with Flamita begin");
+        if(testing.getStatus().contains("metFlamita")){
+            linkChainTo("FlamitaBossFightBegin","FlamitaBossFightBeginHaveMet_1");
+        }else{
+            linkChainTo("FlamitaBossFightBegin","FlamitaBossFightBeginHaveNotMet_1");
+        }
+        if(battleSystem!=null) {
+            if (battleSystem.hasHeroName("Leuna")) {
+                linkChainToTheEndOf("FlamitaBossFightBegin", "FlamitaBossFightBeginHaveLeuna_1");
+            }
+            if (battleSystem.hasHeroName("Chigon")) {
+                linkChainToTheEndOf("FlamitaBossFightBegin", "FlamitaBossFightBeginHaveChigon_1");
+            }
+            if (battleSystem.hasHeroName("Pieberry")) {
+                linkChainToTheEndOf("FlamitaBossFightBegin", "FlamitaBossFightBeginHavePieberry_1");
+            }
+            linkChainToTheEndOf("FlamitaBossFightBegin", "FlamitaBossFightBegin2_1");
+        }
+    }
     /**
      * Show the Azar and Leuna test dialog
      * This can be called from anywhere to test the dialog system
      */
     public static void showAzarLeunaDialog() {
-        showDialogByTitle("azar_leuna");
+        showDialogByTitle("azar_leuna","menu");
     }
 
     /**
@@ -571,12 +750,58 @@ public class DialogRegistrations {
     }
     
     /**
+     * Link the end of a dialog chain (by following nextDialog pointers) to a target dialog ID.
+     * Unlike linkChainTo which relies on incremental IDs, this walks the actual nextDialog chain
+     * starting from title_1 until a dialog with no nextDialog is found (or a loop is detected).
+     */
+    private static void linkChainToTheEndOf(String title, String targetDialogId) {
+        DialogLibrary library = DialogLibrary.getInstance();
+        
+        // Start from the first dialog in the chain
+        String currentId = title + "_1";
+        DialogEntry currentEntry = library.getDialog(currentId);
+        if (currentEntry == null) {
+            System.out.println("linkChainToTheEndOf: start dialog not found for title: " + title);
+            return;
+        }
+        
+        DialogEntry last = null;
+        // Guard against accidental cycles
+        int guard = 0;
+        while (currentEntry != null && guard < 1000) {
+            last = currentEntry;
+            List<String> nextIds = currentEntry.getNextDialogIds();
+            if (nextIds == null || nextIds.isEmpty()) {
+                break; // reached the end of chain
+            }
+            // Assume linear chain: follow the first next dialog
+            String nextId = nextIds.get(0);
+            currentEntry = library.getDialog(nextId);
+            guard++;
+        }
+        
+        if (guard >= 1000) {
+            System.out.println("linkChainToTheEndOf: guard limit reached, possible loop for title: " + title);
+            return;
+        }
+        
+        if (last != null) {
+            List<String> next = last.getNextDialogIds();
+            next.clear();
+            next.add(targetDialogId);
+        }
+    }
+    
+    /**
      * Show a dialog created by dialogMakerHelper
      * @param title The base title/ID used when creating the dialog
      */
-    public static void showDialogByTitle(String title) {
+    public static void showDialogByTitle(String title,String returnPlace) {
         DialogSystem system = DialogSystem.getInstance();
         DialogContext context = new DialogContext();
+        
+        // Clear any existing filter
+        system.setNextDialogFilter(null);
         
         // Start with the first dialog (title_1)
         String firstDialogId = title + "_1";
@@ -585,7 +810,7 @@ public class DialogRegistrations {
         boolean run = system.startDialog(dialogIds, context);
         if(!run){return;}
         //If intro then show the menu
-        if(title.equals("intro")||title.contains("Walk")){
+        if("menu".equals(returnPlace)){
             system.setOnDialogEnd(() -> {
                 // Show menu UI instead of map
                 if (menuUI != null) {
@@ -598,7 +823,131 @@ public class DialogRegistrations {
                 });
             });
         }
+        else if("flamitaBossBattle".equals(returnPlace)&&battleSystem.hasHeroName("Pieberry")){
+            system.setOnDialogEnd(() -> {
+                //Go battle with flamita
+                if (mapUI != null && battleSystem != null) {
+                    // Get gameMap from mapUI
+                    map.GameMap gameMap = mapUI.getGameMap();
+                    if (gameMap != null) {
+                        // Create Flamita boss fight node
+                        map.MapNode flamitaBossNode = gameMap.addFlamitaTheImmortalPhoenixBossFight("forest");
+                        
+                        if (flamitaBossNode != null) {
+                            // Set heroes to only Lucia
+                            String[] luciaOnly = {"Lucia"};
+                            battleSystem.configureBattle(false, luciaOnly);
+                            
+                            // Set up battle with map enemies
+                            List<Observer.characterSlot> mapEnemies = flamitaBossNode.getEnemies();
+                            if (!mapEnemies.isEmpty()) {
+                                Observer.characterSlot enemy1 = mapEnemies.get(0);
+                                Observer.characterSlot enemy2 = mapEnemies.size() > 1 ? mapEnemies.get(1) : null;
+                                Observer.characterSlot enemy3 = mapEnemies.size() > 2 ? mapEnemies.get(2) : null;
+                                
+                                battleSystem.clearEnemyData();
+                                battleSystem.setMapEnemies(enemy1, enemy2, enemy3);
+                                
+                                // Switch to battle mode
+                                mapUI.requestBattleMode();
+                            }
+                        }
+                    }
+                }
 
+                system.setOnDialogEnd(() -> {
+                    if (mapUI != null) {
+                        mapUI.showSelectedPath();
+                    }
+                });
+            });
+        }
+
+
+    }
+    
+    /**
+     * Show a dialog created by dialogMakerHelper, but only continue if next dialogs have the same base title.
+     * This method will only show dialogs in the chain that start with the same base title as the first dialog.
+     * @param title The base title/ID used when creating the dialog
+     * @param returnPlace Where to return after dialog ends ("menu" or null for map)
+     */
+    public static void showOnlyDialogByTitle(String title, String returnPlace) {
+        DialogSystem system = DialogSystem.getInstance();
+        DialogContext context = new DialogContext();
+        
+        // Extract base title (everything before the last underscore and number)
+        // For example: "dialogTitle_2" -> "dialogTitle"
+        String baseTitle = title;
+        int lastUnderscore = title.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+            // Check if after underscore is a number
+            String afterUnderscore = title.substring(lastUnderscore + 1);
+            try {
+                Integer.parseInt(afterUnderscore);
+                // If it's a number, extract base title
+                baseTitle = title.substring(0, lastUnderscore);
+            } catch (NumberFormatException e) {
+                // Not a number, use full title as base
+                baseTitle = title;
+            }
+        }
+        
+        final String finalBaseTitle = baseTitle;
+        
+        // Set filter to only allow dialogs with the same base title
+        system.setNextDialogFilter(dialogId -> {
+            // Extract base title from dialog ID
+            String dialogBaseTitle = dialogId;
+            int underscore = dialogId.lastIndexOf('_');
+            if (underscore > 0) {
+                String afterUnderscore = dialogId.substring(underscore + 1);
+                try {
+                    Integer.parseInt(afterUnderscore);
+                    dialogBaseTitle = dialogId.substring(0, underscore);
+                } catch (NumberFormatException e) {
+                    // Not a number format, use full ID
+                    dialogBaseTitle = dialogId;
+                }
+            }
+            // Only allow if base titles match
+            return finalBaseTitle.equals(dialogBaseTitle);
+        });
+        
+        // Start with the first dialog (title_1)
+        String firstDialogId = title + "_1";
+        List<String> dialogIds = new ArrayList<>();
+        dialogIds.add(firstDialogId);
+        boolean run = system.startDialog(dialogIds, context);
+        if(!run){
+            system.setNextDialogFilter(null); // Clear filter on failure
+            return;
+        }
+        
+        // Set return place callback
+        if("menu".equals(returnPlace)){
+            system.setOnDialogEnd(() -> {
+                // Clear filter when dialog ends
+                system.setNextDialogFilter(null);
+                // Show menu UI instead of map
+                if (menuUI != null) {
+                    menuUI.show();
+                }
+                system.setOnDialogEnd(() -> {
+                    if (mapUI != null) {
+                        mapUI.showSelectedPath();
+                    }
+                });
+            });
+        } else {
+            // Clear filter when dialog ends
+            system.setOnDialogEnd(() -> {
+                system.setNextDialogFilter(null);
+                if (mapUI != null) {
+                    mapUI.showSelectedPath();
+                }
+            });
+        }
     }
     
     /**

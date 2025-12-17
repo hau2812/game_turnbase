@@ -11,13 +11,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import map.GameMap;
 import map.MapUI;
-import ui.AudioSettingsUI;
-import ui.InventoryUI;
-import ui.ShopUI;
-import ui.SimpleTestUI;
-import ui.HeroSelectionUI;
-import ui.BossSelectionUI;
-import ui.MenuUI;
+import ui.*;
 import items.Inventory;
 import items.ItemRegistry;
 import shop.Shop;
@@ -38,7 +32,8 @@ public class testing extends GameApplication {
     public static int gold_coin = 0;
     public static int return_time = 0;
     public static boolean skip_opening = false;
-
+    public static String status="";
+    public static boolean hasFlamitaBoss;
     // Available heroes to choose from (you can select multiple)
     public static String[] ALL_HEROES = {
             "Flamita",
@@ -57,7 +52,7 @@ public class testing extends GameApplication {
 //        "Hero2",
 //        "Pieberry",
 //        "Ina",
-//        "Leuna",
+        //"Leuna",
 //        "Flatina",
         //"Chigon"
     };
@@ -82,7 +77,7 @@ public class testing extends GameApplication {
     public static void setAllHeros(String[] allHeros) {ALL_HEROES = allHeros;}
 
     // Selected heroes for battle (will be set by hero selection UI)
-    public String[] selectedHeroes = {
+    public static String[] selectedHeroes = {
             //"Flamita",
             //"Flatina",
             "Hero",
@@ -90,14 +85,18 @@ public class testing extends GameApplication {
             //"Pieberry",
             //"Ina",
             //"Leuna",
-            //"Chigon"
+            //"Chigon",
+            //"Lucia"
     };
     
     /**
      * Set selected heroes array (used by MenuUI)
      */
+    public static String getSelectedHeroes() {
+        return selectedHeroes[0];
+    }
     public void setSelectedHeroes(String[] heroes) {
-        this.selectedHeroes = heroes;
+        selectedHeroes = heroes;
         // Also update battle system if it's already configured
         if (battleSystem != null) {
             //System.out.println("ok");
@@ -110,7 +109,9 @@ public class testing extends GameApplication {
     public void setGold_coin(int gold_coin) {testing.gold_coin = gold_coin;}
     public int getReturn_time() {return return_time;}
     public void setReturn_time(int return_time) {testing.return_time = return_time;}
-
+    public static String getStatus() {return status;}
+    public static void setStatus(String status) {testing.status = status;}
+    public static void addStatus(String status) {testing.status = testing.status+" "+status;}
     // ===== BATTLE CONFIGURATION ======================================================================================
     // Battle system components
     private BattleSystem battleSystem;
@@ -203,6 +204,11 @@ public class testing extends GameApplication {
                 inMapMode=false;
             }
             menuUI.hide();
+            // Close LibraryUI if it's open
+            if (menuUI != null) {
+                menuUI.hideLibrary();
+            }
+
         });
         dialogSystem.setOnDialogEnd(() -> {
             if (mapUI != null) {
@@ -215,6 +221,10 @@ public class testing extends GameApplication {
         // Register all dialogs
         DialogRegistrations.registerAllDialogs();
         System.out.println("Dialog system initialized");
+        
+        // Initialize dialog box registry
+        ui.DialogBoxRegistry.init();
+        System.out.println("Dialog box registry initialized");
 
         // Test UI visibility (temporary)
         System.out.println("Testing UI visibility...");
@@ -280,9 +290,12 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            //System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
-            DialogRegistrations.registerRecruitDialogs();
-            DialogRegistrations.showRandomDialogWithPurpose("recruitDialog");
+            System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
+//            System.out.println(battleSystem.getEnemySlot2().getCharacter().toString());
+//            System.out.println(battleSystem.getEnemySlot3().getCharacter().toString());
+
+//            DialogRegistrations.registerRecruitDialogs();
+//            DialogRegistrations.showRandomDialogWithPurpose("recruitDialog");
 
 
         });
@@ -296,7 +309,7 @@ public class testing extends GameApplication {
         });
 
         // F1 key to toggle audio settings
-        onKeyDown(KeyCode.F1, () -> {
+        onKeyDown(KeyCode.W, () -> {
             audioSettingsUI.toggle();
         });
 
@@ -306,7 +319,7 @@ public class testing extends GameApplication {
             System.out.println("Current mode: " + (inMapMode ? "MAP" : "BATTLE"));
             System.out.println("Inventory UI object: " + inventoryUI);
 
-            if (inventoryUI != null) {
+            if (inventoryUI != null&&!battleSystem.hasHeroName("Lucia")) {
                 boolean wasVisible = inventoryUI.isVisible();
                 System.out.println("Inventory was visible: " + wasVisible);
 
@@ -399,7 +412,7 @@ public class testing extends GameApplication {
     public void resetBackToMenu() {
         try {
             battleSystem.resetHeroes();
-            setSelectedHeroes(new String[]{"Hero"});
+            setSelectedHeroes(new String[]{selectedHeroes[0]});
             // Clear old enemy data to prevent showing dead enemies in next battle
             battleSystem.clearEnemyData();
             // Stop the battle loop properly
@@ -430,7 +443,7 @@ public class testing extends GameApplication {
         battleUI.clearAllBattleUI();
 
         // Clear old enemy data to prevent showing dead enemies in next battle
-        battleSystem.clearEnemyData();
+        //battleSystem.clearEnemyData();
 
         // Stop the battle loop properly
         battleSystem.stopBattleLoop();
@@ -448,6 +461,7 @@ public class testing extends GameApplication {
             mapUI.showPathSelection();
         }
         // Show victory dialog
+
         DialogRegistrations.showBattleVictoryDialog(battleSystem);
     }
 
@@ -525,7 +539,7 @@ public class testing extends GameApplication {
         DialogRegistrations.initializeSystems(battleSystem, battleUI, mapUI, menuUI);
 
         if(!skip_opening) {
-            DialogRegistrations.showDialogByTitle("intro");
+            DialogRegistrations.showDialogByTitle("intro","menu");
             skip_opening = true;
         }
     }

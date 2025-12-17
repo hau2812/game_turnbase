@@ -32,6 +32,7 @@ public interface Ability {
         int id;
         String name;
         String description;
+        String longdescription;
         String type;
         String target;
         float atkScale;
@@ -51,6 +52,7 @@ public interface Ability {
             this.id = id;
             this.name = name;
             this.description = description;
+            this.longdescription = "";
             this.type = type;
             this.target = target;
             this.atkScale = atkScale;
@@ -63,10 +65,18 @@ public interface Ability {
             this.skillEffects = new ArrayList<>();
         }
 
+        // Constructor with explicit longdescription
+        public skill(int id, String name, String description, String type, String target,
+                     float atkScale, float AVScale, float mpCost, float partyMpCost, String longdescription) {
+            this(id, name, description, type, target, atkScale, AVScale, mpCost, partyMpCost);
+            this.longdescription = longdescription;
+        }
+
         public skill(int id, String name, String description, String type, String target, float atkScale, float AVScale) {
             this.id = id;
             this.name = name;
             this.description = description;
+            this.longdescription = "";
             this.type = type;
             this.target = target;
             this.atkScale = atkScale;
@@ -84,6 +94,7 @@ public interface Ability {
             this.id = id;
             this.name = name;
             this.description = description;
+            this.longdescription = "";
             this.type = type;
             this.target = target;
             this.atkScale = atkScale;
@@ -94,6 +105,16 @@ public interface Ability {
             this.burningRageConsumed = burningRageConsumed;
             this.burningRageGained = burningRageGained;
             this.skillEffects = new ArrayList<>();
+        }
+
+        // Burning Rage constructor with explicit longdescription
+        public skill(int id, String name, String description, String type, String target,
+                     float atkScale, float AVScale, float mpCost, float partyMpCost,
+                     float burningRageRequired, float burningRageConsumed, float burningRageGained,
+                     String longdescription) {
+            this(id, name, description, type, target, atkScale, AVScale, mpCost, partyMpCost,
+                    burningRageRequired, burningRageConsumed, burningRageGained);
+            this.longdescription = longdescription;
         }
 
         //-------------------------------------------------------------------------------------------
@@ -111,6 +132,14 @@ public interface Ability {
 
         public void setDescription(String description) {
             this.description = description;
+        }
+
+        public String getLongdescription() {
+            return longdescription;
+        }
+
+        public void setLongdescription(String longdescription) {
+            this.longdescription = longdescription;
         }
 
         public int getId() {
@@ -231,6 +260,13 @@ public interface Ability {
                 }
             }
         }
+
+        @Override
+        public String toString() {
+            return "skill{" +
+                    "name='" + name + '\'' +
+                    '}';
+        }
     }
 
     public class SkillRegistry {
@@ -262,7 +298,8 @@ public interface Ability {
                     0.0f,
                     0.0f,
                     0,
-                    0
+                    0,
+                    ""
 
             ));
             register(new Ability.skill(
@@ -274,7 +311,8 @@ public interface Ability {
                     1.0f,
                     1.0f,
                     -50,
-                    0
+                    0,
+                    ""
 
             ));
             register(new Ability.skill(
@@ -286,7 +324,8 @@ public interface Ability {
                     1.5f,
                     1.5f,
                     50,
-                    0
+                    0,
+                    "Add 1 stack burn for 3 turn"
             ));
                 // Example: Adding multiple effects at once using the array method
                 Ability.skill fireball = getByName("Fireball");
@@ -306,7 +345,8 @@ public interface Ability {
                     -1.5f,
                     1.0f,
                     200,
-                    0
+                    0,
+                    "Add 1 stack Regeneration for 3 turn"
             ));
                 Ability.skill heal = getByName("Heal");
                 if (heal != null) {
@@ -321,7 +361,8 @@ public interface Ability {
                     2.0f,
                     1.0f,
                     100,
-                    0
+                    0,
+                    ""
             ));
             register(new Ability.skill(
                     5,
@@ -332,7 +373,8 @@ public interface Ability {
                     0.5f,
                     1.0f,
                     -100,
-                    0
+                    0,
+                    ""
             ));
             register(new Ability.skill(
                     6,
@@ -346,7 +388,8 @@ public interface Ability {
                     0,
                     50,
                     50,
-                    0
+                    0,
+                    "dmg + rageConsumed*1.5"
             ));
             
             // Burning Rage skills
@@ -362,7 +405,8 @@ public interface Ability {
                     0,
                     0,    // Requires 50 Burning Rage
                     0,    // Consumes 50 Burning Rage
-                    50      // Gains 0 Burning Rage
+                    50,      // Gains 0 Burning Rage
+                    ""
             ));
             
             register(new Ability.skill(
@@ -376,8 +420,9 @@ public interface Ability {
                     0,
                     0,
                     200,
-                    999,   // Consumes all Burning Rage (999 = all)
-                    0      // Gains 0 Burning Rage
+                    500,   // Consumes all Burning Rage (999 = all)
+                    0,      // Gains 0 Burning Rage
+                    "dmg = 3 * maxHp * (rageConsumed / (10*currentHp + rageConsumed));"
             ));
             
             register(new Ability.skill(
@@ -391,8 +436,9 @@ public interface Ability {
                     0,
                     0,
                     0,     // No minimum rage required (handled specially)
-                    999,    // Consumes 30 Burning Rage
-                    0      // Gains 0 Burning Rage
+                    300,    // Consumes 30 Burning Rage
+                    0,      // Gains 0 Burning Rage
+                    "healingAmount = rageConsumed * (rageConsumed / (rageConsumed + currentHp))"
             ));
             
             register(new Ability.skill(
@@ -407,7 +453,8 @@ public interface Ability {
                     0,
                     0,     // No Burning Rage required
                     0,     // Consumes 0 Burning Rage
-                    25     // Gains 25 Burning Rage
+                    25,     // Gains 25 Burning Rage
+                    ""
             ));
             register(new Ability.skill(
                     11,
@@ -418,7 +465,8 @@ public interface Ability {
                     2.0f,
                     1.0f,
                     150,
-                    0
+                    0,
+                    "2 stack Burn for 3 turn"
             ));
                 Ability.skill orbFlame = getByName("5-Orb Flame");
                 if (orbFlame != null) {
@@ -433,7 +481,8 @@ public interface Ability {
                     3.0f,
                     1.0f,
                     300,
-                    0
+                    0,
+                    "5 stack weakness for 2 turn"
             ));
             Ability.skill forkLightning = getByName("7-Fork Lightning");
             forkLightning.setAnimation("spawn");
@@ -450,7 +499,8 @@ public interface Ability {
                     2.0f,
                     1.0f,
                     200,
-                    0
+                    0,
+                    "Hp=1,Mp=0,specialDmgBonus = hpReduction + mpReduction"
             ));
             Ability.skill Ecarr_Vertel = getByName("Ecarr Vertel");
             Ecarr_Vertel.setAnimation("spawn");
@@ -464,7 +514,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     50,
-                    0
+                    0,
+                    ""
             ));
             // Add Barrier effect to the Barrier skill
             Ability.skill barrier = getByName("Barrier");
@@ -481,7 +532,8 @@ public interface Ability {
                     0.1f,
                     1.0f,
                     -10,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill callingVoid = getByName("Calling void");
             if (callingVoid != null) {
@@ -497,12 +549,13 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     40,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill voidStep = getByName("Void step");
             if (voidStep != null) {
-                voidStep.addEffect("Gathering", 10, 1);
-                voidStep.addEffect("Weakness", 10, 5);
+                voidStep.addEffect("Gathering", 20, 1);
+                voidStep.addEffect("Weakness", 20, 5);
             }
 
             register(new Ability.skill(
@@ -514,7 +567,8 @@ public interface Ability {
                     0.0f,
                     2.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
 
@@ -528,7 +582,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill familyUnited = getByName("Family united");
             if (familyUnited != null) {
@@ -543,7 +598,8 @@ public interface Ability {
                     1.0f,
                     1.0f,
                     10,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
@@ -555,7 +611,8 @@ public interface Ability {
                     1.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
@@ -567,7 +624,8 @@ public interface Ability {
                     2.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
@@ -579,7 +637,8 @@ public interface Ability {
                     0.5f,
                     0.5f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
@@ -591,7 +650,8 @@ public interface Ability {
                     0.0f,
                     0.5f,
                     0,
-                    0
+                    0,
+                    "2 Charging stack for 3 turn"
             ));
             Ability.skill energyCharge = getByName("Energy charge");
             if (energyCharge != null) {
@@ -607,7 +667,9 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    "Absorb 50% an ally current hp to gain 3 mp\n" +
+                            "In Absolute teleportation absorb 40% an ally MaxHp to gain 100AV time stop"
             ));
 
             register(new Ability.skill(
@@ -619,7 +681,10 @@ public interface Ability {
                     0.0f,
                     0.0f,
                     15,
-                    0
+                    0,
+                    "Gain Conserve(0.2spd buff) stack equal amount of buff\n" +
+                            "Prevent all characters other than self from moving, auto cast S1 on random alive enemy until not enough time stop AV for a S1,gain 1 stack of Judgment for each slash\n" +
+                            "After get out of time stop,cast aoe skill scale with Judgment stack (25%atkScale for each stack)"
             ));
 
             register(new Ability.skill(
@@ -631,19 +696,22 @@ public interface Ability {
                     0.0f,
                     0.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
                     27,
                     "Moon light",
-                    "Grant a barrier and a buff -'I though we are at dungeon'",
+                    "Grant a barrier and a buff",
                     "Heal",
                     "Aoe ally",
                     0.0f,
                     1.5f,
                     100,
-                    0
+                    0,
+                    "Give Moon shield buff to allies\n" +
+                            "When an ally have shield and Moon shield take damage, reduce 50% of damage to her Mp instead"
             ));
             Ability.skill moonLight = getByName("Moon light");
             if (moonLight != null) {
@@ -659,8 +727,9 @@ public interface Ability {
                     "Ally",
                     0.0f,
                     1.0f,
-                    50,
-                    0
+                    200,
+                    0,
+                    "Can't buff to herself"
             ));
             Ability.skill moonWave = getByName("Moon wave");
             if (moonWave != null) {
@@ -676,7 +745,8 @@ public interface Ability {
                     0.0f,
                     1.5f,
                     0,
-                    300
+                    300,
+                    "+50 barrier/turn for all allies"
             ));
             Ability.skill absoluteBarrier = getByName("Absolute barrier");
             if (absoluteBarrier != null) {
@@ -692,7 +762,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill amberSacrifice = getByName("Amber sacrifice");
             if (amberSacrifice != null) {
@@ -710,7 +781,8 @@ public interface Ability {
                     0,
                     50,    // Requires 50 Burning Rage
                     0,    // Consumes 50 Burning Rage
-                    0      // Gains 0 Burning Rage
+                    0,      // Gains 0 Burning Rage
+                    ""
             ));
             Ability.skill rageEmpowerment = getByName("Rage empowerment");
             if (rageEmpowerment != null) {
@@ -725,7 +797,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             register(new Ability.skill(
                     33,
@@ -736,7 +809,8 @@ public interface Ability {
                     1.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             register(new Ability.skill(
                     34,
@@ -747,7 +821,8 @@ public interface Ability {
                     1.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             register(new Ability.skill(
                     35,
@@ -758,7 +833,8 @@ public interface Ability {
                     0.75f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill eagleFang = getByName("Eagle fang");
             if (eagleFang != null) {
@@ -774,7 +850,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill Weakening = getByName("Weakening");
             if (Weakening != null) {
@@ -790,7 +867,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
@@ -802,7 +880,8 @@ public interface Ability {
                     0.0f,
                     1.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill Taunt = getByName("Taunt");
             if (Taunt != null) {
@@ -818,7 +897,8 @@ public interface Ability {
                     0.0f,
                     0.0f,
                     0,
-                    0
+                    0,
+                    ""
             ));
 
             register(new Ability.skill(
@@ -830,14 +910,122 @@ public interface Ability {
                     0.0f,
                     0.1f,
                     0,
-                    0
+                    0,
+                    ""
             ));
             Ability.skill dragonBreath = getByName("Dragon breath");
             if (dragonBreath != null) {
                 dragonBreath.addEffect("Dragon breath", 2, 1);
             }
 
+            register(new Ability.skill(
+                    41,
+                    "Arua's Arrow",
+                    "Channels a portion of Arua's Strength into the form of an arrow",
+                    "Magic",
+                    "Enemy",
+                    1.0f,
+                    0.75f,
+                    -100,
+                    0,
+                    ""
+            ));
+
+            register(new Ability.skill(
+                    42,
+                    "Arua's Lighting Bolt",
+                    "A powerful offensive spell that embodies Arua's Blessing in the form of lightning bolt",
+                    "Magic",
+                    "Enemy",
+                    3.0f,
+                    1.0f,
+                    0,
+                    0,
+                    ""
+            ));
+            Ability.skill aruaLightingBolt = getByName("Arua's Lighting Bolt");
+            if (aruaLightingBolt != null) {
+                aruaLightingBolt.addEffect("Weakness", 2, 5);
+            }
+
+            register(new Ability.skill(
+                    43,
+                    "Aimhard's Absolute Defense",
+                    "Aimhard's Blessing creates a binding of absolute defense around Lucia",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    1.0f,
+                    300,
+                    0,
+                    ""
+            ));
+            Ability.skill Aimhard = getByName("Aimhard's Absolute Defense");
+            if (Aimhard != null) {
+                Aimhard.addEffect("Invulnerable", 3, 1);
+            }
+            register(new Ability.skill(
+                    44,
+                    "Durok's Gravity Field",
+                    "Unleashes a powerful gravitational field that drastically decreases an enemy's ability to move.",
+                    "Magic",
+                    "Enemy",
+                    0.0f,
+                    0.5f,
+                    300,
+                    0,
+                    ""
+            ));
+            Ability.skill Durok = getByName("Durok's Gravity Field");
+            if (Durok != null) {
+                Durok.addEffect("Slow", 3, 1);
+                Durok.addEffect("Vulnerable", 3, 1);
+            }
+            register(new Ability.skill(
+                    45,
+                    "Aramute's obliterated",
+                    "Consume every Hp and Mp to deal that much damage",
+                    "Magic",
+                    "Enemy",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0,
+                    ""
+            ));
+
+            register(new Ability.skill(
+                    46,
+                    "Channeling flame",
+                    "Create fire orb to gain burning rage",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    1.0f,
+                    0,
+                    0,
+                    ""
+            ));
+
+            register(new Ability.skill(
+                    47,
+                    "Rage absorption",
+                    "Consume burning rage to gain maxHP",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    2.0f,
+                    0,
+                    0,
+                    ""
+            ));
+            Ability.skill rageAbsorption = getByName("Rage absorption");
+            if (rageAbsorption != null) {
+                rageAbsorption.addEffect("Rage absorption", 3, 1);
+            }
         }
+
     }
+
 
 }

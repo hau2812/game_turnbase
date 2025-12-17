@@ -68,7 +68,7 @@ public class SpecialTalents {
                 if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
                     if(slot.getFloatBuffDebuffByName("Moon shield")!=0&&battleSystem.getSlotByName("Leuna")!=null) {
                         Observer.characterSlot Leuna = battleSystem.getSlotByName("Leuna");
-                        float damageToMana = Math.min(actualDamage, Leuna.currentMp);
+                        float damageToMana = Math.min(actualDamage/2, Leuna.currentMp);
                         Leuna.regenerateMp(-damageToMana);
                         actualDamage -= damageToMana;
                         battleUI.updateMpUI(slot);
@@ -91,6 +91,10 @@ public class SpecialTalents {
                         }
                         break; // Only process one barrier effect
 
+                }else if("Invulnerable".equals(effect.getEffects())){
+                    return 0;
+                }else if("Vulnerable".equals(effect.getEffects())){
+                    actualDamage*=1.5f;
                 }
             }
         }
@@ -111,18 +115,6 @@ public class SpecialTalents {
             System.out.println(character.getName() + " don't let the battle end " + (int)character.getUniqueValueAsFloat(GUTS) + " time remaining!");
 
         }
-        //--Boss Flamita special--------------------------------------------------------------------------------------
-        if(character.getName().equals("Flamita ?")&& character.getUniqueValueAsFloat(PHASE1) > 0 && slot.getCurrentHp() <= damageAmount&& slot.getFloatBuffDebuffByName("Guts")==0){
-            actualDamage = 0;
-            slot.setCurrentHp(character.getHp()/2);
-            character.addToUniqueValue(PHASE1,-1);
-            character.addToUniqueValue(GUTS,1);
-            character.addToUniqueValue("Phase 2",1);
-            if(character.getUniqueValueAsFloat(BURNING_RAGE) < character.getHp()/2){
-                character.setUniqueValue(BURNING_RAGE,character.getHp()/2 +"");
-            }
-        }
-        //--Boss Flamita special--------------------------------------------------------------------------------------
 
         // Burning Rage Protection - prevents HP from dropping below 1
         if (character.getUniqueValue(BURNING_RAGE) != null) {
@@ -147,7 +139,62 @@ public class SpecialTalents {
                     actualDamage = damageToHp + currentRage; // Apply damage that reduces HP to 1 + all rage
                     System.out.println(character.getName() + " used all " + currentRage + " Burning Rage but still died!");
                 }
+            }else if(slot.containsBuffDebuff("Rage absorption")){
+                slot.getCharacter().addToUniqueValue("Burning rage",-actualDamage);
+                actualDamage=0;
             }
+        }
+        //--Boss Flamita special--------------------------------------------------------------------------------------
+        if(character.getName().equals("Flamita ?")&& character.getUniqueValueAsFloat(PHASE1) > 0 && slot.getCurrentHp() <= actualDamage&& slot.getFloatBuffDebuffByName("Guts")==0){
+            actualDamage = 0;
+            slot.setCurrentHp(character.getHp()/2);
+            character.addToUniqueValue(PHASE1,-1);
+            character.addToUniqueValue(GUTS,1);
+            character.addToUniqueValue("Phase 2",1);
+            if(character.getUniqueValueAsFloat(BURNING_RAGE) < character.getHp()/2){
+                character.setUniqueValue(BURNING_RAGE,character.getHp()/2 +"");
+            }
+        }else if(character.getUniqueValue("Phase 2")!=null&&character.getUniqueValueAsFloat(PHASE1) > 0 && slot.getCurrentHp() <= actualDamage&& slot.getFloatBuffDebuffByName("Guts")==0) {
+            actualDamage = 0;
+            slot.setCurrentHp(character.getHp());
+            character.getUniqueValues().remove(character.getUniqueValue("Phase 1"));
+            character.addToUniqueValue(GUTS,1);
+            character.addToUniqueValue("Phase 2",1);
+        }else if(character.getUniqueValue("Phase 3")!=null&&character.getUniqueValueAsFloat("Phase 2") > 0 && slot.getCurrentHp() <= actualDamage&& slot.getFloatBuffDebuffByName("Guts")==0) {
+            actualDamage = 0;
+            if(slot.getCharacter().getName().equals("Flamita The Immortal Phoenix")){
+                character.getUniqueValues().remove(character.getUniqueValue("Phase 2"));
+                character.addToUniqueValue("Phase 3",1);
+                character.setUniqueValue("Burning rage","0");
+                slot.setCurrentHp(1);
+                slot.removeBuffDebuffByName("Rage absorption");
+                slot.addBuffDebuff(BuffDebuff.getByName("Invulnerable").withDuration(999));
+                slot.addBuffDebuff(BuffDebuff.getByName("Resurrection").withDuration(999));
+                if(battleSystem.getEnemySlot2()!=null){
+                    System.out.println("ok");
+                    battleSystem.applyDamage(battleSystem.getEnemySlot2(),9999);
+                }
+                if(battleSystem.getEnemySlot3()!=null){
+                    System.out.println("ok");
+                    battleSystem.applyDamage(battleSystem.getEnemySlot3(),9999);
+                }
+                battleSystem.spawnFireOrb();
+
+            }else {
+                slot.setCurrentHp(character.getHp());
+            }
+
+        }
+
+        //--Boss Flamita special--------------------------------------------------------------------------------------
+
+        if(character.getUniqueValue("Elysion Regeneration") != null && actualDamage >= slot.getCurrentHp()&&!slot.containsBuffDebuff("Elysion break down")) {
+            //System.out.println("");
+            actualDamage = 0;
+            slot.setCurrentHp(1);
+            slot.heal(character.getUniqueValueAsFloat("Elysion Regeneration"));
+            character.setUniqueValue("Elysion Regeneration","0");
+            slot.addBuffDebuff(BuffDebuff.getByName("Elysion break down").copy());
         }
         
         return Math.max(0, actualDamage); // Can't have negative damage
@@ -178,6 +225,12 @@ public class SpecialTalents {
             }
             System.out.println(character.getName() + " lost " + damageAmount + " HP. Burning rage: " + 
                 character.getUniqueValueAsFloat(BURNING_RAGE));
+        }
+        if(character.getUniqueValue("Elysion Regeneration") != null){
+            character.addToUniqueValue("Elysion Regeneration",damageAmount/4);
+        }
+        if(character.getName().equals("Flamita The Immortal Phoenix")){
+            character.addToUniqueValue("actionCount",(int)(damageAmount/100));
         }
 
     }
@@ -258,6 +311,12 @@ public class SpecialTalents {
                     System.out.println(character.getName() + " regenerated " + actualRegen + " MP!");
                 }
             }
+        }
+        if (character.getUniqueValue("Elysion Regeneration") != null) {
+            float regenAmount = character.getUniqueValueAsFloat("Elysion Regeneration")/3;
+            character.addToUniqueValue("Elysion Regeneration", -regenAmount);
+            battleSystem.applyDamage(slot,-regenAmount);
+            slot.regenerateMp(regenAmount/2);
         }
         if(slot.getFloatBuffDebuffByName("Regen barrier")>0&&slot.getFloatBuffDebuffByName("Conserve")==0){
             BuffDebuff shield = new BuffDebuff("Barrier", "Buff", 3, "BARRIER", 1f, 1, 999, "Skill");
@@ -437,6 +496,9 @@ public class SpecialTalents {
                 totalHp+=activeEffect.getTotalValue();
             }
         }
+        if(slot.getCharacter().getName().equals("Flamita The Immortal Phoenix")){
+            totalAtk+=(slot.getCharacter().getHp()-5000)/5000;
+        }
         character.setAtk(basecharacter.getAtk()*totalAtk);
         character.setDef(basecharacter.getDef()*totalDef);
         character.setSpd(basecharacter.getSpd()*totalSpd);
@@ -515,62 +577,63 @@ public class SpecialTalents {
     /**
      * Create a character with berserker talent
      */
-    public static character createBerserker(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
+    public static character createBerserker(int id, String name, float atk, float matk, float def,
+                                            float res, float spd, float hp, float mp, String talentDiscription) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         //uniqueValues.add(new Characters.uniqueValue(BERSERKER_RAGE, "0"));
-        
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
     /**
      * Create a character with mana shield talent
      */
-    public static character createMage(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
+    public static character createMage(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, String talentDiscription) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         uniqueValues.add(new Characters.uniqueValue(MANA_SHIELD, "1")); // 1 = active
         
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
     /**
      * Create a character with critical strike talent
      */
-    public static character createRogue(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
+    public static character createRogue(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, String talentDiscription) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         uniqueValues.add(new Characters.uniqueValue(CRITICAL_STRIKE, "0.3")); // 30% crit chance
         
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
     /**
      * Create an enemy with regeneration talent
      */
-    public static character createRegenerationEnemy(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float regenAmount) {
+    public static character createRegenerationEnemy(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float regenAmount, String talentDiscription) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         uniqueValues.add(new Characters.uniqueValue(REGENERATION, String.valueOf(regenAmount)));
         
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
     /**
      * Create a character with burning rage talent
      */
-    public static character createBurningRageCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp) {
+    public static character createBurningRageCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, String talentDiscription) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         uniqueValues.add(new Characters.uniqueValue(BURNING_RAGE, "0")); // Start with 0 rage
         
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
     /**
      * Create a character with MP regeneration talent
      * @param mpRegenAmount Amount of MP regenerated per turn
      */
-    public static character createMpRegenCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float mpRegenAmount) {
+    public static character createMpRegenCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float mpRegenAmount, String talentDiscription) {
         java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
         uniqueValues.add(new Characters.uniqueValue(MP_REGENERATION, String.valueOf(mpRegenAmount)));
         
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, uniqueValues);
+        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
     /**

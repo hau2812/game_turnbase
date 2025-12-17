@@ -2,7 +2,10 @@ package battle;
 
 import abilities.Ability;
 import audio.AudioManager;
+import characters.BuffDebuff;
+import characters.Characters;
 import characters.Observer;
+import characters.SpecialTalents;
 import com.almasb.fxgl.app.GameApplication;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -10,7 +13,9 @@ import javafx.animation.KeyValue;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -26,6 +31,8 @@ import items.ConsumableItem;
 import items.Inventory;
 import javafx.util.Duration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
@@ -138,13 +145,13 @@ public class  BattleUI {
     private Line orangeLine;
     
     // Health bars - using list-based approach
-    private java.util.List<HealthBarData> healthBars = new java.util.ArrayList<>();
+    private List<HealthBarData> healthBars = new ArrayList<>();
     
     // Burning Rage bars (red bars that show accumulated rage)
-    private java.util.List<BurningRageBarData> burningRageBars = new java.util.ArrayList<>();
+    private List<BurningRageBarData> burningRageBars = new ArrayList<>();
     
     // Barrier bars (light blue bars that show barrier points)
-    private java.util.List<BarrierBarData> barrierBars = new java.util.ArrayList<>();
+    private List<BarrierBarData> barrierBars = new ArrayList<>();
     
     // TimeStop bar (white bar that shows time stop duration)
     private Rectangle timeStopBar;
@@ -630,6 +637,291 @@ public class  BattleUI {
     }
     
     /**
+     * Add health bar for a newly spawned enemy slot
+     * @param slot The enemy slot to add
+     * @param index The index in the character array (4 for enemy2, 5 for enemy3)
+     */
+    public void addHealthBarForEnemySlot(Observer.characterSlot slot, int index) {
+        if (slot == null) return;
+        
+        // Check if health bar already exists for this slot
+        if (findHealthBarData(slot) != null) {
+            return; // Already exists
+        }
+        
+        // Position data: [healthX, healthY, mpX, mpY]
+        double[][] positions = {
+                {50, 200, 50, 225},   // Hero (blue) - index 0
+                {50, 275+25, 50, 300+25},   // Hero2 (green) - index 1
+                {50, 350+50, 50, 375+50},   // Hero3 (purple) - index 2
+                {550, 200, 550, 225}, // Enemy (red) - index 3
+                {550, 275+25, 550, 275+25}, // Enemy2 (yellow) - index 4
+                {550, 350+50, 550, 325+50}  // Enemy3 (orange) - index 5
+        };
+        
+        // Health bar colors
+        Color[] healthColors = {Color.BLUE, Color.LIMEGREEN, Color.PURPLE, Color.RED, Color.YELLOW, Color.ORANGE};
+        
+        if (index < 0 || index >= positions.length) {
+            return; // Invalid index
+        }
+        
+        double[] pos = positions[index];
+        double healthX = pos[0];
+        double healthY = pos[1];
+        
+        // Create health border
+        Rectangle healthBorder = new Rectangle(healthBarWidth, healthBarHeight, Color.TRANSPARENT);
+        healthBorder.setStroke(Color.BLACK);
+        healthBorder.setStrokeWidth(2);
+        healthBorder.setTranslateX(healthX);
+        healthBorder.setTranslateY(healthY);
+        
+        // Create health bar
+        Rectangle healthBar = new Rectangle(healthBarWidth, healthBarHeight, healthColors[index]);
+        healthBar.setTranslateX(healthX);
+        healthBar.setTranslateY(healthY);
+        
+        // Create enemy sprite
+        ImageView enemySprite = null;
+        Timeline enemyIdleAnimation = null;
+        enemySprite = createEnemySprite(slot, healthX, healthY);
+        if (enemySprite != null) {
+            getGameScene().addUINode(enemySprite);
+            enemySprite.setVisible(true);
+            enemyIdleAnimation = createSpriteAnimation(enemySprite, slot);
+            if (enemyIdleAnimation != null) {
+                enemyIdleAnimation.play();
+            }
+        }
+        
+        // Create text elements
+        Text hpText = new Text("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        hpText.setFont(new Font(16));
+        hpText.setFill(Color.BLACK);
+        hpText.setTranslateX(healthX + 4);
+        hpText.setTranslateY(healthY + healthBarHeight - 5);
+        hpText.setMouseTransparent(true);
+        
+        Text nameText = new Text(slot.getCharacter().getName());
+        nameText.setFont(new Font(18));
+        nameText.setFill(Color.BLACK);
+        nameText.setTranslateX(healthX + 4);
+        nameText.setTranslateY(healthY - 5);
+        nameText.setMouseTransparent(true);
+        
+        // Create HealthBarData
+        HealthBarData healthBarData = new HealthBarData(slot, healthBar, healthBorder, 
+            null, null, hpText, null, nameText, null, null, null, healthX, healthY);
+        
+        if (enemySprite != null) {
+            healthBarData.enemySprite = enemySprite;
+            healthBarData.enemyIdleAnimation = enemyIdleAnimation;
+        }
+        
+        healthBars.add(healthBarData);
+        
+        // Add hover functionality
+        addDebuffHoverToHealthBar(healthBar, healthBorder, slot);
+        
+        // Add UI elements to scene
+        getGameScene().addUINode(healthBorder);
+        getGameScene().addUINode(healthBar);
+        getGameScene().addUINode(hpText);
+        getGameScene().addUINode(nameText);
+        
+        // Create and add burning rage bar if needed
+        if (hasBurningRage(slot)) {
+            Rectangle rageBar = new Rectangle(0, healthBarHeight, Color.DARKRED);
+            rageBar.setTranslateX(healthX);
+            rageBar.setTranslateY(healthY);
+            rageBar.setVisible(false);
+            rageBar.setMouseTransparent(true);
+            
+            BurningRageBarData rageBarData = new BurningRageBarData(slot, rageBar, healthX, healthY);
+            burningRageBars.add(rageBarData);
+            getGameScene().addUINode(rageBar);
+        }
+        
+        // Create and add barrier bar
+        Rectangle barrierBar = new Rectangle(0, healthBarHeight / 2, Color.LIGHTSEAGREEN);
+        barrierBar.setTranslateX(healthX);
+        barrierBar.setTranslateY(healthY);
+        barrierBar.setVisible(false);
+        barrierBar.setMouseTransparent(true);
+        
+        BarrierBarData barrierBarData = new BarrierBarData(slot, barrierBar, healthX, healthY);
+        barrierBars.add(barrierBarData);
+        getGameScene().addUINode(barrierBar);
+        
+        // Create and add line for this character
+        Line line = getLineForCharacter(slot);
+        if (line != null && slot.getCurrentHp() > 0) {
+            slot.setLine(line);
+            if (line.getParent() == null) {
+                getGameScene().addUINode(line);
+            }
+        }
+        
+        // Update health UI to set initial values
+        updateHealthUI(slot);
+        
+        // Set up target selection for this health bar
+        setupTargetSelectionForHealthBar(healthBarData);
+    }
+    
+    /**
+     * Remove health bar for a dead enemy
+     * @param slot The enemy slot that died
+     */
+    public void removeHealthBarForEnemy(Observer.characterSlot slot) {
+        if (slot == null) return;
+        
+        // Only remove for enemies, not heroes
+        if (!isEnemy(slot)) return;
+        
+        HealthBarData healthBarData = findHealthBarData(slot);
+        if (healthBarData == null) return;
+        
+        // Remove all UI elements from scene
+        if (healthBarData.healthBorder != null) {
+            getGameScene().removeUINode(healthBarData.healthBorder);
+        }
+        if (healthBarData.healthBar != null) {
+            getGameScene().removeUINode(healthBarData.healthBar);
+        }
+        if (healthBarData.mpBorder != null) {
+            getGameScene().removeUINode(healthBarData.mpBorder);
+        }
+        if (healthBarData.mpBar != null) {
+            getGameScene().removeUINode(healthBarData.mpBar);
+        }
+        if (healthBarData.hpText != null) {
+            getGameScene().removeUINode(healthBarData.hpText);
+        }
+        if (healthBarData.mpText != null) {
+            getGameScene().removeUINode(healthBarData.mpText);
+        }
+        if (healthBarData.nameText != null) {
+            getGameScene().removeUINode(healthBarData.nameText);
+        }
+        if (healthBarData.idleSprite != null) {
+            getGameScene().removeUINode(healthBarData.idleSprite);
+        }
+        if (healthBarData.enemySprite != null) {
+            getGameScene().removeUINode(healthBarData.enemySprite);
+        }
+        if (healthBarData.avValueText != null) {
+            getGameScene().removeUINode(healthBarData.avValueText);
+        }
+        
+        // Stop animations
+        if (healthBarData.spriteAnimation != null) {
+            healthBarData.spriteAnimation.stop();
+        }
+        if (healthBarData.enemyIdleAnimation != null) {
+            healthBarData.enemyIdleAnimation.stop();
+        }
+        
+        // Remove from health bars list
+        healthBars.remove(healthBarData);
+        
+        // Remove burning rage bar if exists
+        burningRageBars.removeIf(rageBarData -> {
+            if (rageBarData.characterSlot == slot) {
+                if (rageBarData.rageBar != null) {
+                    getGameScene().removeUINode(rageBarData.rageBar);
+                }
+                return true;
+            }
+            return false;
+        });
+        
+        // Remove barrier bar if exists
+        barrierBars.removeIf(barrierBarData -> {
+            if (barrierBarData.characterSlot == slot) {
+                if (barrierBarData.barrierBar != null) {
+                    getGameScene().removeUINode(barrierBarData.barrierBar);
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+    
+    /**
+     * Set up target selection click handlers for a single health bar
+     * @param healthBarData The health bar data to set up
+     */
+    private void setupTargetSelectionForHealthBar(HealthBarData healthBarData) {
+        Observer.characterSlot slot = healthBarData.characterSlot;
+        boolean isEnemy = isEnemy(slot);
+        boolean isAlly = isHero(slot);
+        
+        // Create highlight selection runnable
+        Runnable highlightSelection = () -> {
+            // Update highlighting for all health bars
+            for (HealthBarData hbd : healthBars) {
+                Observer.characterSlot s = hbd.characterSlot;
+                boolean isE = isEnemy(s);
+                boolean isA = isHero(s);
+                
+                if (isE) {
+                    boolean isSelected = battleSystem.getSelectedEnemyTarget() == s;
+                    hbd.healthBorder.setStroke(isSelected ? Color.GOLD : Color.BLACK);
+                    hbd.healthBorder.setStrokeWidth(isSelected ? 3 : 2);
+                } else if (isA) {
+                    boolean isSelected = battleSystem.getSelectedAllyTarget() == s;
+                    hbd.healthBorder.setStroke(isSelected ? Color.GOLD : Color.BLACK);
+                    hbd.healthBorder.setStrokeWidth(isSelected ? 3 : 2);
+                }
+            }
+        };
+        
+        // Set up click handlers for health bar, border, and HP text
+        if (healthBarData.healthBar != null) {
+            healthBarData.healthBar.setOnMouseClicked(e -> {
+                audioManager.playButtonClick();
+                if (isEnemy) {
+                    battleSystem.setSelectedEnemyTarget(slot);
+                    battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                } else if (isAlly) {
+                    battleSystem.setSelectedAllyTarget(slot);
+                    battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                }
+                highlightSelection.run();
+            });
+        }
+        
+        if (healthBarData.healthBorder != null) {
+            healthBarData.healthBorder.setOnMouseClicked(e -> {
+                audioManager.playButtonClick();
+                if (isEnemy) {
+                    battleSystem.setSelectedEnemyTarget(slot);
+                    battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                } else if (isAlly) {
+                    battleSystem.setSelectedAllyTarget(slot);
+                    battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                }
+                highlightSelection.run();
+            });
+        }
+        
+        if (healthBarData.hpText != null) {
+            healthBarData.hpText.setOnMouseClicked(e -> {
+                if (isEnemy) {
+                    battleSystem.setSelectedEnemyTarget(slot);
+                    battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                } else if (isAlly) {
+                    battleSystem.setSelectedAllyTarget(slot);
+                    battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
+                }
+                highlightSelection.run();
+            });
+        }
+    }
+    
+    /**
      * Check if a character has the Burning Rage talent
      */
     private boolean hasBurningRage(Observer.characterSlot slot) {
@@ -642,7 +934,7 @@ public class  BattleUI {
     private boolean hasBarrier(Observer.characterSlot slot) {
         if (slot.getActiveEffects() == null) return false;
         
-        for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+        for (BuffDebuff effect : slot.getActiveEffects()) {
             if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
                 return true;
             }
@@ -705,10 +997,10 @@ public class  BattleUI {
             debuffText.append("Special Talents:\n");
             
             if (slot.getCharacter().getUniqueValues() != null) {
-                for (characters.Characters.uniqueValue uv : slot.getCharacter().getUniqueValues()) {
+                for (Characters.uniqueValue uv : slot.getCharacter().getUniqueValues()) {
                     try {
                         float value = Float.parseFloat(uv.getValue());
-                        if (value > 0||uv.getName().equals("Burning rage")) {
+                        if (value > 0||uv.getName().equals("Burning rage")||uv.getName().equals("actionCount")) {
                             // Format name: capitalize first letter of each word
                             String displayName = formatTalentName(uv.getName());
                             debuffText.append(displayName);
@@ -734,7 +1026,7 @@ public class  BattleUI {
         debuffText.append("\nBuff/Debuff Effects:\n");
         
         if (slot.getActiveEffects() != null && !slot.getActiveEffects().isEmpty()) {
-            for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+            for (BuffDebuff effect : slot.getActiveEffects()) {
                 String effectIcon = getEffectIcon(effect.getType(), effect.getEffects());
                 String effectDescription = getEffectDescription(effect);
                 if(effect.getName().contains("cd")){
@@ -828,7 +1120,7 @@ public class  BattleUI {
     /**
      * Get description for effect based on its properties using total value (value * stack)
      */
-    private String getEffectDescription(characters.BuffDebuff effect) {
+    private String getEffectDescription(BuffDebuff effect) {
         String effects = effect.getEffects();
         float totalValue = effect.getTotalValue(); // This combines value and stack
         int stack = effect.getStack();
@@ -928,7 +1220,14 @@ public class  BattleUI {
                 avValueText.setFill(Color.DARKSLATEGRAY);
                 // Position to the right of character name
                 double nameWidth = nameText.getLayoutBounds().getWidth();
-                avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4 + nameWidth + 10);
+                if(slot.getCharacter().getName().length()>20){
+                    avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
+                    avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 25);
+                }else {
+                    avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4 + nameWidth + 10);
+                    avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+                }
+
                 avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
                 avValueText.setMouseTransparent(true);
                 healthBarData.avValueText = avValueText;
@@ -1003,8 +1302,15 @@ public class  BattleUI {
                     // Position to the right of character name
                     if (healthBarData.nameText != null) {
                         double nameWidth = healthBarData.nameText.getLayoutBounds().getWidth();
-                        avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4 + nameWidth + 10);
-                        avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+                        if(slot.getCharacter().getName().length()>20){
+                            avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
+                            avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 25);
+                        }else {
+                            avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4 + nameWidth + 10);
+                            avValueText.setTranslateY(healthBarData.healthBorder.getTranslateY() - 5);
+                        }
+
+
                     } else {
                         // Fallback positioning if nameText doesn't exist
                         //avValueText.setTranslateX(healthBarData.healthBorder.getTranslateX() + 4);
@@ -1172,7 +1478,7 @@ public class  BattleUI {
         }
 
         // Set initial viewport to first frame
-        spriteView.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+        spriteView.setViewport(new Rectangle2D(0, 0, frameWidth, frameHeight));
 
         // Create animation timeline
         Timeline animation = new Timeline();
@@ -1189,7 +1495,7 @@ public class  BattleUI {
                 e -> {
                     // Set viewport to show the current frame
                     double viewportX = frameIndex * frameWidth;
-                    spriteView.setViewport(new javafx.geometry.Rectangle2D(
+                    spriteView.setViewport(new Rectangle2D(
                         viewportX, 0, frameWidth, frameHeight
                     ));
                 }
@@ -1289,7 +1595,7 @@ public class  BattleUI {
             return null;
         }
 
-        spriteView.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+        spriteView.setViewport(new Rectangle2D(0, 0, frameWidth, frameHeight));
 
         Timeline animation = new Timeline();
         animation.setCycleCount(1); // Play once, not loop
@@ -1302,7 +1608,7 @@ public class  BattleUI {
                 frameDuration.multiply(i),
                 e -> {
                     double viewportX = frameIndex * frameWidth;
-                    spriteView.setViewport(new javafx.geometry.Rectangle2D(
+                    spriteView.setViewport(new Rectangle2D(
                         viewportX, 0, frameWidth, frameHeight
                     ));
                 }
@@ -1457,7 +1763,7 @@ public class  BattleUI {
             }
 
             // Animate hero sprite moving to target position (1.5x faster: 300ms -> 200ms)
-            javafx.animation.TranslateTransition moveToEnemy = new javafx.animation.TranslateTransition(Duration.millis(200), heroData.idleSprite);
+            TranslateTransition moveToEnemy = new TranslateTransition(Duration.millis(200), heroData.idleSprite);
             moveToEnemy.setToX(targetX); // Absolute position
             moveToEnemy.setToY(targetY); // Absolute position
 
@@ -1593,7 +1899,7 @@ public class  BattleUI {
             }
             
             // Set initial viewport to first frame
-            projectile.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+            projectile.setViewport(new Rectangle2D(0, 0, frameWidth, frameHeight));
             
             // Position directly at target location (centered)
             double spawnX = targetX - (magicProjectileWidth / 2.0);
@@ -1618,7 +1924,7 @@ public class  BattleUI {
                     frameDuration.multiply(i),
                     e -> {
                         double viewportX = frameIndex * frameWidth;
-                        projectile.setViewport(new javafx.geometry.Rectangle2D(
+                        projectile.setViewport(new Rectangle2D(
                             viewportX, 0, frameWidth, frameHeight
                         ));
                     }
@@ -1674,7 +1980,7 @@ public class  BattleUI {
             }
             
             // Set initial viewport to first frame
-            projectile.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+            projectile.setViewport(new Rectangle2D(0, 0, frameWidth, frameHeight));
             
             // Position at hero location (centered)
             double startX = heroX - (magicProjectileWidth / 2.0);
@@ -1699,7 +2005,7 @@ public class  BattleUI {
                     frameDuration.multiply(i),
                     e -> {
                         double viewportX = frameIndex * frameWidth;
-                        projectile.setViewport(new javafx.geometry.Rectangle2D(
+                        projectile.setViewport(new Rectangle2D(
                             viewportX, 0, frameWidth, frameHeight
                         ));
                     }
@@ -1711,7 +2017,7 @@ public class  BattleUI {
             frameAnimation.setOnFinished(e -> {
                 // Show last frame
                 double lastFrameX = lastFrameIndex * frameWidth;
-                projectile.setViewport(new javafx.geometry.Rectangle2D(
+                projectile.setViewport(new Rectangle2D(
                     lastFrameX, 0, frameWidth, frameHeight
                 ));
             });
@@ -1720,7 +2026,7 @@ public class  BattleUI {
             double endX = targetX - (magicProjectileWidth / 2.0);
             double endY = targetY - (magicProjectileHeight / 2.0);
             
-            javafx.animation.TranslateTransition moveProjectile = new javafx.animation.TranslateTransition(
+            TranslateTransition moveProjectile = new TranslateTransition(
                 Duration.millis(500), projectile);
             moveProjectile.setToX(endX);
             moveProjectile.setToY(endY);
@@ -1821,11 +2127,11 @@ public class  BattleUI {
                     }
                 });
                 // Reset viewport to first frame
-                heroData.skillSprite.setViewport(new javafx.geometry.Rectangle2D(0, 0, 64, 64));
+                heroData.skillSprite.setViewport(new Rectangle2D(0, 0, 64, 64));
                 heroData.skillAnimation.play();
             } else {
                 // No skill animation, just wait a bit then return/resume
-                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(Duration.millis(500));
+                PauseTransition pause = new PauseTransition(Duration.millis(500));
                 pause.setOnFinished(pauseFinished -> {
                     if (shouldReturn) {
                         returnHeroToOriginalPosition(heroData);
@@ -1841,7 +2147,7 @@ public class  BattleUI {
             }
         } else {
             // No skill sprite, just wait then return/resume
-            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(Duration.millis(500));
+            PauseTransition pause = new PauseTransition(Duration.millis(500));
             pause.setOnFinished(pauseFinished -> {
                 if (shouldReturn) {
                     returnHeroToOriginalPosition(heroData);
@@ -1871,7 +2177,7 @@ public class  BattleUI {
         }
 
         // Animate hero sprite returning to original position
-        javafx.animation.TranslateTransition returnHome = new javafx.animation.TranslateTransition(
+        TranslateTransition returnHome = new TranslateTransition(
             Duration.millis(300), heroData.idleSprite);
         returnHome.setToX(heroData.originalSpriteX); // Return to original absolute position
         returnHome.setToY(heroData.originalSpriteY); // Return to original absolute position
@@ -2067,7 +2373,7 @@ public class  BattleUI {
             Object ud = skill1Box.getUserData();
             if (ud instanceof Group) {
                 Group textGroup = (Group) ud;
-                for (javafx.scene.Node node : textGroup.getChildren()) {
+                for (Node node : textGroup.getChildren()) {
                     getGameScene().removeUINode(node);
                 }
             } else if (ud instanceof Text) {
@@ -2079,7 +2385,7 @@ public class  BattleUI {
             Object ud = skill2Box.getUserData();
             if (ud instanceof Group) {
                 Group textGroup = (Group) ud;
-                for (javafx.scene.Node node : textGroup.getChildren()) {
+                for (Node node : textGroup.getChildren()) {
                     getGameScene().removeUINode(node);
                 }
             } else if (ud instanceof Text) {
@@ -2091,7 +2397,7 @@ public class  BattleUI {
             Object ud = skill3Box.getUserData();
             if (ud instanceof Group) {
                 Group textGroup = (Group) ud;
-                for (javafx.scene.Node node : textGroup.getChildren()) {
+                for (Node node : textGroup.getChildren()) {
                     getGameScene().removeUINode(node);
                 }
             } else if (ud instanceof Text) {
@@ -2103,7 +2409,7 @@ public class  BattleUI {
             Object ud = skill4Box.getUserData();
             if (ud instanceof Group) {
                 Group textGroup = (Group) ud;
-                for (javafx.scene.Node node : textGroup.getChildren()) {
+                for (Node node : textGroup.getChildren()) {
                     getGameScene().removeUINode(node);
                 }
             } else if (ud instanceof Text) {
@@ -2123,6 +2429,8 @@ public class  BattleUI {
             s3 = hero.getSkills().size() > 6 ? hero.getSkills().get(6) : Ability.SkillRegistry.getByName("N/A");
             s4 = hero.getSkills().size() > 7 ? hero.getSkills().get(7) : Ability.SkillRegistry.getByName("N/A");
 
+        }else if(hero.getBuffDebuffByName("Arua's charge")!=null&&hero.getBuffDebuffByName("Arua's charge").getStack()>2){
+            s1 = hero.getSkills().size() > 4 ? hero.getSkills().get(4) : Ability.SkillRegistry.getByName("N/A");
         }
         // Create large skill boxes with skill name and target text on them (stacked left to right, sticking together)
         double skillY = 550; // Same Y position for all skills
@@ -2273,7 +2581,7 @@ public class  BattleUI {
                         return; // Not enough Party MP
                     }
                     // Check Burning Rage affordability
-                    if (!characters.SpecialTalents.hasEnoughBurningRage(attacker, skill.getBurningRageRequired())) {
+                    if (!SpecialTalents.hasEnoughBurningRage(attacker, skill.getBurningRageRequired())) {
                         return; // Not enough Burning Rage
                     }
                 }
@@ -2395,9 +2703,11 @@ public class  BattleUI {
         boolean available = skill != null && !skill.getName().equals("N/A");
         boolean hasEnoughMp = available && hero.getCurrentMp() >= skill.getMpCost();
         boolean hasEnoughPartyMp = available && (battleSystem.getPartyMp() >= skill.getPartyMpCost()||skill.getPartyMpCost()==0);
-        boolean hasEnoughRage = available && characters.SpecialTalents.hasEnoughBurningRage(hero, skill.getBurningRageRequired());
+        boolean hasEnoughRage = available && SpecialTalents.hasEnoughBurningRage(hero, skill.getBurningRageRequired());
         boolean affordable = hasEnoughMp && hasEnoughRage && hasEnoughPartyMp;
-        
+        if(hero.getBuffDebuffByName("Elysion break down")!=null&& (skill != null && skill.getName().equals("Aramute's obliterated"))){
+            available = false;
+        }
         if (!available) {
             box.setOpacity(0.3);
             box.setStroke(Color.GRAY);
@@ -2626,7 +2936,7 @@ public class  BattleUI {
         }
 
         // Set initial viewport to first frame
-        spriteView.setViewport(new javafx.geometry.Rectangle2D(0, 0, frameWidth, frameHeight));
+        spriteView.setViewport(new Rectangle2D(0, 0, frameWidth, frameHeight));
 
         Timeline animation = new Timeline();
         animation.setCycleCount(1); // Play once, not loop
@@ -2641,7 +2951,7 @@ public class  BattleUI {
                 frameDuration.multiply(i),
                 e -> {
                     double viewportX = frameIndex * frameWidth;
-                    spriteView.setViewport(new javafx.geometry.Rectangle2D(
+                    spriteView.setViewport(new Rectangle2D(
                         viewportX, 0, frameWidth, frameHeight
                     ));
                 }
@@ -2678,14 +2988,14 @@ public class  BattleUI {
                     if (newProgress.doubleValue() >= 1.0) {
                         if (!effectImage.isError() && effectImage.getWidth() > 0) {
                             // Set initial viewport to first frame (64x64)
-                            sprite.setViewport(new javafx.geometry.Rectangle2D(0, 0, 64, 64));
+                            sprite.setViewport(new Rectangle2D(0, 0, 64, 64));
                         }
                     }
                 });
             } else {
                 // Image already loaded, set viewport immediately
                 if (effectImage.getWidth() > 0 && !effectImage.isError()) {
-                    sprite.setViewport(new javafx.geometry.Rectangle2D(0, 0, 64, 64));
+                    sprite.setViewport(new Rectangle2D(0, 0, 64, 64));
                 }
             }
             
@@ -3106,9 +3416,9 @@ public class  BattleUI {
         if (barrierBarData == null) return;
         
         // Get the barrier effect
-        characters.BuffDebuff barrierEffect = null;
+        BuffDebuff barrierEffect = null;
         if (slot.getActiveEffects() != null) {
-            for (characters.BuffDebuff effect : slot.getActiveEffects()) {
+            for (BuffDebuff effect : slot.getActiveEffects()) {
                 if ("BARRIER".equals(effect.getEffects()) && effect.getStack() > 0) {
                     barrierEffect = effect;
                     break;
