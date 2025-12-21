@@ -150,6 +150,10 @@ public class DialogSystem {
         // Display the dialog
         if (dialogUI != null) {
             String displayText = currentDialog.getDisplayText(currentContext);
+            
+            // Set background image based on dialog title
+            dialogUI.setBackgroundFromTitle(currentDialog.getId());
+            
             dialogUI.showDialog(
                 currentDialog.getSpeakerName(),
                 displayText,

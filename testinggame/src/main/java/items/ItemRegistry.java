@@ -11,7 +11,25 @@ public class ItemRegistry {
     public static void init() {
         // Clear existing registry
         registry.clear();
-        
+        // ===================== EQUIPMENT ITEMS =====================
+        registerItem(new StoryItem("necro_sword","Necro Sword",
+                        "A sword that consume their user strength to make a lethal cut at their enemy",
+                        0,
+                        Item.ItemRarity.LEGENDARY));
+        registerItem(new StoryItem("radiant_core","Radiant Core",
+                "A high power mana crystal from the heaven",
+                0,
+                Item.ItemRarity.LEGENDARY));
+        registerItem(new StoryItem("Phoenix_feather","Phoenix Feather",
+                "Feather of a Phoenix, it has many use, invulnerable for a while, generate high mana or even bring back from the death",
+                0,
+                Item.ItemRarity.LEGENDARY));
+        registerItem(new StoryItem("litaru_sword","Litaru Sword",
+                "In one human life, one bright movement is enough",
+                0,
+                Item.ItemRarity.LEGENDARY));
+
+
         // ===================== CONSUMABLE ITEMS =====================
         
         // Healing Potions

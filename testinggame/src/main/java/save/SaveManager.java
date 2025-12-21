@@ -66,7 +66,8 @@ public class SaveManager {
             // Format: Line 1: Available characters (comma-separated)
             //         Line 2: Gold coin
             //         Line 3: Return time
-            //         Line 4: Status string (last)
+            //         Line 4: Status string
+            //         Line 5: Story item IDs (comma-separated)
             try (PrintWriter writer = new PrintWriter(new FileWriter(savePath.toFile()))) {
                 // Write available characters
                 if (saveData.getAvailableCharacters() != null && !saveData.getAvailableCharacters().isEmpty()) {
@@ -81,9 +82,16 @@ public class SaveManager {
                 // Write return time
                 writer.println(saveData.getReturnTime());
                 
-                // Write status string (last)
+                // Write status string
                 if (saveData.getStatus() != null) {
                     writer.println(saveData.getStatus());
+                } else {
+                    writer.println(); // Empty line
+                }
+                
+                // Write story item IDs
+                if (saveData.getStoryItemIds() != null && !saveData.getStoryItemIds().isEmpty()) {
+                    writer.println(String.join(",", saveData.getStoryItemIds()));
                 } else {
                     writer.println(); // Empty line
                 }
@@ -162,12 +170,28 @@ public class SaveManager {
                 saveData.setReturnTime(0);
             }
             
-            // Read status string (line 4, last)
+            // Read status string (line 4)
             String statusLine = reader.readLine();
             if (statusLine != null) {
                 saveData.setStatus(statusLine);
             } else {
                 saveData.setStatus("");
+            }
+            
+            // Read story item IDs (line 5)
+            String storyItemsLine = reader.readLine();
+            if (storyItemsLine != null && !storyItemsLine.trim().isEmpty()) {
+                String[] storyItems = storyItemsLine.split(",");
+                List<String> storyItemList = new ArrayList<>();
+                for (String itemId : storyItems) {
+                    String trimmed = itemId.trim();
+                    if (!trimmed.isEmpty()) {
+                        storyItemList.add(trimmed);
+                    }
+                }
+                saveData.setStoryItemIds(storyItemList);
+            } else {
+                saveData.setStoryItemIds(new ArrayList<>());
             }
             
             System.out.println("Game loaded successfully from: " + savePath.toAbsolutePath());

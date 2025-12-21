@@ -552,6 +552,10 @@ public class SpecialTalents {
         
         // Apply stat modifications immediately
         applyStatModifications(slot, effect);
+        if(effect.getEffects().equals("HP")){
+            slot.setCurrentHp(Math.min(slot.getCurrentHp(),slot.getCharacter().getHp()));
+            battleUI.updateHealthUI(slot);
+        }
     }
     
     /**

@@ -28,6 +28,7 @@ public class DialogUI {
     private Rectangle dialogBox;
     private Rectangle characterImageBox;
     private ImageView characterImage;
+    private ImageView backgroundImage; // Background image for dialog
     private Text dialogText;
     private Text speakerNameText;
     private StackPane skipButton;
@@ -36,6 +37,7 @@ public class DialogUI {
     private List<StackPane> optionButtons;
     private List<Text> optionTexts;
     private boolean isVisible = false;
+    private String currentBackgroundTitle; // Track current background title to detect changes
     
     // Typewriter effect
     private Timeline typewriterTimeline;
@@ -104,6 +106,15 @@ public class DialogUI {
         dialogText.setTranslateY(DIALOG_TEXT_Y);
         dialogText.setMouseTransparent(true); // Make text non-interactive so it doesn't block button clicks
 
+        // Background image (full screen, behind everything)
+        backgroundImage = new ImageView();
+        backgroundImage.setFitWidth(800); // Full screen width
+        backgroundImage.setFitHeight(600); // Full screen height
+        backgroundImage.setTranslateX(0);
+        backgroundImage.setTranslateY(0);
+        backgroundImage.setVisible(false); // Hidden by default
+        backgroundImage.setMouseTransparent(true); // Don't block clicks
+        currentBackgroundTitle = null;
         
         // Options container
         optionsContainer = new HBox();
@@ -116,6 +127,7 @@ public class DialogUI {
         skipButton = buildSkipButton();
 
         mainContainer.getChildren().addAll(
+            backgroundImage, // Background first (behind everything)
             dialogBox,
             characterImageBox,
             characterImage,
@@ -328,11 +340,141 @@ public class DialogUI {
     }
     
     /**
+     * Set background image based on dialog title
+     * @param dialogTitle The dialog title (will extract base title and look for {baseTitle}_background.png)
+     */
+    public void setBackgroundFromTitle(String dialogTitle) {
+        if (dialogTitle == null || dialogTitle.isEmpty()) {
+            // Remove background if title is empty
+            if (currentBackgroundTitle != null) {
+                backgroundImage.setVisible(false);
+                backgroundImage.setImage(null);
+                currentBackgroundTitle = null;
+            }
+            return;
+        }
+        
+        // Extract base title by removing _1, _2, etc. suffix
+        String baseTitleTemp = dialogTitle;
+        int lastUnderscore = dialogTitle.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+            String afterUnderscore = dialogTitle.substring(lastUnderscore + 1);
+            try {
+                Integer.parseInt(afterUnderscore);
+                // If it's a number, extract base title
+                baseTitleTemp = dialogTitle.substring(0, lastUnderscore);
+            } catch (NumberFormatException e) {
+                // Not a number, use full title as base
+                baseTitleTemp = dialogTitle;
+            }
+        }
+        
+        // Make final copy for use in lambda
+        final String baseTitle = baseTitleTemp;
+        
+        // If title changed, remove old background
+        if (currentBackgroundTitle != null && !currentBackgroundTitle.equals(baseTitle)) {
+            backgroundImage.setVisible(false);
+            backgroundImage.setImage(null);
+        }
+        
+        // Try to load new background image
+        String backgroundPath = "sprites/" + baseTitle + "_background.png";
+        String expectedFileName = baseTitle + "_background.png";
+        try {
+            Image bgImg = FXGL.image(backgroundPath);
+            if (bgImg == null || bgImg.isError()) {
+                // Image is null or has error, hide background
+                backgroundImage.setVisible(false);
+                backgroundImage.setImage(null);
+                currentBackgroundTitle = null;
+                return;
+            }
+            
+            // Check if image is valid (not a placeholder)
+            // FXGL returns a 66x66 placeholder when file not found
+            double width = bgImg.getWidth();
+            double height = bgImg.getHeight();
+            
+            // Check if it's a placeholder image (66x66 is FXGL's default error image size)
+            if (width == 66 && height == 66) {
+                // This is likely a placeholder, hide background
+                backgroundImage.setVisible(false);
+                backgroundImage.setImage(null);
+                currentBackgroundTitle = null;
+                return;
+            }
+            
+            // Check if image dimensions are valid
+            if (width <= 0 || height <= 0 || Double.isNaN(width) || Double.isNaN(height)) {
+                // Invalid dimensions, hide background
+                backgroundImage.setVisible(false);
+                backgroundImage.setImage(null);
+                currentBackgroundTitle = null;
+                return;
+            }
+            
+            // Check if image URL contains the expected filename (to verify it's not a placeholder)
+            String imageUrl = bgImg.getUrl();
+            if (imageUrl != null && !imageUrl.contains(expectedFileName) && !imageUrl.contains(baseTitle + "_background")) {
+                // URL doesn't match expected file - likely a placeholder
+                backgroundImage.setVisible(false);
+                backgroundImage.setImage(null);
+                currentBackgroundTitle = null;
+                return;
+            }
+            
+            // Image appears valid, but wait for it to finish loading if it's loading in background
+            if (bgImg.isBackgroundLoading()) {
+                // Image is still loading - add listener to check when done
+                bgImg.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                    if (newProgress.doubleValue() >= 1.0) {
+                        // Image finished loading - validate again
+                        if (bgImg.isError() || bgImg.getWidth() <= 0 || bgImg.getHeight() <= 0 ||
+                            (bgImg.getWidth() == 66 && bgImg.getHeight() == 66)) {
+                            backgroundImage.setVisible(false);
+                            backgroundImage.setImage(null);
+                            currentBackgroundTitle = null;
+                        } else {
+                            // Valid image, show it
+                            backgroundImage.setImage(bgImg);
+                            backgroundImage.setVisible(true);
+                            currentBackgroundTitle = baseTitle;
+                        }
+                    }
+                });
+            } else {
+                // Image already loaded - validate and show if valid
+                if (width > 0 && height > 0 && !Double.isNaN(width) && !Double.isNaN(height) &&
+                    !(width == 66 && height == 66)) {
+                    backgroundImage.setImage(bgImg);
+                    backgroundImage.setVisible(true);
+                    currentBackgroundTitle = baseTitle;
+                } else {
+                    backgroundImage.setVisible(false);
+                    backgroundImage.setImage(null);
+                    currentBackgroundTitle = null;
+                }
+            }
+        } catch (Exception e) {
+            // Image not found or error loading, hide background
+            backgroundImage.setVisible(false);
+            backgroundImage.setImage(null);
+            currentBackgroundTitle = null;
+        }
+    }
+    
+    /**
      * Hide the dialog UI
      */
     public void hide() {
         // Stop typewriter animation when hiding
         stopTypewriter();
+        
+        // Remove background when hiding
+        backgroundImage.setVisible(false);
+        backgroundImage.setImage(null);
+        currentBackgroundTitle = null;
         
         if (isVisible) {
             isVisible = false;

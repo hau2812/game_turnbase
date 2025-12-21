@@ -1,7 +1,9 @@
 package dialog;
 
+import audio.AudioManager;
 import battle.BattleSystem;
 import battle.BattleUI;
+import characters.BuffDebuff;
 import map.MapUI;
 import org.example.testing;
 import ui.MenuUI;
@@ -345,6 +347,18 @@ public class DialogRegistrations {
         }else if(battleSystem.containDefeatEnemies("Flamita The Immortal Phoenix")){
             showBattleVictoryDialogFlamitaBoss2();
             testing.return_time+=1;
+        }else if(battleSystem.containDefeatEnemies("Virell the Lifedrinker Sentinel")){
+            showBattleVictoryDialogVirell();
+            testing.storyItemInventory.addStoryItem("necro_sword");
+        }else if(battleSystem.containDefeatEnemies("Solareth the Living Beacon")){
+            showBattleVictoryDialogSolareth();
+            testing.storyItemInventory.addStoryItem("radiant_core");
+        }else if(battleSystem.containDefeatEnemies("Spiritual Monster")){
+            showDialogByTitle("LitaruEndDialog4","menu");
+            testing.storyItemInventory.addStoryItem("litaru_sword");
+            testing.storyItemInventory.removeStoryItem("necro_sword");
+            testing.storyItemInventory.removeStoryItem("radiant_core");
+            testing.storyItemInventory.removeStoryItem("Phoenix_feather");
         }
     }
     public static void showBattleVictoryDialogFlamitaBoss(){
@@ -388,43 +402,53 @@ public class DialogRegistrations {
                 "Pieberry:Right...!;" +
                 ":Dashing through the flame she channel up her very last of her energy to cast her most proud spell;" +
                 ":The dazzling light shine up...too much that even the dev can't see anything and must shifts the scene to Azar;" +
+                ":(Outside the dungeon);" +
+                ":Azar:(I should make a report about this);" +
+                "(A random poster):Warning...Crazy red women inside");
+        showDialogByTitle("FlamitaBoss2BattleVictory","");
+    }
+    public static void showBattleVictoryDialogVirell(){
+        dialogMakerHelper("battleVictoryDialogVirell;" +
+                "Azar:Okay...here our sword (pick up the sword from the guardian dead body);" +
+                "Azar:Legend said the sword will eventually consume all of it user's health...;" +
+                "Azar:And after they die, the power of the sword will get out of the sword, seek out and revive the guardian and another cycle begin...;" +
+                "Litaru:What a mischievous sword :>;" +
+                "Azar:Better not use this thing... How did you even know about this place though;" +
+                "Litaru:Hey, don’t underestimate how much an Aureaxis agent knows~;" +
+                "Azar:Right...Anyway that done for today...Next thing is...'Radiant Core' right?;" +
+                "Litaru:Ye~Call me when you're ready;");
+        showDialogByTitle("battleVictoryDialogVirell","");
+    }
+    public static void showBattleVictoryDialogSolareth(){
+        dialogMakerHelper("battleVictorySolareth;" +
+                "Azar:Ok...Radiant Core...;" +
+                "Azar:This thing can even lit the forge for a day;" +
+                "Litaru:Hey Azar look!(pointing in front of her);" +
+                "Azar:...?;");
+        dialogMakerHelper("battleVictorySolareth2;" +
                 "Azar:...;" +
-                ":Well Azar seem can't say anything so let's end the dialog here:P ");
-        showDialogByTitle("FlamitaBoss2BattleVictory","menu");
+                "Litaru:Sunset is my favorite time of day!;" +
+                "Litaru:Doesn't it beautiful Azar...?;" +
+                "Azar:...;" +
+                ":From the mountain peak, the sunset spills over the city like a sea of gold — sunlight fading across the rooftops, bathing the world in a beauty both majestic and gentle;" +
+                "Azar:Yes...Yes it is...;" +
+                "Litaru:I love it because it exists only for a fleeting moment, marking the most beautiful time of the day;" +
+                ":(After a while watch the sunset together...);" +
+                "Azar:Well... we should head back, it's getting dark;" +
+                "Litaru:Ye, you right;" +
+                "Azar:...no way i'm gonna walk back to the city...let's teleport back;");
+        dialogMakerHelper("battleVictorySolareth3;" +
+                ":(At the city...);" +
+                "Azar:Ok so last piece is the Phoenix feather...Because Phoenix went extinct for long time, finding them is pretty hard;" +
+                "Litaru:I can get one by...order one from Aureaxis but it gonna take a while...;" +
+                "Azar:I'll try to get one somehow;" +
+                "Litaru:Okay...If you find it first then tell me and it's finally time to crack the case;" +
+                "Azar:(Phoenix ha...I wonder...;" +
+                "dev:Ok there's no way you don't know where to get it...right?");
+        linkChainToTheEndOf("battleVictorySolareth","battleVictorySolareth2_1");
+        linkChainToTheEndOf("battleVictorySolareth","battleVictorySolareth3_1");
+        showDialogByTitle("battleVictorySolareth","");
     }
-    /**
-     * Register a test dialog between Azar and Leuna (10 lines)
-     * Now uses dialogMakerHelper for easier dialog creation
-     */
-    private static void registerAzarLeunaDialog() {
-        // Base dialog (5 lines) with purpose smallTalk
-        String dialogString = "azar_leuna;Azar:Line 1;Leuna:Line 2;Azar:Line 3;Leuna:Line 4;Azar:Line 5";
-        dialogMakerHelperWithPurpose(dialogString, "smallTalk");
-
-        // Branch dialogs
-        String dialogString2 = "azar_leuna_option1;Azar:Option1_1;Leuna:Option1_2";
-        String dialogString3 = "azar_leuna_option2;Azar:Option2_1;Leuna:Option2_2";
-        String dialogString4 = "azar_leuna_continue1;Azar:Line 6;Leuna:Line 7";
-
-        dialogMakerHelper(dialogString2);
-        dialogMakerHelper(dialogString3);
-        dialogMakerHelper(dialogString4);
-
-        DialogLibrary library = DialogLibrary.getInstance();
-
-        // Add options after line 5 (azar_leuna_5)
-        DialogEntry branchEntry = library.getDialog("azar_leuna_5");
-        if (branchEntry != null) {
-            branchEntry.getOptions().clear();
-            branchEntry.withOption(new DialogOption("Option 1").withNextDialog("azar_leuna_option1_1"));
-            branchEntry.withOption(new DialogOption("Option 2").withNextDialog("azar_leuna_option2_1"));
-        }
-
-        // Link ends of option dialogs to continuation
-        linkChainTo("azar_leuna_option1", "azar_leuna_continue1_1");
-        linkChainTo("azar_leuna_option2", "azar_leuna_continue1_1");
-    }
-
     private static void registerIntroDialog(){
         String dialogString = "intro;" +
                 ":In a world that literally anything can happen...;" +
@@ -485,14 +509,31 @@ public class DialogRegistrations {
                 "Azar:(I remember the king of Pyro kingdom is still alive. If she has a mother...or a sibling...);" +
                 "Azar:Well...That’s good to know...I'll call you later when I need to go to Lost Dungeon together with me;" +
                 "Flamita:You know I never miss a chance to be stronger. You can count on me");
-
-        DialogLibrary library = DialogLibrary.getInstance();
+        dialogMakerHelper("FlamitaHaveAWalk_Feather;" +
+                "Flamita:Wha...Why do you thing I have it?;" +
+                "Azar:...seriously?;" +
+                "Flamita:Ok I... does have it, but why do you even need it?;" +
+                "Azar:For a case I just got;" +
+                "Flamita:Do you even know how to use it?;" +
+                "Azar:Don't worry we have many file about it;" +
+                "Flamita:Fine...;" +
+                "Azar:So you gonna give it to me :> ?;" +
+                "Flamita:Not here dumb ass, I'll send it into your office;" +
+                "Azar:Nice... thanks Flamita, I owe you this;" +
+                "Flamita:Just make sure you don't waste my feather;" +
+                "Azar:Sure...sure...;" +
+                "Azar:(Wait... when she say 'her's feather' which mean 'her's feather' or 'her's feather'...");
+                DialogLibrary library = DialogLibrary.getInstance();
         linkChainTo("FlamitaHaveAWalk_Other","FlamitaHaveAWalk_Start_1");
         DialogEntry branchEntry = library.getDialog("FlamitaHaveAWalk_Start_1");
         if (branchEntry != null) {
             branchEntry.getOptions().clear();
             branchEntry.withOption(new DialogOption("Talk about other").withNextDialog("FlamitaHaveAWalk_Other_1"));
             branchEntry.withOption(new DialogOption("Ask about Ignari").withNextDialog("FlamitaHaveAWalk_Ignari_1"));
+            if(testing.getStatus().contains("battleVictorySolareth")&&!testing.getStatus().contains("FlamitaHaveAWalk_Feather")) {
+                branchEntry.withOption(new DialogOption("Ask about Phoenix Feather").withNextDialog("FlamitaHaveAWalk_Feather_1"));
+                testing.storyItemInventory.addStoryItem("Phoenix_feather");
+            }
         }
     }
 
@@ -546,19 +587,253 @@ public class DialogRegistrations {
             linkChainToTheEndOf("FlamitaBossFightBegin", "FlamitaBossFightBegin2_1");
         }
     }
-    /**
-     * Show the Azar and Leuna test dialog
-     * This can be called from anywhere to test the dialog system
-     */
-    public static void showAzarLeunaDialog() {
-        showDialogByTitle("azar_leuna","menu");
+
+    public static void showOfficeDialog() {
+        dialogMakerHelperWithPurpose("officeDialogBasic1;" +
+                "Azar:(Every day is the same...There are no clues for 'it'...);" +
+                "Azar:(How long that I have been doing this...);" +
+                "Azar:(...);" +
+                "Azar:(Maybe...maybe one day...)","officeDialog");
+        dialogMakerHelperWithPurpose("officeDialogBasic2;" +
+                "Azar:(Lost dungeon ha...What a joke...);" +
+                "Azar:(Now people seem to know how to play with this thing...);" +
+                "Azar:(Some day the amount of people getting out even higher than getting in...);" +
+                "Azar:(But where did the monster get in though...)","officeDialog");
+        dialogMakerHelperWithPurpose("officeDialogBasic3;" +
+                "Azar:(Who's 'him' they are talking about...);" +
+                "Azar:(But he's said to be stronger than Flamita...);" +
+                "Azar:(Hope he's a chill guy...)","officeDialog");
+        dialogMakerHelper("officeDialogLitaru;" +
+                ":With many success investigate run on Lost Dungeon, Azar has be able to bring back a lot of relic and information for the center;" +
+                ":But seem like he doesn't have any feeling of satisfaction...;" +
+                "Clint:I have heard about your accomplishment Azar... and you deserve a vacation;" +
+                "Azar:I don't need a vacation...;" +
+                "Clint:Right...Anyway there're a new case about some kind of cult that just has rife at a random village near the city;" +
+                "Clint:I'll need you to investigate it and report as soon as possible;" +
+                "Azar:Sure...just leave the case file there and I'll get going;" +
+                "Clint:...and one more thing Azar...;" +
+                "Azar:What else?;" +
+                "Clint:How long until you decide to have a family?;" +
+                "Azar:Wha...What kind of question is that?;" +
+                "Clint:You have working here for 10 years Azar...Don't you thing it's time to take some rest?;" +
+                "Azar:I'm still doing good, and also I cannot stop until I find out 'what happened' then;" +
+                "Clint:Seem like I can't stop you Azar...but I must say...;" +
+                "Clint:Having a purpose in life is good but...You must also seek happiness for yourself;" +
+                "Azar:...;" +
+                "Clint:Ah...what I'm I saying... Anyway just be careful Azar, cult thing is sometime very ominous");
+        dialogMakerHelper("officeDialogAfterVirell;" +
+                ":Azar seem to checking some file...;" +
+                "Clint:Hey...How is it going Azar?;" +
+                "Azar:So far so good...I got every info I need to deal with this case;" +
+                "Clint:I saw you bring the Necro Sword to your warehouse, I'll not ask why you need it but is it ok to go get it alone?;" +
+                "Azar:Why do you thing I'd go alone?;" +
+                "Clint:Oh come on… like I don’t know you already...;" +
+                "Clint:The great Azar always 'Well this case needs to be kept confidential, no ally allow';" +
+                "Azar:...;" +
+                "Clint:Except when going to public dungeon, you always investigate by yourself;" +
+                "Azar:Okay...Okay...This time I didn't go alone;" +
+                "Clint:WHAT!? WITH WHO!?;" +
+                "Azar:There're a girl work at Aureaxis seem to have the same case as me;" +
+                "Clint:A GIRL!?;" +
+                "Clint:Ok so when do I can get your wedding invitation card;" +
+                "Azar:The fuck? We just met... and beside we're just partner of this one case;" +
+                "Clint:Oh~I~Don't~Thing~So~Azar~;" +
+                "Azar:...;" +
+                "Clint:Anyway...All the way from Aureaxis ha? I'll check about that girl for you;" +
+                "Azar:Hey I didn't said I ne...;" +
+                "Clint:I~'ll~Get~Going~;" +
+                "Azar:...");
+        dialogMakerHelper("officeDialogAfterSolareth;" +
+                "Clint:I have check all the operational cooperation file with Aureaxis but I have no information about your Litaru;" +
+                "Azar:(Your? ._.) Seem like she maybe a secret agent then?;" +
+                "Clint:I don't know Azar... They always have paper work for every guy work in there;" +
+                "Azar:Why do you thing they have to tell you everything;" +
+                "Clint:Well...ye... you got a point...;" +
+                "Clint:But you need to be careful Azar...;" +
+                "Azar:Sure...sure...;");
+        dialogMakerHelper("officeDialogAfterLitaru;" +
+                "Clint:Oh I found some file about your case Azar;" +
+                "Clint:This thing is so old...like 50 years before;" +
+                "Azar:WOW!?So helpful...thank you Clint ._.;" +
+                "Clint:What?;" +
+                "Azar:I've already done this case Clint;" +
+                "Clint:Oh...eh...How about the Litaru of your?;" +
+                "Azar:She gone...;" +
+                "Clint:What...she left this city to go back already?;" +
+                "Clint:It's fine Azar...life is full of opportunity;" +
+                "Azar:Ye~yea...;" +
+                "Clint:Well...you might take some rest, good work Azar;" +
+                "Azar:...;");
+        if(!testing.getStatus().contains("watchedOfficeDialogLitaru")&&testing.return_time>=5){
+            showOnlyDialogByTitle("officeDialogLitaru","menu");
+            testing.addStatus("watchedOfficeDialogLitaru");
+        }
+        else if(!testing.storyItemInventory.hasStoryItem("litaru_sword")&&testing.getStatus().contains("battleVictoryDialogVirell")&&!testing.getStatus().contains("officeDialogAfterVirell")){
+            showDialogByTitle("officeDialogAfterVirell","menu");
+        }
+        else if(!testing.storyItemInventory.hasStoryItem("litaru_sword")&&testing.getStatus().contains("battleVictorySolareth")&&!testing.getStatus().contains("officeDialogAfterSolareth")){
+            showDialogByTitle("officeDialogAfterSolareth","menu");
+        }
+        else if(testing.storyItemInventory.hasStoryItem("litaru_sword")&&!testing.getStatus().contains("officeDialogAfterLitaru")){
+            showDialogByTitle("officeDialogAfterLitaru","menu");
+        }
+        else {
+            showRandomDialogWithPurpose("officeDialog", "menu");
+        }
     }
 
-    /**
-     * Show a random dialog matching the given purpose.
-     * @param purpose the purpose tag to filter dialogs
-     */
-    public static void showRandomDialogWithPurpose(String purpose) {
+    public static void showLitaruStartDialog() {
+        dialogMakerHelper("LitaruStart;" +
+                ":(At a random village...);" +
+                "Azar:Okay...They're really seem to doing something;" +
+                ":(Hiding at a bush Azar can see a bunch of people doing something like a ritual);" +
+                "Azar:I might have to take a note at this...;" +
+                "???:(whisper)Ye...they seem doing something menacing ha...;" +
+                "Azar:What the...who's there;" +
+                "???:Chill...You are a detective too right?;" +
+                "Azar:How...did you know? And how did you find me?;" +
+                "???:Well this is the first best hiding spot from the city way to here;" +
+                "???:A good view, a discreet place, and no one will go to here,... only a good detective will know this spot;" +
+                "Azar:And you are...?;" +
+                "???:I'm just a detective from Aureaxis(the biggest center kingdom);" +
+                "Azar:Really? From all the way there in Aureaxis? Show me your name card;" +
+                "???:Here...:>;" +
+                "Azar:So...Miss Litaru right?;" +
+                "Litaru:Ah... just call me Litaru;" +
+                "Azar:And my name's Azar;" +
+                "Litaru:Oh I know...;" +
+                "Azar:Really?;" +
+                "Litaru:Who doesn't know the best detective in the city Azar?;" +
+                "Azar:Well...So how long did you on this case? Did you find anything ?;" +
+                "Litaru:It's seem like they're going to perform some kind of ritual at a unknow place;" +
+                "Litaru:They need some ingredients too and are buying them with the high prize;" +
+                "Azar:Great... Then just get one ingredient and go trade with them to get inside and catch them;" +
+                "Litaru:The problem is they only buy all ingredients at once;" +
+                "Azar:Damn...What are those ? Maybe I can ask my superior to get some;" +
+                "Litaru:'Necro Sword','Radiant Core' and a'Phoenix feather';" +
+                "Azar:Ok they don't have it ._.;" +
+                "Litaru:Well...I know where to find it though;" +
+                "Azar:Hmmm...Seem like we gonna have an adventure;" +
+                "Litaru:We:>?;" +
+                "Azar:Well...you're here mean you're on this case too right...?;" +
+                "Litaru:Sure...let's work this out together...'partner':>;" +
+                "Azar:...");
+        showDialogByTitle("LitaruStart","menu");
+    }
+    public static void showLitaruEndDialog(){
+        dialogMakerHelper("LitaruEndDialog;" +
+                "Litaru:Oh...that was quick;" +
+                "Litaru:Hmmm...They said to buy the item in the next few day so... we'll need to wait;" +
+                "Azar:Ah...that fine...I'll need to rest for a bit for the show down battle with them;" +
+                "Litaru:Ehe...I don't thing you will need to fight at all;" +
+                "Azar:Oh...Why are you so sure?;" +
+                "Litaru:Detective instinct:>;" +
+                "Azar:._.???;");
+        dialogMakerHelper("LitaruEndDialog2;" +
+                "Litaru:Oh...it's the day ha?;" +
+                "Azar:Yep, time to find out what they really do;" +
+                "Litaru:You got the items ?;" +
+                "Azar:All in this backpack;" +
+                "Litaru:Then let's go!;" +
+                ":(after a while of walking to the village);" +
+                ":(at the village...);" +
+                "Litaru:Give me the items, they know me so I should be the one who do the trade;" +
+                "Azar:Sure (give the items);" +
+                ":(walking...);" +
+                "Azar:Wait...why it's so quiet, where's everyone?;" +
+                "Litaru:They've left for the ritual...;" +
+                "Azar:What...?;");
+        dialogMakerHelper("LitaruEndDialog3;" +
+                "Litaru:Sorry Azar...but this's the only way...(take all the item they have collected so far and show it in front of her);"+
+                "Azar:What are you talking about ???;" +
+                "Litaru:The ritual...must be completed;" +
+                "Azar:Wha...;" +
+                ":(suddenly monsters from every where spawning at thin air, the wind howling, the dark cloud hide the sunlight...);" +
+                "Litaru:A...So it's time...;" +
+                "Azar:Hey Litaru it's dangerous here, how about we go somewhere and talk about this first;" +
+                "Litaru:Don't worry Azar...You're not their target;" +
+                "Litaru:(one hand hold the Necro Sword, the other hand slam the Radian Core at the sword);" +
+                ":(the energy blooming out, get fed by the sword, the sword is become more active than ever);" +
+                "Azar:What are you doing Litaru???;" +
+                ":(one monster rush in, pass by Azar jump straight at Litaru);" +
+                ":(she hold the sword tight, slashing down the monster with one hit);" +
+                ":(but as the negative effect kicking in, her arm show many dark line getting longer);" +
+                "Litaru:Ah...(Squeeze the Phoenix Feather, it disappear and releasing Phoenix energy, calming the impact of the sword);" +
+                "Azar:No way...;" +
+                "Litaru:Azar...like the sunset, people only need one bright moment to be remember...;" +
+                "Litaru:So please Azar...Bear witness to this moment of mine;");
+        dialogMakerHelper("LitaruEndDialog4;" +
+                ":(as the Phoenix energy run out, Litaru fall from the air, Azar rushed in, catch and carry her...);" +
+                ":(the spiritual monster seem to complete their task, slowly disappear);" +
+                "Litaru:A...sorry that I have lied to you Azar;" +
+                ":(her body, no longer protected by Phoenix energy, slowly wither away);" +
+                "Azar:Why...why it has to be you?;" +
+                "Litaru:Well...a long time ago, the people of this village had kill a innocent child by accident;" +
+                "Litaru:Her mother, furiously use all her might to cast a curse on this village;" +
+                "Litaru:Each 50 years, one young person who had been affected will be consume by the dark spirit;" +
+                "Litaru:I was born just to be dead Azar, alone, cold in the darkness...;" +
+                "Litaru:But luckily I have met you, you have show me the last happiness of life;" +
+                "Litaru:Sorry I have made you go though this...;" +
+                "Litaru:Promise me Azar...that you will find yourself some happiness after this...;" +
+                "Azar:I...I promise;" +
+                "Litaru:Ehe...thank you Azar, thank you for everything;" +
+                ":(as the dark cloud fade away, the sun shine again at two partner...);" +
+                "Litaru:Oh...the sun...this is...sunrise right...? So beautiful...;" +
+                "Litaru:So...warm...;" +
+                ":(her body slowly disappear, leaving Azar standing there);" +
+                ":(...);" +
+                ":(picking up the sword left by her, now the power have left away, it now only a empty shell);" +
+                ":(but in Azar eye, this sword is more than what we can imagine);");
+        if(testing.status.contains("LitaruEndDialog")&&!testing.status.contains("LitaruEndDialog2")){
+            showDialogByTitle("LitaruEndDialog2","");
+            DialogSystem system = DialogSystem.getInstance();
+            system.setOnDialogEnd(() -> {
+                AudioManager.getInstance().setMusicVolume(0.5);
+                showDialogByTitle("LitaruEndDialog3","litaru_last_battle");
+                AudioManager.getInstance().playMusic("litaru.mp3",true);
+            });
+        }else{
+            showDialogByTitle("LitaruEndDialog","menu");
+
+        }
+    }
+    public static void showStartDungeonDialog(){
+        dialogMakerHelper("StartDungeonLitaruDialog;" +
+                "Azar:So how exactly did you on to this?;" +
+                "Litaru:Well...it's actually my vacation, I went to this city because of the delicious food;" +
+                "Litaru:But when I walking around the city I heard a suspicious guy talking with a merchant about these kind of stuff;" +
+                "Litaru:After that I know my vacation is about to an end...I follow him. get to the village and then found you;" +
+                "Azar:Ah...I see...;" +
+                "Azar:...maybe I need a vacation after this too...;");
+        dialogMakerHelper("StartDungeonLitaruDialog2;" +
+                "Azar:Damn all the way to the top of this mountain...this gonna be tough;" +
+                "Litaru:Knowing this will be hard... then why don't you call for your party?;");
+        dialogMakerHelper("StartDungeonLitaruDialog2Next;" +
+                "Azar:(What have I just thinking about ???);" +
+                "Azar:Because I want this to be kept confidential;" +
+                "Litaru:But sharing this with me is fine?;" +
+                "Azar:Well...You're a detective too so... I guess...;" +
+                "Azar:Beside, I want to know how an elite from Aureaxis work too;" +
+                "Litaru:Ah...Ok,then I can't let you down:>");
+        DialogLibrary library = DialogLibrary.getInstance();
+        DialogEntry branchEntry = library.getDialog("StartDungeonLitaruDialog2_2");
+        if (branchEntry != null) {
+            branchEntry.getOptions().clear();
+            branchEntry.withOption(new DialogOption("I don't have any budget").withNextDialog("StartDungeonLitaruDialog2Next_1"));
+            branchEntry.withOption(new DialogOption("I want only 2 of us together").withNextDialog("StartDungeonLitaruDialog2Next_1"));
+            branchEntry.withOption(new DialogOption("The great Azar is enough").withNextDialog("StartDungeonLitaruDialog2Next_1"));
+        }
+        if(testing.status != null && testing.status.contains("LitaruStart")&&!testing.status.contains("StartDungeonLitaruDialog")){
+            showDialogByTitle("StartDungeonLitaruDialog","");
+        }else if(testing.status != null && testing.storyItemInventory.hasStoryItem("necro_sword") && !testing.status.contains("StartDungeonLitaruDialog2") ){
+            showDialogByTitle("StartDungeonLitaruDialog2","");
+        }else{
+            mapUI.showSelectedPath();
+        }
+    }
+
+
+    public static void showRandomDialogWithPurpose(String purpose,String returnPlace) {
         if (purpose == null || purpose.trim().isEmpty()) {
             System.out.println("showRandomDialogWithPurpose: purpose cannot be empty");
             return;
@@ -574,20 +849,22 @@ public class DialogRegistrations {
         DialogSystem system = DialogSystem.getInstance();
         List<String> dialogIds = new ArrayList<>();
         dialogIds.add(firstId);
+        if("menu".equals(returnPlace)){
+            system.setOnDialogEnd(() -> {
+                // Show menu UI instead of map
+                if (menuUI != null) {
+                    menuUI.show();
+                }
+                system.setOnDialogEnd(() -> {
+                    if (mapUI != null) {
+                        mapUI.showSelectedPath();
+                    }
+                });
+            });
+        }
         system.startDialog(dialogIds, context);
     }
-    
-    /**
-     * Helper function to convert a string format into dialog entries
-     * Format: "Title;Hero1:line1;Hero2:line2;Hero1:line3"
-     * - Title is the base ID
-     * - Each dialog entry will have ID "Title_number" (e.g., "Title_1", "Title_2")
-     * - Semicolon (;) separates each value
-     * - Colon (:) separates hero name from text
-     * - All \n characters are removed before processing
-     * 
-     * @param dialogString The string to convert (format: "Title;Hero1:line1;Hero2:line2;...")
-     */
+
     public static void dialogMakerHelper(String dialogString) {
         if (dialogString == null || dialogString.trim().isEmpty()) {
             System.out.println("DialogMakerHelper: Empty or null string provided");
@@ -862,8 +1139,46 @@ public class DialogRegistrations {
                 });
             });
         }
+        else if("litaru_last_battle".equals(returnPlace)) {
+            system.setOnDialogEnd(() -> {
+                //Go battle with flamita
+                if (mapUI != null && battleSystem != null) {
+                    // Get gameMap from mapUI
+                    map.GameMap gameMap = mapUI.getGameMap();
+                    if (gameMap != null) {
+                        // Create Flamita boss fight node
+                        map.MapNode flamitaBossNode = gameMap.addLitaruFight("forest");
 
+                        if (flamitaBossNode != null) {
+                            // Set heroes to only Lucia
+                            String[] litaruOnly = {"Litaru "};
+                            battleSystem.configureBattle(false, litaruOnly);
+                            battleSystem.getHeroSlot().addBuffDebuff(BuffDebuff.getByName("Invulnerable").copy().withDuration(9999));
+                            battleSystem.getHeroSlot().addBuffDebuff(BuffDebuff.getByName("Necro Sword").copy().withDuration(9999));
+                            // Set up battle with map enemies
+                            List<Observer.characterSlot> mapEnemies = flamitaBossNode.getEnemies();
+                            if (!mapEnemies.isEmpty()) {
+                                Observer.characterSlot enemy1 = mapEnemies.get(0);
+                                Observer.characterSlot enemy2 = mapEnemies.size() > 1 ? mapEnemies.get(1) : null;
+                                Observer.characterSlot enemy3 = mapEnemies.size() > 2 ? mapEnemies.get(2) : null;
 
+                                battleSystem.clearEnemyData();
+                                battleSystem.setMapEnemies(enemy1, enemy2, enemy3);
+
+                                // Switch to battle mode
+                                mapUI.requestBattleMode();
+                            }
+                        }
+                    }
+                }
+
+                system.setOnDialogEnd(() -> {
+                    if (mapUI != null) {
+                        mapUI.showSelectedPath();
+                    }
+                });
+            });
+        }
     }
     
     /**

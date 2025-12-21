@@ -7,6 +7,7 @@ import characters.Observer;
 import characters.SpecialTalents;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
+import items.StoryItemInventory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import map.GameMap;
@@ -33,6 +34,7 @@ public class testing extends GameApplication {
     public static int return_time = 0;
     public static boolean skip_opening = false;
     public static String status="";
+    public static String[] storyItem={};
     public static boolean hasFlamitaBoss;
     // Available heroes to choose from (you can select multiple)
     public static String[] ALL_HEROES = {
@@ -129,7 +131,7 @@ public class testing extends GameApplication {
     // Inventory system
     private Inventory inventory;
     private InventoryUI inventoryUI;
-
+    public static StoryItemInventory storyItemInventory;
     // Shop system
     private Shop shop;
     private ShopUI shopUI;
@@ -174,7 +176,17 @@ public class testing extends GameApplication {
         ItemRegistry.init();
         inventory = new Inventory();
         inventoryUI = new InventoryUI(inventory, battleSystem);
+
         System.out.println("Inventory system initialized");
+        
+        // Initialize story item inventory
+        storyItemInventory = new items.StoryItemInventory();
+        // Load story items from testing.storyItem if any exist
+        if (storyItem != null && storyItem.length > 0) {
+            for (String itemId : storyItem) {
+                storyItemInventory.addStoryItem(itemId);
+            }
+        }
 
         // Initialize shop system
         shop = new Shop();
@@ -285,7 +297,9 @@ public class testing extends GameApplication {
     protected void initInput() {
         // N key to exit map mode and start battle
         onKeyDown(KeyCode.N, () -> {
-            resetBackToMenu();
+            if(battleUI != null&&!battleSystem.hasHeroName("Litaru ")) {
+                resetBackToMenu();
+            }
         });
 
         onKeyDown(KeyCode.B, () -> {
@@ -319,7 +333,7 @@ public class testing extends GameApplication {
             System.out.println("Current mode: " + (inMapMode ? "MAP" : "BATTLE"));
             System.out.println("Inventory UI object: " + inventoryUI);
 
-            if (inventoryUI != null&&!battleSystem.hasHeroName("Lucia")) {
+            if (inventoryUI != null&&!battleSystem.hasHeroName("Lucia")&&!battleSystem.hasHeroName("Azar")&&!battleSystem.hasHeroName("Litaru ")) {
                 boolean wasVisible = inventoryUI.isVisible();
                 System.out.println("Inventory was visible: " + wasVisible);
 
@@ -349,13 +363,10 @@ public class testing extends GameApplication {
 
         // T key to toggle test UI
         onKeyDown(KeyCode.T, () -> {
-            System.out.println("T key pressed - toggling test UI");
-            if (testUI != null) {
-                testUI.toggle();
-                System.out.println("Test UI toggled. Visible: " + testUI.isVisible());
-            } else {
-                System.out.println("Test UI is null!");
-            }
+//            storyItemInventory.addStoryItem("necro_sword");
+//            storyItemInventory.addStoryItem("necro_sword2");
+//            storyItemInventory.addStoryItem("necro_sword3");
+//            storyItemInventory.addStoryItem("necro_sword4");
         });
 
         // D key to show random smallTalk dialog and print all registered dialogs
@@ -529,6 +540,7 @@ public class testing extends GameApplication {
             menuUI = new MenuUI();
             menuUI.setNeededUI(mapUI, battleSystem, battleUI);
             menuUI.setTestingInstance(this); // Pass testing instance for selectedHeroes access
+            menuUI.setStoryItemInventory(storyItemInventory); // Pass story item inventory
         }
 
         mapUI.setBattleSystem(battleSystem);

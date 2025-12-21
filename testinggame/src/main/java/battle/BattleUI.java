@@ -210,7 +210,8 @@ public class  BattleUI {
     boolean hideTalents = true;
     // Audio system
     private AudioManager audioManager;
-    
+
+    public Runnable highlightSelection;
     public BattleUI(BattleSystem battleSystem) {
         this.battleSystem = battleSystem;
         this.audioManager = AudioManager.getInstance();
@@ -331,7 +332,9 @@ public class  BattleUI {
         if (character == null || character.getCurrentHp() <= 0) {
             return null;
         }
-        
+        if(character.getLine()!=null){
+            return character.getLine();
+        }
         Line line = new Line();
         line.setStroke(color);
         line.setStrokeWidth(3);
@@ -452,19 +455,32 @@ public class  BattleUI {
         updatePartyMpBar();
     }
     
-    private void createLines() {
+    public void createLines() {
         // Create all lines using helper function
-        blueLine = createSingleLine(battleSystem.getHeroSlot(), Color.BLUE, 1.75);
-        greenLine = createSingleLine(battleSystem.getHeroSlot2(), Color.LIMEGREEN, 1.9);
-        purpleLine = createSingleLine(battleSystem.getHeroSlot3(), Color.PURPLE, 2.1);
-        redLine = createSingleLine(battleSystem.getEnemySlot(), Color.RED, 1.5);
-        yellowLine = createSingleLine(battleSystem.getEnemySlot2(), Color.YELLOW, 1.33);
-        orangeLine = createSingleLine(battleSystem.getEnemySlot3(), Color.ORANGE, 1.2);
+        //if(blueLine==null){
+            blueLine = createSingleLine(battleSystem.getHeroSlot(), Color.BLUE, 1.75);
+        //
+        //if(greenLine==null) {
+            greenLine = createSingleLine(battleSystem.getHeroSlot2(), Color.LIMEGREEN, 1.9);
+        //}
+        //if(purpleLine==null) {
+            purpleLine = createSingleLine(battleSystem.getHeroSlot3(), Color.PURPLE, 2.1);
+        //}
+        //if(redLine==null) {
+            redLine = createSingleLine(battleSystem.getEnemySlot(), Color.RED, 1.5);
+        //}
+        //if(yellowLine==null) {
+            yellowLine = createSingleLine(battleSystem.getEnemySlot2(), Color.YELLOW, 1.33);
+        //}
+        //if(orangeLine==null) {
+            orangeLine = createSingleLine(battleSystem.getEnemySlot3(), Color.ORANGE, 1.2);
+        //}
 
         // Add lines to scene - only if they were created
         Line[] allLines = {blueLine, greenLine, purpleLine, redLine, yellowLine, orangeLine};
         for (Line line : allLines) {
             if (line != null) {
+                getGameScene().removeUINode(line);
                 getGameScene().addUINode(line);
             }
         }
@@ -476,7 +492,7 @@ public class  BattleUI {
         for (int i = 0; i < allCharacters.length; i++) {
             Observer.characterSlot character = allCharacters[i];
             Line line = allLineRefs[i];
-            if (character != null && character.getCurrentHp() > 0 && line != null) {
+            if (character != null && character.getCurrentHp() > 0 && line != null&&character.getLine()==null) {
                 character.setLine(line);
             }
         }
@@ -859,7 +875,7 @@ public class  BattleUI {
         boolean isAlly = isHero(slot);
         
         // Create highlight selection runnable
-        Runnable highlightSelection = () -> {
+        highlightSelection = () -> {
             // Update highlighting for all health bars
             for (HealthBarData hbd : healthBars) {
                 Observer.characterSlot s = hbd.characterSlot;
@@ -2254,8 +2270,8 @@ public class  BattleUI {
     }
     
     private void setupTargetSelection() {
-        // Target selection on click
-        Runnable highlightSelection = () -> {
+        // Target selection on click - set instance field so BattleSystem can use it
+        this.highlightSelection = () -> {
             // Update highlighting for all health bars
             for (HealthBarData healthBarData : healthBars) {
                 Observer.characterSlot slot = healthBarData.characterSlot;
@@ -2291,7 +2307,7 @@ public class  BattleUI {
                         battleSystem.setSelectedAllyTarget(slot);
                         battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
                     }
-                highlightSelection.run(); 
+                this.highlightSelection.run(); 
             });
         }
             
@@ -2305,7 +2321,7 @@ public class  BattleUI {
                         battleSystem.setSelectedAllyTarget(slot);
                         battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
                     }
-                highlightSelection.run(); 
+                this.highlightSelection.run(); 
             });
         }
             
@@ -2318,12 +2334,12 @@ public class  BattleUI {
                         battleSystem.setSelectedAllyTarget(slot);
                         battleSystem.setSelectedTarget(slot); // Keep for backward compatibility
                     }
-                highlightSelection.run(); 
+                this.highlightSelection.run(); 
             });
         }
         }
         
-        highlightSelection.run();
+        this.highlightSelection.run();
     }
     
     public void renderHeroSkillsFor(Observer.characterSlot hero) {

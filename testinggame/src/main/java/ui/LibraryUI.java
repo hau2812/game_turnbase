@@ -365,6 +365,9 @@ public class LibraryUI {
 
         List<Characters.character> heroes = new ArrayList<>(Characters.CharacterRegistry.getAll());
         heroes.remove(Characters.CharacterRegistry.getByName("Lucia"));
+        heroes.remove(Characters.CharacterRegistry.getByName("Litaru "));
+        heroes.remove(Characters.CharacterRegistry.getByName("Litaru"));
+        heroes.remove(Characters.CharacterRegistry.getByName("Azar"));
         double startX = listBackground.getTranslateX() + 10;
         double startY = listBackground.getTranslateY() + 10;
         double rowHeight = 30;
@@ -712,6 +715,10 @@ public class LibraryUI {
 
         // Add all hero names
         List<Characters.character> heroes = new ArrayList<>(Characters.CharacterRegistry.getAll());
+        heroes.remove(Characters.CharacterRegistry.getByName("Azar"));
+        heroes.remove(Characters.CharacterRegistry.getByName("Lucia"));
+        heroes.remove(Characters.CharacterRegistry.getByName("Litaru"));
+        heroes.remove(Characters.CharacterRegistry.getByName("Litaru "));
         for (Characters.character ch : heroes) {
             String name = ch.getName();
 
@@ -787,6 +794,7 @@ public class LibraryUI {
             }
         } else {
             // Show dialogs where hostName matches the selected hero
+
             boxesToShow.addAll(DialogBoxRegistry.getByHost(hostName));
         }
 

@@ -248,15 +248,11 @@ public interface Observer {
             Ability.SkillRegistry.init();
             Characters.CharacterRegistry.init();
 
-            //Hero 1
-            characterSlot heroSlot = createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack", null);
-            // Hero 2
-            characterSlot hero2Slot = createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal", "Barrier");
-            // Hero 3
-            characterSlot hero3Slot = createCharacterSlot("Flamita", "Rage Strike", "Burning slash", "Rage Heal", "Rage Burst");
-            // Hero 4
-            characterSlot hero4Slot = createCharacterSlot("Pieberry", "Charge attack", "5-Orb Flame", "7-Fork Lightning", "Ecarr Vertel");
 
+            createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack", null);
+            createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal", "Barrier");
+            createCharacterSlot("Flamita", "Rage Strike", "Burning slash", "Rage Heal", "Rage Burst");
+            createCharacterSlot("Pieberry", "Charge attack", "5-Orb Flame", "7-Fork Lightning", "Ecarr Vertel");
             createCharacterSlot("Ina", "Light attack", "Energy charge", "Let me absorb you", "Absolute teleportation");
             createCharacterSlot("Leuna", "Charge attack", "Moon light", "Moon wave", "Absolute barrier");
             createCharacterSlot("Flatina", "Rage Strike", "Amber sacrifice", "Rage empowerment", "Burning guts");
@@ -269,6 +265,9 @@ public interface Observer {
 
             createCharacterSlot("Lucia", "Arua's Arrow", "Aimhard's Absolute Defense", "Durok's Gravity Field", "Aramute's obliterated");
             addSkillToList(registry.get("Lucia").getSkills(),"Arua's Lighting Bolt","Lucia");
+            createCharacterSlot("Litaru", "Charge attack", "Fireball", "Heal", "Barrier");
+            createCharacterSlot("Azar", "Slash", "Fireball", "heavy attack", "Regeneration");
+            createCharacterSlot("Litaru ", "Slash", "Sweep", "Last dance", "Sunset");
 
 
 

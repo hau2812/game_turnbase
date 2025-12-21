@@ -1023,6 +1023,82 @@ public interface Ability {
             if (rageAbsorption != null) {
                 rageAbsorption.addEffect("Rage absorption", 3, 1);
             }
+            register(new Ability.skill(
+                    48,
+                    "Life absorption",
+                    "Consume health to deal damage to their maxHP",
+                    "Physical",
+                    "Enemy",
+                    1.0f,
+                    1.0f,
+                    0,
+                    0,
+                    ""
+            ));
+            Ability.skill absorption = getByName("Life absorption");
+            if (absorption != null) {
+                absorption.addEffect("Wither",999,1);
+            }
+            register(new Ability.skill(
+                    49,
+                    "Regeneration",
+                    "Heal",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    0.75f,
+                    200,
+                    0,
+                    ""
+            ));
+            Ability.skill Regeneration = getByName("Regeneration");
+            if (Regeneration != null) {
+                Regeneration.addEffect("Regeneration", 3, 4);
+            }
+            register(new Ability.skill(
+                    50,
+                    "Sweep",
+                    "Deal aoe damage",
+                    "Physical",
+                    "Aoe enemy",
+                    1.0f,
+                    1.0f,
+                    150,
+                    0,
+                    ""
+            ));
+            register(new Ability.skill(
+                    51,
+                    "Last dance",
+                    "Get 10x speed and a uto deal single target damage 20 time",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    0.0f,
+                    300,
+                    0,
+                    ""
+            ));
+            Ability.skill Lastdance = getByName("Last dance");
+            if (Lastdance != null) {
+                Lastdance.addEffect("Last dance", 30, 1);
+            }
+            register(new Ability.skill(
+                    52,
+                    "Sunset",
+                    "Gain flat damage bonus scale with lost hp",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    0.0f,
+                    200,
+                    0,
+                    ""
+            ));
+            Ability.skill Sunset = getByName("Sunset");
+            if (Sunset != null) {
+                Sunset.addEffect("Sunset", 30, 1);
+            }
         }
 
     }

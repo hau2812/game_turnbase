@@ -517,7 +517,11 @@ public class BattleSystem {
     public void initializeBattle() {
 
         // Start battle music
-        playBattleMusic();
+        if(heroSlot!=null&&heroSlot.getCharacter().getName().equals("Litaru ")){
+            System.out.println("skip music");
+        }else {
+            playBattleMusic();
+        }
         // Configure which characters to create
         
         // Init registry
@@ -694,6 +698,9 @@ public class BattleSystem {
             if (!aliveEnemies.isEmpty()) {
                 selectedEnemyTarget = aliveEnemies.get(0); // Select first alive enemy
                 selectedTarget = selectedEnemyTarget; // Keep for backward compatibility
+                if (battleUI.highlightSelection != null) {
+                    battleUI.highlightSelection.run();
+                }
             } else {
                 selectedEnemyTarget = null;
                 selectedTarget = null;
@@ -722,7 +729,10 @@ public class BattleSystem {
         } else if (slot == enemySlot3) {
             enemySlot3 = null;
         }
-        
+
+        if(slot.getCharacter().getName().equals("Spiritual Monster")&&enemySlot==null&&enemySlot2==null&&enemySlot3==null){
+            spawnSpiritualMonster();
+        }
 
     }
     
@@ -1031,7 +1041,7 @@ public class BattleSystem {
             }
             if(Chigon.containsBuffDebuff("Dragon breath")){
                 if(partyMp>0) {
-                    setPartyMp(getPartyMp()-1);
+                    setPartyMp(Math.max(0,getPartyMp()-0.5f));
                     SpecialTalents.applyStatModifications(Chigon, null);
                     for (Observer.characterSlot enemy : getAllAliveEnemies()) {
 
@@ -1044,6 +1054,13 @@ public class BattleSystem {
                 }else{
                     Chigon.getActiveEffects().remove(Chigon.getBuffDebuffByName("Dragon breath"));
                 }
+            }
+        }
+        if(hasHeroName("Litaru ")){
+            heroSlot.setCurrentHp(Math.max(0,heroSlot.getCurrentHp()-0.1f));
+            battleUI.updateHealthUI(heroSlot);
+            if(heroSlot.getCurrentHp()<=0){
+                onBattleWon.run();
             }
         }
 
@@ -1135,6 +1152,14 @@ public class BattleSystem {
                     battleUI.refreshAllCharacterUI();
                     if (currentActingHero != null && battleUI != null) {
                         battleUI.renderHeroSkillsFor(currentActingHero);
+                    }
+                    //autocast
+                    if(currentActingHero != null && currentActingHero.containsBuffDebuff("Last dance")) {
+                        Ability.skill skill = currentActingHero.getSkills().get(0);
+                        useSkill(currentActingHero,getRandomAliveEnemy(),skill);
+                        currentActingHero.setCurrentMp(0);
+                        pushCharacterLine(currentActingHero,currentActingHero.getCharacter().getAV()*skill.getAVScale());
+                        moving=true;
                     }
                 }
             }
@@ -1438,6 +1463,8 @@ public class BattleSystem {
             battleUI.updateHealthUI(attacker);
         }else if (skill.getId()==26){
             specialDmgBonus = attacker.getFloatBuffDebuffByName("Judgment")*attacker.getCharacter().getAtk()/4;
+        }else if (attacker.getBuffDebuffByName("Sunset")!=null){
+            specialDmgBonus = attacker.getCharacter().getHp() - attacker.getCurrentHp();
         }
         
         // Add more special skills here in the future
@@ -1583,6 +1610,36 @@ public class BattleSystem {
             battleUI.addHealthBarForEnemySlot(enemySlot3, 5); // Index 5 for enemy3
         }
 
+    }
+    public void spawnSpiritualMonster(){
+        int ranHp1 = random(500,1500);
+        int ranHp2 = random(500,1500);
+        int ranHp3 = random(500,1500);
+        Characters.character SM = new Characters.character(36,"Spiritual Monster",100,0,0,0,8,ranHp1,0,null);
+        Characters.character SM2 = new Characters.character(SM);
+            SM2.setHp(ranHp2);
+        Characters.character SM3 = new Characters.character(SM);
+            SM3.setHp(ranHp3);
+        Characters.character SM1b = new Characters.character(SM);
+        Characters.character SM2b = new Characters.character(SM2);
+        Characters.character SM3b = new Characters.character(SM3);
+        Ability.skill skill = Ability.SkillRegistry.getById(4);
+        ArrayList<Ability.skill> skillA =  new ArrayList<>(){};
+        skillA.add(skill);
+        Observer.characterSlot SM1o = new Observer.characterSlot(1,SM,SM1b,skillA,SM.getHp(),0);
+        Observer.characterSlot SM2o = new Observer.characterSlot(1,SM2,SM2b,skillA,SM2.getHp(),0);
+        Observer.characterSlot SM3o = new Observer.characterSlot(1,SM3,SM3b,skillA,SM3.getHp(),0);
+
+        setMapEnemies(SM1o,SM2o,SM3o);
+        battleUI.addHealthBarForEnemySlot(enemySlot,3);
+        battleUI.addHealthBarForEnemySlot(enemySlot2,4);
+        battleUI.addHealthBarForEnemySlot(enemySlot3,5);
+        battleUI.createLines();
+        selectedEnemyTarget=enemySlot;
+        selectedTarget=enemySlot;
+        if (battleUI.highlightSelection != null) {
+            battleUI.highlightSelection.run();
+        }
     }
 
 

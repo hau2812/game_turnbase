@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
 
+import static com.almasb.fxgl.dsl.FXGL.*;
+
 public class GameMap {
     private List<MapPath> paths;
     private MapPath selectedPath;
@@ -23,8 +25,10 @@ public class GameMap {
         initializeMap();
     }
 
-    private void initializeMap() {
+    public void initializeMap() {
         // Create the three paths
+        paths.clear();
+        currentNodeNumber = 1;
         MapPath forestPath = new MapPath("forest", MapPath.PathType.FOREST);
         MapPath mountainPath = new MapPath("mountain", MapPath.PathType.MOUNTAIN);
         MapPath villagePath = new MapPath("village", MapPath.PathType.VILLAGE);
@@ -38,15 +42,23 @@ public class GameMap {
         //addMabelBossFight("forest");
 
         // Initialize paths với random system
-        initializeRandomPath(forestPath);
-        initializeRandomPath(mountainPath);
-        initializeRandomPath(villagePath);
+        if(testing.status.contains("LitaruStart")&&!testing.status.contains("battleVictorySolareth")) {
+            initializeLitaruPath(forestPath);
+            setSelectedPath(forestPath);
+        }else {
+            initializeRandomPath(forestPath);
+            initializeRandomPath(mountainPath);
+            initializeRandomPath(villagePath);
+            createRandomBossFight(forestPath.getId());
+        }
 
-        createRandomBossFight(forestPath.getId());
+
+
+
 
         // Create Boss Node (chung cho tat ca paths) - CO DINH
         bossNode = new MapNode("boss", "Dragon's Lair", "Hang cua rong boss cuoi cung", 
-                              MapNode.NodeType.BOSS, 400, 100);
+                              MapNode.NodeType.BOSS, 400, 30);
         // Add boss enemy - CO DINH
         Characters.character boss = createBossCharacter();
         // Boss co skills manh me
@@ -72,7 +84,7 @@ public class GameMap {
 
 
         // Random number of nodes (4-6 nodes) - RANDOM
-        int nodeCount = 2 + (int)(Math.random() * 3); // 4-6 random nodes
+        int nodeCount = 3 + (int)(Math.random() * 3); // 4-6 random nodes
         if(testing.SKIP_TO_BOSS){
             nodeCount = 0;
             return;
@@ -81,7 +93,7 @@ public class GameMap {
         //create Node
         int i=1;
 
-        for (; i <= nodeCount/2; i++) {
+        for (; i <= nodeCount/1.5; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
             //randomNode = RandomMapGenerator.createRandomBattleNode(pathName,i,path.getPathType(),1);
             path.addNode(randomNode);
@@ -118,6 +130,54 @@ public class GameMap {
 
 
 
+    }
+    private void initializeLitaruPath(MapPath path) {
+        String pathName = path.getId().toLowerCase();
+
+        // Start node - CO DINH
+        MapNode start = new MapNode("Litaru_start",
+                getPathStartName(path.getPathType()),
+                getPathStartDescription(path.getPathType()),
+                MapNode.NodeType.START, 100, getPathStartY(path.getPathType()));
+        path.addNode(start);
+
+
+
+        // Random number of nodes (4-6 nodes) - RANDOM
+        int nodeCount = 3 ; // 4-6 random nodes
+        //create Node
+        int i=1;
+
+        for (; i < nodeCount; i++) {
+            MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
+            //randomNode = RandomMapGenerator.createRandomBattleNode(pathName,i,path.getPathType(),1);
+            path.addNode(randomNode);
+            currentNodeNumber++;
+        }
+
+        //create save
+        MapNode saveNode = RandomMapGenerator.createRandomRestNode(pathName,i);
+        path.addNode(saveNode);
+        i++;
+        currentNodeNumber++;
+        //create more Node
+        for (; i <= nodeCount*2; i++) {
+            MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
+            path.addNode(randomNode);
+            currentNodeNumber++;
+        }
+        //create save
+        MapNode saveNode2 = RandomMapGenerator.createRandomRestNode(pathName,i);
+        path.addNode(saveNode2);
+        i++;
+        currentNodeNumber++;
+
+        // Final event/battle - CO DINH (nhung khac nhau cho moi path)
+        if(testing.storyItemInventory.hasStoryItem("necro_sword")){
+            addSolarethBossFight(pathName);
+        }else{
+            addVirellBossFight(pathName);
+        }
     }
 
     /**
@@ -312,10 +372,13 @@ public class GameMap {
         //randomInt = 1;
         if(randomInt == 1&&!testing.getSelectedHeroes().equals("Flamita")){
             addFlamitaBossFight(pathId);
-            testing.hasFlamitaBoss = true;
-            List<String> newAvaliable = new ArrayList<>(Arrays.asList(testing.getAvailableHeroes()));
-            newAvaliable.remove("Flamita");
-            testing.setAvailableHeroes(newAvaliable.toArray(new String[0]));
+            testing.hasFlamitaBoss = false;
+            if(!testing.status.contains("FlamitaBoss2BattleVictory")) {
+                testing.hasFlamitaBoss = true;
+                List<String> newAvaliable = new ArrayList<>(Arrays.asList(testing.getAvailableHeroes()));
+                newAvaliable.remove("Flamita");
+                testing.setAvailableHeroes(newAvaliable.toArray(new String[0]));
+            }
         }
         else if(randomInt == 2){
             testing.hasFlamitaBoss = false;
@@ -428,6 +491,57 @@ public class GameMap {
                 MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 370, enemies, skillIds);
 
         return oufuuNode;
+    }
+    public MapNode addVirellBossFight(String pathId) {
+        // Create corrupted Flamita character
+        Characters.character Virell = new Characters.character(
+                (int)(Math.random() * 1000), "Virell the Lifedrinker Sentinel", 100, 30, 20, 10, 5, 3000, 0, new ArrayList<>()
+        );
+
+        // Skill IDs: 6, 7, 8, 9
+        Characters.character[] enemies = {Virell};
+        int[][] skillIds = {{48}};
+        System.out.println(currentNodeNumber);
+        // Add the custom node
+        return addCustomNode(pathId, "Virell_boss", "???", "Internal Burning",
+                MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
+    }
+    public MapNode addSolarethBossFight(String pathId) {
+        // Create corrupted Flamita character
+        Characters.character Solareth = new Characters.character(
+                (int)(Math.random() * 1000), "Solareth the Living Beacon", 100, 30, 20, 10, 5, 3000, 0, new ArrayList<>()
+        );
+
+        // Skill IDs: 6, 7, 8, 9
+        Characters.character[] enemies = {Solareth};
+        int[][] skillIds = {{1,23}};
+        System.out.println(currentNodeNumber);
+        // Add the custom node
+        return addCustomNode(pathId, "Virell_boss", "???", "Internal Burning",
+                MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
+    }
+    public MapNode addLitaruFight(String pathId) {
+        // Create corrupted Flamita character
+        int ranHp1 = random(500,1500);
+        int ranHp2 = random(500,1500);
+        int ranHp3 = random(500,1500);
+        Characters.character Spiritual = new Characters.character(
+                (int)(Math.random() * 1000), "Spiritual Monster", 100, 30, 20, 10, 8, ranHp1, 0, new ArrayList<>()
+        );
+        Characters.character Spiritual2 = new Characters.character(
+                (int)(Math.random() * 1000), "Spiritual Monster", 100, 30, 20, 10, 8, ranHp2, 0, new ArrayList<>()
+        );
+        Characters.character Spiritual3 = new Characters.character(
+                (int)(Math.random() * 1000), "Spiritual Monster", 100, 30, 20, 10, 8, ranHp3, 0, new ArrayList<>()
+        );
+
+        // Skill IDs: 6, 7, 8, 9
+        Characters.character[] enemies = {Spiritual,Spiritual2,Spiritual3};
+        int[][] skillIds = {{4},{4},{4}};
+        System.out.println(currentNodeNumber);
+        // Add the custom node
+        return addCustomNode(pathId, "Litaru_fight", "???", "Internal Burning",
+                MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
     }
     
     /**

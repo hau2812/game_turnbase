@@ -96,7 +96,9 @@ public class MapUI {
         clearUI();
         createPathSelectionUI();
         // Start map exploration music
-        audioManager.playMapMusic();
+        if(battleSystem!=null&&!battleSystem.hasHeroName("Litaru ")) {
+            audioManager.playMapMusic();
+        }
     }
 
     public void showSelectedPath() {
@@ -252,7 +254,7 @@ public class MapUI {
         }
 
         // Back button
-        createBackButton();
+        //createBackButton();
     }
 
     private void createNodeUI(MapNode node, int nodeIndex, int currentIndex) {
@@ -371,10 +373,18 @@ public class MapUI {
     }
 
     private void activateNode(MapNode node) {
+
+        node.activate();
+        // Move to next node if current is completed
+        if (node.isCompleted()) {
+            gameMap.getSelectedPath().moveToNextNode();
+        }
+
         // Handle different node types
         switch (node.getType()) {
             case START:
-                System.out.println("Starting at: " + node.getName());
+                DialogRegistrations.showStartDungeonDialog();
+
                 break;
             case EVENT:
                 if (node.getEvent() instanceof MapEvent) {
@@ -417,7 +427,7 @@ public class MapUI {
                 break;
             case RECRUIT:
                 DialogRegistrations.registerRecruitDialogs();
-                DialogRegistrations.showRandomDialogWithPurpose("recruitDialog");
+                DialogRegistrations.showRandomDialogWithPurpose("recruitDialog","");
                 break;
             case SHOP:
                 System.out.println("Opened shop at: " + node.getName());
@@ -476,14 +486,10 @@ public class MapUI {
                 break;
         }
         
-        node.activate();
-        // Move to next node if current is completed
-        if (node.isCompleted()) {
-            gameMap.getSelectedPath().moveToNextNode();
-        }
+
         
         // Only refresh the UI if it's not a battle node (battle nodes switch to battle mode)
-        if (node.getType() != MapNode.NodeType.BATTLE && node.getType() != MapNode.NodeType.RECRUIT && node.getType() != MapNode.NodeType.SHOP && node.getType() != MapNode.NodeType.BOSS) {
+        if (node.getType() != MapNode.NodeType.START&&node.getType() != MapNode.NodeType.BATTLE && node.getType() != MapNode.NodeType.RECRUIT && node.getType() != MapNode.NodeType.SHOP && node.getType() != MapNode.NodeType.BOSS) {
             // Refresh the UI to show updated status
             showSelectedPath();
         }

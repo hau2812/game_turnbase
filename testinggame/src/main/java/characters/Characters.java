@@ -72,9 +72,11 @@ public interface Characters {
             this.hp = other.hp;
             this.mp = other.mp;
             // Deep copy uniqueValues list
-            this.uniqueValues = new ArrayList<>();
-            for (uniqueValue uv : other.uniqueValues) {
-                this.uniqueValues.add(new uniqueValue(uv.getName(), uv.getValue()));
+            if(other.uniqueValues!=null) {
+                this.uniqueValues = new ArrayList<>();
+                for (uniqueValue uv : other.uniqueValues) {
+                    this.uniqueValues.add(new uniqueValue(uv.getName(), uv.getValue()));
+                }
             }
         }
 
@@ -172,7 +174,9 @@ public interface Characters {
             }
             return 0f;
         }
-
+//        public character copy(){
+//            return new character(this.id,this.name,this.atk,this.matk,this.def,this.res,this.spd,this.getAV())
+//        }
         @Override
         public String toString() {
             return "character{" +
@@ -377,6 +381,45 @@ public interface Characters {
                     new ArrayList<uniqueValue>() {{
                         add(new uniqueValue("Elysion Regeneration", "0"));
                     }}
+            ));
+            register(new Characters.character(
+                    12,
+                    "Litaru",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    300, // hp
+                    300,// mp
+                    "",  // talentDiscription template (fill later)
+                    new ArrayList<uniqueValue>()
+            ));
+            register(new Characters.character(
+                    14,
+                    "Litaru ",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    500, // hp
+                    300,// mp
+                    "",  // talentDiscription template (fill later)
+                    new ArrayList<uniqueValue>()
+            ));
+            register(new Characters.character(
+                    13,
+                    "Azar",
+                    100,  // atk
+                    35,   // matk
+                    18,   // def
+                    12,   // res
+                    10,   // spd
+                    450, // hp
+                    200,// mp
+                    "",  // talentDiscription template (fill later)
+                    new ArrayList<uniqueValue>()
             ));
         }
     }

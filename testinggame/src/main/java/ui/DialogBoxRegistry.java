@@ -47,7 +47,8 @@ public class DialogBoxRegistry {
     public static List<DialogBox> getAll() {
         List<DialogBox> all = new ArrayList<>();
         for (List<DialogBox> boxes : registry.values()) {
-            all.addAll(boxes);
+                all.addAll(boxes);
+
         }
         return all;
     }

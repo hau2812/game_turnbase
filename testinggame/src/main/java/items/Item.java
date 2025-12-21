@@ -49,7 +49,8 @@ public abstract class Item {
     
     public enum ItemType {
         CONSUMABLE,
-        EQUIPMENT
+        EQUIPMENT,
+        STORY_ITEM
     }
     
     @Override
