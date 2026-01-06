@@ -12,10 +12,10 @@ public abstract class Item {
     
     public enum ItemRarity {
         COMMON("Common", 1.0f),
-        UNCOMMON("Uncommon", 1.5f),
-        RARE("Rare", 2.0f),
-        EPIC("Epic", 3.0f),
-        LEGENDARY("Legendary", 5.0f);
+        UNCOMMON("Uncommon", 1.0f),
+        RARE("Rare", 1.0f),
+        EPIC("Epic", 1.0f),
+        LEGENDARY("Legendary", 1.0f);
         
         private final String displayName;
         private final float valueMultiplier;

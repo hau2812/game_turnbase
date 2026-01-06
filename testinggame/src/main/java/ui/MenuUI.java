@@ -1102,7 +1102,7 @@ public class MenuUI {
         if (returnTimeText != null) {
             returnTimeText.setText("Return Time: " + org.example.testing.return_time);
         }
-        if(testing.status.contains("LitaruStart")&&!testing.storyItemInventory.hasStoryItem("radiant_core")){
+        if(testing.status.contains("LitaruStart")&&!testing.storyItemInventory.hasStoryItem("radiant_core")&&!testing.storyItemInventory.hasStoryItem("litaru_sword")){
             dungeonButtonText.setText("Go to Not \nDungeon");
         }else{
             dungeonButtonText.setText("Go to \nDungeon");
@@ -1137,7 +1137,7 @@ public class MenuUI {
      */
     private void goToDungeon() {
         hide();
-        if(testing.status.contains("LitaruStart")&&!testing.storyItemInventory.hasStoryItem("radiant_core")){
+        if(testing.status.contains("LitaruStart")&&!testing.storyItemInventory.hasStoryItem("radiant_core")&&!testing.storyItemInventory.hasStoryItem("litaru_sword")){
             mapUI.getGameMap().initializeMap();
             mapUI.showSelectedPath();
             testing.selectedHeroes=new String[]{"Azar","Litaru"};

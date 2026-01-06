@@ -172,6 +172,14 @@ public interface Observer {
             }
             return false;
         }
+        public boolean containsEffectBuffDebuff(String effect) {
+            for (BuffDebuff buff : activeEffects) {
+                if (buff != null && buff.getEffects().equals(effect)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     // ===================== REGISTRY =====================
@@ -237,7 +245,9 @@ public interface Observer {
             );
             
             // Register the slot
-            registry.put(character.getName(), slot);
+            if(!registry.containsKey(character.getName())) {
+                registry.put(character.getName(), slot);
+            }
             
             return slot;
         }

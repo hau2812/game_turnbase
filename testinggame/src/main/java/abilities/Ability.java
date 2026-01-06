@@ -1070,7 +1070,7 @@ public interface Ability {
             register(new Ability.skill(
                     51,
                     "Last dance",
-                    "Get 10x speed and a uto deal single target damage 20 time",
+                    "Get 10x speed and auto deal single target damage 20 time",
                     "Heal",
                     "Self",
                     0.0f,

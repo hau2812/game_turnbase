@@ -75,9 +75,6 @@ public class MapNode {
                 // Start battle with enemies
                 break;
             case EVENT:
-                if (event != null) {
-                    event.trigger();
-                }
                 break;
             case RECRUIT:
                 break;

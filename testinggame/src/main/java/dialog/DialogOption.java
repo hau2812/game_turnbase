@@ -7,7 +7,8 @@ import java.util.function.Function;
  */
 public class DialogOption {
     private String text;                           // Option text displayed to player
-    private Function<DialogContext, Void> action;   // Action to execute when chosen
+    private Function<DialogContext, Void> action;   // Action to execute when chosen (with context)
+    private Runnable runnable;                     // Simple function to execute when chosen (no parameters)
     private String nextDialogId;                    // Next dialog to show (null to continue)
     
     public DialogOption(String text) {
@@ -19,6 +20,15 @@ public class DialogOption {
         return this;
     }
     
+    /**
+     * Set a simple runnable function to execute when this option is chosen
+     * This is a simpler alternative to withAction() that doesn't require DialogContext
+     */
+    public DialogOption withRunnable(Runnable runnable) {
+        this.runnable = runnable;
+        return this;
+    }
+    
     public DialogOption withNextDialog(String nextDialogId) {
         this.nextDialogId = nextDialogId;
         return this;
@@ -27,6 +37,7 @@ public class DialogOption {
     // Getters
     public String getText() { return text; }
     public Function<DialogContext, Void> getAction() { return action; }
+    public Runnable getRunnable() { return runnable; }
     public String getNextDialogId() { return nextDialogId; }
 }
 

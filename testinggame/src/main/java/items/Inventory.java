@@ -1,7 +1,15 @@
 package items;
 
+import audio.AudioManager;
+import battle.BattleSystem;
+import battle.BattleUI;
 import characters.Observer;
+import dialog.DialogRegistrations;
+import javafx.scene.shape.Line;
+
 import java.util.*;
+
+import static com.almasb.fxgl.dsl.FXGL.getGameScene;
 
 /**
  * Inventory system to manage items and equipment
@@ -20,7 +28,7 @@ public class Inventory {
         this.equippedItems = new HashMap<>();
         this.characterEquipment = new HashMap<>();
         this.battleConsumables = new ArrayList<>();
-        this.gold = 1000; // Starting gold
+        this.gold = 300; // Starting gold
     }
     
     // ===================== ITEM MANAGEMENT =====================
@@ -53,7 +61,16 @@ public class Inventory {
         }
         return true;
     }
-    
+    public boolean removeQuantity(String itemId, int quantity) {
+        if (!items.containsKey(itemId)) {
+            return false;
+        }
+        items.put(itemId,items.get(itemId) - quantity);
+        if (items.get(itemId) <= 0) {
+            items.remove(itemId);
+        }
+        return true;
+    }
     /**
      * Get item quantity
      */
@@ -73,6 +90,19 @@ public class Inventory {
      */
     public Item getItem(String itemId) {
         return itemRegistry.get(itemId);
+    }
+    
+    /**
+     * Remove all items from inventory
+     * This clears all items, item registry, equipped items, character equipment, and battle consumables
+     * Note: Gold is not cleared by this method
+     */
+    public void removeAllItems() {
+        items.clear();
+        itemRegistry.clear();
+        equippedItems.clear();
+        characterEquipment.clear();
+        battleConsumables.clear();
     }
     
     // ===================== EQUIPMENT MANAGEMENT =====================
@@ -104,7 +134,8 @@ public class Inventory {
 
         // Remove from inventory
         removeItem(itemId, 1);
-        
+        //Check if dialog
+        DialogRegistrations.showEquipmentDialog(characterName+equipment.getName()+"Dialog");
         return true;
     }
     
@@ -168,6 +199,28 @@ public class Inventory {
     }
     
     /**
+     * Check if a character has a specific equipment item by ID
+     * @param characterSlot The character slot to check
+     * @param itemId The item ID to search for
+     * @return true if the character has the equipment, false otherwise
+     */
+    public boolean containsEquipment(Observer.characterSlot characterSlot, String itemId) {
+        if (characterSlot == null || itemId == null) {
+            return false;
+        }
+        
+        Map<EquipmentItem.EquipmentSlot, EquipmentItem> equippedItems = getEquippedItems(characterSlot);
+        
+        for (EquipmentItem item : equippedItems.values()) {
+            if (item != null && itemId.equals(item.getId())) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
      * Get all equipped items (legacy method)
      */
     public Map<EquipmentItem.EquipmentSlot, EquipmentItem> getEquippedItems() {
@@ -190,10 +243,14 @@ public class Inventory {
         ConsumableItem consumable = (ConsumableItem) item;
         
         // Check if this item is already in battle consumables
+        int count=0;
         for (ConsumableItem existing : battleConsumables) {
             if (existing.getId().equals(itemId)) {
-                return false; // Item already in battle selection
+                count++;
             }
+        }
+        if(count==items.get(itemId)) {
+            return false;
         }
         
         battleConsumables.add(consumable);
@@ -224,11 +281,20 @@ public class Inventory {
         if (index < 0 || index >= battleConsumables.size()) return false;
         
         ConsumableItem consumable = battleConsumables.get(index);
+        //revive
+        if(consumable.id.equals("potion_of_revival")&&target.getCurrentHp()<=0){
+            target.setCurrentHp(0.001f);
+            DialogRegistrations.getBattleUI().createLines();
+            DialogRegistrations.getBattleUI().updateHealthUI(target);
+        }
+
         consumable.applyEffect(target);
-        
+        //remove items quantity
+        Item item = battleConsumables.get(index);
+        removeQuantity(item.getId(),1);
         // Remove from battle consumables after use
         battleConsumables.remove(index);
-        
+        AudioManager.getInstance().playSound("magic_cast.wav");
         return true;
     }
     

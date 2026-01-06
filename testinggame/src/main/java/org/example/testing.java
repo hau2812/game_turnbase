@@ -19,6 +19,16 @@ import shop.Shop;
 import dialog.DialogSystem;
 import dialog.DialogUI;
 import dialog.DialogRegistrations;
+import dialog.DialogLibrary;
+import dialog.DialogEntry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
@@ -55,7 +65,7 @@ public class testing extends GameApplication {
 //        "Pieberry",
 //        "Ina",
         //"Leuna",
-//        "Flatina",
+        //"Flatina",
         //"Chigon"
     };
 
@@ -122,7 +132,14 @@ public class testing extends GameApplication {
     // Map system
     private GameMap gameMap;
     private MapUI mapUI;
-    private boolean inMapMode = false;
+    public static boolean inMapMode = false;
+    private static int currentFloor = 1; // Track current floor (1 or 2)
+    
+    public static int getCurrentFloor() {return currentFloor;}
+    
+    public void setCurrentFloor(int floor) {
+        currentFloor = floor;
+    }
 
     // Audio system
     private AudioManager audioManager;
@@ -156,6 +173,27 @@ public class testing extends GameApplication {
         settings.setHeight(600);
         settings.setTitle("Lost Dungeon");
     }
+    
+    // Frame rate limiter to ensure consistent game speed across different monitor refresh rates
+    private long lastUpdateTime = 0;
+    private static final long TARGET_UPDATE_INTERVAL_NS = 16_666_667L; // ~60 FPS (16.67ms per frame)
+    
+    @Override
+    protected void onUpdate(double tpf) {
+        long currentTime = System.nanoTime();
+        
+        // Limit update rate to ~60 FPS to ensure consistent game speed
+        if (lastUpdateTime > 0) {
+            long elapsed = currentTime - lastUpdateTime;
+            if (elapsed < TARGET_UPDATE_INTERVAL_NS) {
+                // Skip this update to maintain target frame rate
+                return;
+            }
+        }
+        
+        lastUpdateTime = currentTime;
+        super.onUpdate(tpf);
+    }
 
     @Override
     protected void initGame() {
@@ -176,6 +214,8 @@ public class testing extends GameApplication {
         ItemRegistry.init();
         inventory = new Inventory();
         inventoryUI = new InventoryUI(inventory, battleSystem);
+        // Set map mode checker for inventory UI
+        inventoryUI.setMapModeChecker(() -> inMapMode);
 
         System.out.println("Inventory system initialized");
         
@@ -206,21 +246,25 @@ public class testing extends GameApplication {
         dialogSystem.setDialogUI(dialogUI);
         
         // Set callbacks to clear/hide UIs when dialog runs
+        // Note: DialogUI now has a full-screen background that covers battle UI,
+        // so we don't need to clear battle UI anymore - just hide other UIs
         dialogSystem.setOnDialogStart(() -> {
-            // Clear BattleUI and MapUI when dialog starts
-            if (battleUI != null) {
-                battleUI.clearAllBattleUI();
-            }
+            // Hide all UIs when dialog starts (dialog background will cover battle UI)
             if (mapUI != null) {
                 mapUI.hide();
                 inMapMode=false;
             }
-            menuUI.hide();
-            // Close LibraryUI if it's open
             if (menuUI != null) {
-                menuUI.hideLibrary();
+                menuUI.hide();
+                menuUI.hideLibrary(); // Close LibraryUI if it's open
             }
-
+            if (shopUI != null) {
+                shopUI.hide();
+            }
+            if (inventoryUI != null) {
+                inventoryUI.hide();
+            }
+            // Battle UI is now covered by dialog's full-screen background, no need to clear it
         });
         dialogSystem.setOnDialogEnd(() -> {
             if (mapUI != null) {
@@ -263,6 +307,11 @@ public class testing extends GameApplication {
             // This callback is called when all enemies are defeated
             handleBattleVictory();
         });
+        
+        battleSystem.setOnBattleLost(() -> {
+            // This callback is called when all heroes are defeated
+            handleBattleDefeat();
+        });
 
 
 
@@ -298,28 +347,20 @@ public class testing extends GameApplication {
         // N key to exit map mode and start battle
         onKeyDown(KeyCode.N, () -> {
             if(battleUI != null&&!battleSystem.hasHeroName("Litaru ")) {
-                resetBackToMenu();
+                if(!dialogUI.isVisible()&&!inventoryUI.isVisible()) {
+                    resetBackToMenu();
+                }
             }
         });
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
-//            System.out.println(battleSystem.getEnemySlot2().getCharacter().toString());
-//            System.out.println(battleSystem.getEnemySlot3().getCharacter().toString());
-
-//            DialogRegistrations.registerRecruitDialogs();
-//            DialogRegistrations.showRandomDialogWithPurpose("recruitDialog");
-
-
+            battleSystem.applyDamage(battleSystem.getHeroSlot(),300);
         });
 
         // M key to return to map mode from battle
         onKeyDown(KeyCode.M, () -> {
-            if(mapUI!=null){
-                mapUI.hide();
-            }
-
+            audioManager.playMusic("camp0.mp3",true);
         });
 
         // F1 key to toggle audio settings
@@ -333,7 +374,7 @@ public class testing extends GameApplication {
             System.out.println("Current mode: " + (inMapMode ? "MAP" : "BATTLE"));
             System.out.println("Inventory UI object: " + inventoryUI);
 
-            if (inventoryUI != null&&!battleSystem.hasHeroName("Lucia")&&!battleSystem.hasHeroName("Azar")&&!battleSystem.hasHeroName("Litaru ")) {
+            if (inventoryUI != null&&!battleSystem.hasHeroName("Lucia")&&!battleSystem.hasHeroName("Azar")&&!battleSystem.hasHeroName("Litaru ")&&!menuUI.isVisible()&&!dialogSystem.isRunning()) {
                 boolean wasVisible = inventoryUI.isVisible();
                 System.out.println("Inventory was visible: " + wasVisible);
 
@@ -350,23 +391,190 @@ public class testing extends GameApplication {
 
         // S key to toggle shop (only works in map mode)
         onKeyDown(KeyCode.S, () -> {
-            System.out.println("S key pressed - toggling shop");
-            if (inMapMode && shopUI != null) {
-                shopUI.toggle();
-                System.out.println("Shop UI toggled. Visible: " + shopUI.isVisible());
-            } else if (!inMapMode) {
-                System.out.println("Shop can only be opened in map mode!");
-            } else {
-                System.out.println("Shop UI is null!");
-            }
+//            System.out.println("S key pressed - toggling shop");
+//            if (inMapMode && shopUI != null) {
+//                shopUI.toggle();
+//                System.out.println("Shop UI toggled. Visible: " + shopUI.isVisible());
+//            } else if (!inMapMode) {
+//                System.out.println("Shop can only be opened in map mode!");
+//            } else {
+//                System.out.println("Shop UI is null!");
+//            }
         });
 
-        // T key to toggle test UI
+        // T key to test camp dialog search 100 times
         onKeyDown(KeyCode.T, () -> {
-//            storyItemInventory.addStoryItem("necro_sword");
-//            storyItemInventory.addStoryItem("necro_sword2");
-//            storyItemInventory.addStoryItem("necro_sword3");
-//            storyItemInventory.addStoryItem("necro_sword4");
+            // Register camp dialogs once
+            DialogRegistrations.registerBasicCampDialog();
+            
+            // Run test 100 times to check percentage
+            int count = 10000;
+            int foundCount = 0;
+            int notFoundCount = 0;
+            Map<String, Integer> dialogCounts = new HashMap<>(); // Track how many times each dialog was found
+            
+            System.out.println("\n========== STARTING CAMP DIALOG TEST (100 runs) ==========");
+            
+            for (int z = 0; z < count; z++) {
+                ArrayList<Observer.characterSlot> heroes = new ArrayList<>(Arrays.asList(battleSystem.getAllHeroes()));
+                // Remove null heroes
+                heroes.removeIf(h -> h == null);
+                Collections.shuffle(heroes);
+
+                // Limit to 3 heroes
+                if (heroes.size() > 3) {
+                    heroes = new ArrayList<>(heroes.subList(0, 3));
+                }
+
+                // Always use all heroes to search
+                int numHeroesToSearch = heroes.size();
+
+                if (numHeroesToSearch == 0 || heroes.isEmpty()) {
+                    // No heroes, count as not found
+                    notFoundCount++;
+                    continue;
+                }
+
+                // Get hero names
+                List<String> heroNames = new ArrayList<>();
+                for (int i = 0; i < numHeroesToSearch && i < heroes.size(); i++) {
+                    String heroName = heroes.get(i).getCharacter().getName();
+                    heroNames.add(heroName);
+                }
+
+                // Search types: 1, 2, 3
+                List<Integer> searchTypes = new ArrayList<>(Arrays.asList(1, 2, 3));
+                Collections.shuffle(searchTypes);
+
+                String foundDialogTitle = null;
+                System.out.println(heroNames.toString());
+                // Try each search type
+                for (int searchType : searchTypes) {
+                    List<String> matchingDialogs = new ArrayList<>();
+                    boolean found = false;
+                    
+                    if (searchType == 1 && numHeroesToSearch >= 1) {
+                        // Search for "camp1" + hero name (try each hero one by one)
+                        DialogLibrary library = DialogLibrary.getInstance();
+                        Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+
+                        for (String heroName : heroNames) {
+                            String searchPattern = "camp1" + heroName;
+
+                            for (String dialogId : allDialogs.keySet()) {
+                                // Check if dialog title contains the pattern
+                                if (dialogId.contains(searchPattern)) {
+                                    String baseTitle = dialogId.substring(0, dialogId.lastIndexOf('_'));
+                                    if (!matchingDialogs.contains(baseTitle)) {
+                                        matchingDialogs.add(baseTitle);
+                                        found = true;
+                                    }
+                                }
+                            }
+
+                            // If found with this hero, stop searching
+                            if (found) {
+                                break;
+                            }
+                        }
+                    } else if (searchType == 2 && numHeroesToSearch >= 2) {
+                        // Search for "camp2" + combinations of 2 hero names
+                        // Check both orderings since dialog might be "camp2Hero1Hero2" or "camp2Hero2Hero1"
+                        DialogLibrary library = DialogLibrary.getInstance();
+                        Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+                        
+                        for (int i = 0; i < heroNames.size(); i++) {
+                            for (int j = i + 1; j < heroNames.size(); j++) {
+                                String hero1 = heroNames.get(i);
+                                String hero2 = heroNames.get(j);
+
+                                for (String dialogId : allDialogs.keySet()) {
+                                    // Check if dialog contains both hero names (order doesn't matter)
+                                    if (dialogId.contains("camp2") && 
+                                        dialogId.contains(hero1) && 
+                                        dialogId.contains(hero2)) {
+                                        String baseTitle = dialogId.substring(0, dialogId.lastIndexOf('_'));
+                                        if (!matchingDialogs.contains(baseTitle)) {
+                                            matchingDialogs.add(baseTitle);
+                                            found = true;
+                                        }
+                                    }
+                                }
+                                // If found with this combination, stop searching
+                                if (found) {
+                                    break;
+                                }
+                            }
+                            // If found with this hero, stop searching
+                            if (found) {
+                                break;
+                            }
+                        }
+                    } else if (searchType == 3 && numHeroesToSearch >= 3) {
+                        // Search for "camp3" + all 3 hero names
+                        // Check if dialog contains all 3 hero names (order doesn't matter)
+                        if (heroNames.size() >= 3) {
+                            String hero1 = heroNames.get(0);
+                            String hero2 = heroNames.get(1);
+                            String hero3 = heroNames.get(2);
+                            
+                            DialogLibrary library = DialogLibrary.getInstance();
+                            Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+
+                            for (String dialogId : allDialogs.keySet()) {
+                                // Check if dialog contains "camp3" and all three hero names
+                                if (dialogId.contains("camp3") && 
+                                    dialogId.contains(hero1) && 
+                                    dialogId.contains(hero2) && 
+                                    dialogId.contains(hero3)) {
+                                    matchingDialogs.add(dialogId.substring(0, dialogId.lastIndexOf('_')));
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // If found dialogs, randomly pick one
+                    if (!matchingDialogs.isEmpty()) {
+                        Collections.shuffle(matchingDialogs);
+                        foundDialogTitle = matchingDialogs.get(0);
+                        break; // Found a dialog, stop searching
+                    }
+                }
+
+                // Count results
+                if (foundDialogTitle != null) {
+                    foundCount++;
+                    // Track individual dialog counts
+                    dialogCounts.put(foundDialogTitle, dialogCounts.getOrDefault(foundDialogTitle, 0) + 1);
+                    System.out.println("Run " + (z + 1) + ": Found dialog with title: " + foundDialogTitle);
+                } else {
+                    notFoundCount++;
+                    System.out.println("Run " + (z + 1) + ": Found nothing");
+                }
+            }
+            
+            // Print statistics
+            System.out.println("\n========== CAMP DIALOG TEST RESULTS ==========");
+            System.out.println("Total runs: " + count);
+            System.out.println("Found: " + foundCount + " (" + String.format("%.2f", foundCount * 100.0 / count) + "%)");
+            System.out.println("Not found: " + notFoundCount + " (" + String.format("%.2f", notFoundCount * 100.0 / count) + "%)");
+            System.out.println("\n--- Individual Dialog Counts ---");
+            if (dialogCounts.isEmpty()) {
+                System.out.println("No dialogs were found.");
+            } else {
+                // Sort by count (descending) for better readability
+                List<Map.Entry<String, Integer>> sortedDialogs = new ArrayList<>(dialogCounts.entrySet());
+                sortedDialogs.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+                
+                for (Map.Entry<String, Integer> entry : sortedDialogs) {
+                    String dialogTitle = entry.getKey();
+                    int timesFound = entry.getValue();
+                    double percentage = (timesFound * 100.0 / count);
+                    System.out.println("  " + dialogTitle + ": " + timesFound + " times (" + String.format("%.2f", percentage) + "%)");
+                }
+            }
+            System.out.println("=============================================\n");
         });
 
         // D key to show random smallTalk dialog and print all registered dialogs
@@ -417,21 +625,52 @@ public class testing extends GameApplication {
     }
     
     /**
+     * Initialize floor 2 with 1.5x enemy stats
+     */
+    public void initializeFloor2() {
+        currentFloor = 2;
+        // Create new GameMap with 1.5x stat multiplier
+        gameMap = new GameMap(1.25f);
+        mapUI.setGameMap(gameMap);
+        // Reset the selected path's currentNodeIndex to start from the beginning
+        if (gameMap.getSelectedPath() != null) {
+            gameMap.getSelectedPath().currentNodeIndex = 0;
+        }
+        System.out.println("Floor 2 initialized with 1.5x enemy stats");
+    }
+    
+    /**
      * Reset game back to menu - resets heroes, clears battle data, and restarts game
      * Can be called from MapUI when clicking on boss node or from N key
      */
     public void resetBackToMenu() {
         try {
+            //restart inventory
+            inventory.addGold(-inventory.getGold()+300);
+            inventory.removeAllItems();
+            giveStartingItems();
+
+            currentFloor = 1; // Reset floor to 1 when returning to menu
             battleSystem.resetHeroes();
-            setSelectedHeroes(new String[]{selectedHeroes[0]});
+            if("Azar".equals(selectedHeroes[0])||"Litaru ".equals(selectedHeroes[0])) {
+                battleSystem.removeAllCharacters();
+                setSelectedHeroes(new String[]{"Hero"});
+                battleSystem.configureBattle(battleSystem.getHideTalents(), new String[]{"Hero"});
+            }else{
+                AudioManager.getInstance().playMenuMusic();
+                battleSystem.removeAllCharacters();
+                setSelectedHeroes(new String[]{selectedHeroes[0]});
+                battleSystem.configureBattle(battleSystem.getHideTalents(),new String[]{selectedHeroes[0]});
+            }
             // Clear old enemy data to prevent showing dead enemies in next battle
             battleSystem.clearEnemyData();
+            battleSystem.setPartyMp(0);
             // Stop the battle loop properly
             battleSystem.stopBattleLoop();
             battleUI.clearAllBattleUI();
             mapUI.hide();
             menuUI.show();
-            AudioManager.getInstance().playMenuMusic();
+
             startGame();
             //create new link
 
@@ -443,9 +682,10 @@ public class testing extends GameApplication {
 
     private void handleBattleVictory() {
         //Gain gold
-        for (Observer.characterSlot slot : battleSystem.getAllEnemies()){
-            if (slot !=null){
-                inventory.addGold(100);
+        if(mapUI.getGameMap().getSelectedPath() != null) {
+            int index = mapUI.getGameMap().getSelectedPath().currentNodeIndex;
+            for (String enemy : battleSystem.defeatEnemies) {
+                inventory.addGold(100 + 25 * index);
             }
         }
 
@@ -475,25 +715,33 @@ public class testing extends GameApplication {
 
         DialogRegistrations.showBattleVictoryDialog(battleSystem);
     }
+    
+    private void handleBattleDefeat() {
+        // Stop the battle loop properly
+        battleSystem.stopBattleLoop();
+        
+        // Clear all battle UI elements
+        battleUI.clearAllBattleUI();
+        
+        // Clear old enemy data
+        battleSystem.clearEnemyData();
+        
+        // Reset back to menu
+        resetBackToMenu();
+        
+        // Show defeat dialog
+        DialogRegistrations.showBattleLoseDialog();
+    }
 
     private void giveStartingItems() {
         // Give player some starting consumables
-        inventory.addItem(ItemRegistry.getItem("health_potion_medium"), 3);
-        inventory.addItem(ItemRegistry.getItem("mana_potion_medium"), 2);
+        inventory.addItem(ItemRegistry.getItem("health_potion_small"), 3);
+        inventory.addItem(ItemRegistry.getItem("mana_potion_small"), 2);
         inventory.addItem(ItemRegistry.getItem("elixir_small"), 1);
-
-        // Give player some enemy-targeting items
-        inventory.addItem(ItemRegistry.getItem("fire_bomb"), 2);
-        inventory.addItem(ItemRegistry.getItem("poison_dart"), 1);
-        inventory.addItem(ItemRegistry.getItem("ice_shard"), 1);
-        inventory.addItem(ItemRegistry.getItem("weakness_potion"), 1);
 
         // Give player some starting equipment
         inventory.addItem(ItemRegistry.getItem("iron_sword"), 1);
         inventory.addItem(ItemRegistry.getItem("leather_armor"), 1);
-        inventory.addItem(ItemRegistry.getItem("mana_crystal"), 1);
-
-        System.out.println("Starting items given to player!");
     }
 
     private void showBossSelection() {
@@ -548,7 +796,7 @@ public class testing extends GameApplication {
         mapUI.setTestingInstance(this);
 
         menuUI.setNeededUI(mapUI, battleSystem, battleUI);
-        DialogRegistrations.initializeSystems(battleSystem, battleUI, mapUI, menuUI);
+        DialogRegistrations.initializeSystems(battleSystem, battleUI, mapUI, menuUI, shopUI, inventoryUI,this);
 
         if(!skip_opening) {
             DialogRegistrations.showDialogByTitle("intro","menu");

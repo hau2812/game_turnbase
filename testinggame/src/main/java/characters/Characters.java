@@ -387,8 +387,8 @@ public interface Characters {
                     "Litaru",
                     100,  // atk
                     35,   // matk
-                    18,   // def
-                    12,   // res
+                    40,   // def
+                    40,   // res
                     10,   // spd
                     300, // hp
                     300,// mp
@@ -413,8 +413,8 @@ public interface Characters {
                     "Azar",
                     100,  // atk
                     35,   // matk
-                    18,   // def
-                    12,   // res
+                    40,   // def
+                    40,   // res
                     10,   // spd
                     450, // hp
                     200,// mp

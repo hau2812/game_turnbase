@@ -7,9 +7,12 @@ import characters.BuffDebuff;
 import map.MapUI;
 import org.example.testing;
 import ui.MenuUI;
+import ui.ShopUI;
+import ui.InventoryUI;
 import characters.Observer;
 
 import java.util.*;
+import java.lang.reflect.Field;
 
 /**
  * Central file for all dialog registrations and dialog-related logic
@@ -21,19 +24,38 @@ public class DialogRegistrations {
     private static BattleUI battleUI;
     private static MapUI mapUI;
     private static MenuUI menuUI;
+    private static ShopUI shopUI;
+    private static InventoryUI inventoryUI;
+    private static testing testingInstance;
     
+    // Track which UI was active before dialog started (for "current" returnPlace)
+    private static String previousUIState = null; // "menu", "map", "battle", "shop", or "inventory"
+    // Track underlying UI when shop/inventory overlay is active
+    private static String previousUnderlyingUIState = null; // "menu", "map", or "battle"
+    private static boolean eventDialogsRegistered = false;
     /**
      * Initialize system references for dialog control
      * @param battleSystem Reference to battle system
      * @param battleUI Reference to battle UI
      * @param mapUI Reference to map UI
      * @param menuUI Reference to menu UI
+     * @param shopUI Reference to shop UI
+     * @param inventoryUI Reference to inventory UI
      */
-    public static void initializeSystems(BattleSystem battleSystem, BattleUI battleUI, MapUI mapUI, MenuUI menuUI) {
+    public static void initializeSystems(BattleSystem battleSystem, BattleUI battleUI, MapUI mapUI, MenuUI menuUI, ShopUI shopUI, InventoryUI inventoryUI,testing testingInstance) {
         DialogRegistrations.battleSystem = battleSystem;
         DialogRegistrations.battleUI = battleUI;
         DialogRegistrations.mapUI = mapUI;
         DialogRegistrations.menuUI = menuUI;
+        DialogRegistrations.shopUI = shopUI;
+        DialogRegistrations.inventoryUI = inventoryUI;
+        DialogSystem system = DialogSystem.getInstance();
+        system.setOnDialogEnd(() -> {
+            if (mapUI != null) {
+                mapUI.showSelectedPath();
+            }
+        });
+        DialogRegistrations.testingInstance = testingInstance;
     }
     
     /**
@@ -70,25 +92,27 @@ public class DialogRegistrations {
      */
     public static void registerAllDialogs() {
         // Register battle victory dialogs
-        registerBattleVictoryDialogs();
         registerIntroDialog();
         registerFlamitaHaveAWalk();
         registerFlamitaBossFight();
         registerFirstRecruitDialogs("Flamita");
+        registerTestingDialog();
         // Register small talk dialogs
         //registerAzarLeunaDialog();
         //registerAzarFlamitaDialog();
-        
+
         // Add more dialog registrations here as needed
         // registerCampfireDialogs();
         // registerShopDialogs();
         // etc.
     }
-    /**
-     * Get 3 random heroes from the provided list, excluding heroes already in the party
-     * @param heroList List of available hero names
-     * @return List of 3 random hero names (or fewer if not enough heroes available)
-     */
+    public static void registerTestingDialog(){
+        dialogMakerHelper("testingDialog;" +
+                ":Line1;" +
+                ":Line2;" +
+                ":Line3");
+    }
+
     public static List<String> get3RandomHero(List<String> heroList) {
         if (heroList == null || heroList.isEmpty()) {
             return new ArrayList<>();
@@ -165,11 +189,6 @@ public class DialogRegistrations {
 
         }
     }
-    
-    /**
-     * Add a hero to the current party
-     * @param heroName Name of the hero to add
-     */
     private static void addHeroToParty(String heroName) {
         if (battleSystem == null) {
             System.out.println("Cannot add hero: battleSystem is null");
@@ -214,10 +233,6 @@ public class DialogRegistrations {
         }
         System.out.println("Added " + heroName + " to the party! Party now has: " + Arrays.toString(updatedHeroes));
     }
-    /**
-     * Register battle victory dialogs
-     * Registers the base "battle_victory" dialog structure
-     */
     private static boolean registerFirstRecruitDialogs(String heroName){
         if(false&&testing.getStatus().contains("met"+heroName)){
             return false;
@@ -286,16 +301,7 @@ public class DialogRegistrations {
         }
     }
 
-    private static void registerBattleVictoryDialogs() {
-        // Register base battle victory dialog structure
-        // The actual hero-specific dialogs will be created dynamically in showBattleVictoryDialog()
-        // But we can register a template or placeholder if needed
-    }
-    
-    /**
-     * Show battle victory dialog based on hero conditions
-     * @param battleSystem The battle system to get heroes from
-     */
+
     public static void showBattleVictoryDialog(BattleSystem battleSystem) {
         Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
         
@@ -354,6 +360,7 @@ public class DialogRegistrations {
             showBattleVictoryDialogSolareth();
             testing.storyItemInventory.addStoryItem("radiant_core");
         }else if(battleSystem.containDefeatEnemies("Spiritual Monster")){
+            testingInstance.resetBackToMenu();
             showDialogByTitle("LitaruEndDialog4","menu");
             testing.storyItemInventory.addStoryItem("litaru_sword");
             testing.storyItemInventory.removeStoryItem("necro_sword");
@@ -449,6 +456,14 @@ public class DialogRegistrations {
         linkChainToTheEndOf("battleVictorySolareth","battleVictorySolareth3_1");
         showDialogByTitle("battleVictorySolareth","");
     }
+
+    public static void showBattleLoseDialog(){
+        dialogMakerHelperWithPurpose("battleLoseDialog1;" +
+                "Azar:Shit...they are tougher than I expected;" +
+                "Azar:Let's get out of here","loseDialog");
+        showRandomDialogWithPurpose("loseDialog","menu");
+    }
+
     private static void registerIntroDialog(){
         String dialogString = "intro;" +
                 ":In a world that literally anything can happen...;" +
@@ -485,7 +500,6 @@ public class DialogRegistrations {
                 ":And then our Azar decides to go to a place that will change his life forever...again?";
         dialogMakerHelper(dialogString);
     }
-
     private static void registerFlamitaHaveAWalk(){
 
 
@@ -510,7 +524,7 @@ public class DialogRegistrations {
                 "Azar:Well...That’s good to know...I'll call you later when I need to go to Lost Dungeon together with me;" +
                 "Flamita:You know I never miss a chance to be stronger. You can count on me");
         dialogMakerHelper("FlamitaHaveAWalk_Feather;" +
-                "Flamita:Wha...Why do you thing I have it?;" +
+                "Flamita:Wha...Why do you think I have it?;" +
                 "Azar:...seriously?;" +
                 "Flamita:Ok I... does have it, but why do you even need it?;" +
                 "Azar:For a case I just got;" +
@@ -531,12 +545,12 @@ public class DialogRegistrations {
             branchEntry.withOption(new DialogOption("Talk about other").withNextDialog("FlamitaHaveAWalk_Other_1"));
             branchEntry.withOption(new DialogOption("Ask about Ignari").withNextDialog("FlamitaHaveAWalk_Ignari_1"));
             if(testing.getStatus().contains("battleVictorySolareth")&&!testing.getStatus().contains("FlamitaHaveAWalk_Feather")) {
-                branchEntry.withOption(new DialogOption("Ask about Phoenix Feather").withNextDialog("FlamitaHaveAWalk_Feather_1"));
-                testing.storyItemInventory.addStoryItem("Phoenix_feather");
+                branchEntry.withOption(new DialogOption("Ask about Phoenix Feather")
+                    .withNextDialog("FlamitaHaveAWalk_Feather_1")
+                    .withRunnable(() -> testing.storyItemInventory.addStoryItem("Phoenix_feather")));
             }
         }
     }
-
     public static void registerFlamitaBossFight(){
         dialogMakerHelper("FlamitaBossFightBegin;" +
                 ":You see a red hair girl standing next to the way out...");
@@ -588,6 +602,679 @@ public class DialogRegistrations {
         }
     }
 
+
+    
+
+    private static void setDialogText(DialogEntry entry, String newText) {
+        try {
+            Field textField = DialogEntry.class.getDeclaredField("text");
+            textField.setAccessible(true);
+            textField.set(entry, newText);
+        } catch (Exception e) {
+            System.err.println("Failed to set dialog text: " + e.getMessage());
+        }
+    }
+    public static void registerBasicEventDialog(){
+        if (eventDialogsRegistered) {
+            return; // Already registered
+        }
+        
+        if (battleSystem == null) {
+            System.out.println("BattleSystem not initialized, cannot register event dialogs");
+            return;
+        }
+        
+        DialogLibrary library = DialogLibrary.getInstance();
+        java.util.Random random = new java.util.Random();
+        
+        // Get heroes for the runnables (max 3 heroes)
+        Observer.characterSlot hero1 = null;
+        Observer.characterSlot hero2 = null;
+        Observer.characterSlot hero3 = null;
+        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+        hero1 = heroes.length > 0 ? heroes[0] : null;
+        hero2 = heroes.length > 1 ? heroes[1] : null;
+        hero3 = heroes.length > 2 ? heroes[2] : null;
+        
+        // Store final references for lambda
+        Observer.characterSlot finalHero1 = hero1;
+        Observer.characterSlot finalHero2 = hero2;
+        Observer.characterSlot finalHero3 = hero3;
+        final java.util.Random finalRandom = random;
+        
+        // Helper method to apply healing
+        java.util.function.Consumer<Float> healCharacter = (amount) -> {
+            if (finalHero1 != null && finalHero1.getCurrentHp() > 0) {
+                float newHp = Math.min(finalHero1.getCharacter().getHp(), finalHero1.getCurrentHp() + amount);
+                finalHero1.setCurrentHp(newHp);
+            }
+            if (finalHero2 != null && finalHero2.getCurrentHp() > 0) {
+                float newHp = Math.min(finalHero2.getCharacter().getHp(), finalHero2.getCurrentHp() + amount);
+                finalHero2.setCurrentHp(newHp);
+            }
+            if (finalHero3 != null && finalHero3.getCurrentHp() > 0) {
+                float newHp = Math.min(finalHero3.getCharacter().getHp(), finalHero3.getCurrentHp() + amount);
+                finalHero3.setCurrentHp(newHp);
+            }
+        };
+        
+        // Helper method to restore MP
+        java.util.function.Consumer<Float> restoreMp = (amount) -> {
+            if (finalHero1 != null && finalHero1.getCurrentHp() > 0) {
+                float newMp = Math.min(finalHero1.getCharacter().getMp(), finalHero1.getCurrentMp() + amount);
+                finalHero1.setCurrentMp(newMp);
+            }
+            if (finalHero2 != null && finalHero2.getCurrentHp() > 0) {
+                float newMp = Math.min(finalHero2.getCharacter().getMp(), finalHero2.getCurrentMp() + amount);
+                finalHero2.setCurrentMp(newMp);
+            }
+            if (finalHero3 != null && finalHero3.getCurrentHp() > 0) {
+                float newMp = Math.min(finalHero3.getCharacter().getMp(), finalHero3.getCurrentMp() + amount);
+                finalHero3.setCurrentMp(newMp);
+            }
+        };
+        
+        // Helper method to apply damage
+        java.util.function.Consumer<Float> damageCharacter = (amount) -> {
+            if (finalHero1 != null && finalHero1.getCurrentHp() > 0) {
+                float newHp = Math.max(1, finalHero1.getCurrentHp() - amount);
+                finalHero1.setCurrentHp(newHp);
+            }
+            if (finalHero2 != null && finalHero2.getCurrentHp() > 0) {
+                float newHp = Math.max(1, finalHero2.getCurrentHp() - amount);
+                finalHero2.setCurrentHp(newHp);
+            }
+            if (finalHero3 != null && finalHero3.getCurrentHp() > 0) {
+                float newHp = Math.max(1, finalHero3.getCurrentHp() - amount);
+                finalHero3.setCurrentHp(newHp);
+            }
+        };
+        
+        // Event 1: Healing Spring
+        dialogMakerHelperWithPurpose("Event_HealingSpring;:You found a sacred spring in the forest. The spring water can restore your health.", "event");
+        DialogEntry event1 = library.getDialog("Event_HealingSpring_1");
+        if (event1 != null) {
+            event1.withOption(new DialogOption("Drink deeply")
+                .withRunnable(() -> {
+                    int outcome = finalRandom.nextInt(10);
+                    String resultId;
+                    if (outcome < 5) {
+                        // 40% chance: Cursed water - take damage
+                        damageCharacter.accept(100f);
+                        resultId = "Event_HealingSpring_Cursed_1";
+                    } else if (outcome < 8) {
+                        // 30% chance: Good healing
+                        float healAmount = 100 + finalRandom.nextInt(100); // 100-300 HP
+                        healCharacter.accept(healAmount);
+                        restoreMp.accept(100f);
+                        resultId = "Event_HealingSpring_Good_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "The sacred water flows through your body, restoring " + (int)healAmount + " HP and 100 MP to all heroes!");
+                        }
+                    } else {
+                        // 30% chance: Great healing
+                        healCharacter.accept(200f);
+                        restoreMp.accept(200f);
+                        resultId = "Event_HealingSpring_Great_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "The sacred water's power flows through you! All heroes recovered 300 HP and 200 MP!");
+                        }
+                    }
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog(resultId);
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+            event1.withOption(new DialogOption("Take a small sip")
+                .withRunnable(() -> {
+                    healCharacter.accept(150f);
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_HealingSpring_Safe_1");
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_HealingSpring_Cursed;:The water was cursed! All heroes lost 100 HP!");
+        dialogMakerHelper("Event_HealingSpring_Good;:The sacred water flows through your body, restoring health and MP to all heroes!");
+        dialogMakerHelper("Event_HealingSpring_Great;:The sacred water's power flows through you! All heroes recovered significant HP and MP!");
+        dialogMakerHelper("Event_HealingSpring_Safe;:You took a small sip and recovered a bit of health. All heroes recovered 150 HP.");
+        
+        // Event 2: Treasure Chest
+        dialogMakerHelperWithPurpose("Event_TreasureChest;:You discovered an ancient treasure chest hidden under tree roots. It might contain valuable items.", "event");
+        DialogEntry event2 = library.getDialog("Event_TreasureChest_1");
+        if (event2 != null) {
+            event2.withOption(new DialogOption("Open the chest")
+                .withRunnable(() -> {
+                    int outcome = finalRandom.nextInt(10);
+                    String resultId;
+                    if (outcome <= 5) {
+                        // 50% chance: Trap
+                        float damage = 100 + finalRandom.nextInt(200); // 100-300 damage
+                        damageCharacter.accept(damage);
+                        resultId = "Event_TreasureChest_Trap_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "It was a trap! All heroes lost " + (int)damage + " HP!");
+                        }
+                    } else if (outcome <= 8) {
+                        // 30% chance: Good treasure
+                        healCharacter.accept(250f);
+                        restoreMp.accept(150f);
+                        resultId = "Event_TreasureChest_Good_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You found healing potions inside! All heroes recovered 250 HP and 150 MP!");
+                        }
+                    } else {
+                        // 20% chance: Great treasure
+                        healCharacter.accept(300f);
+                        restoreMp.accept(200f);
+                        int goldEarned = 0;
+                        if (characters.SpecialTalents.inventory != null) {
+                            goldEarned = 100 + finalRandom.nextInt(100);
+                            characters.SpecialTalents.inventory.addGold(goldEarned);
+                        }
+                        resultId = "Event_TreasureChest_Great_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You found a great treasure! All heroes recovered 300 HP and 200 MP, and you found " + goldEarned + " gold!");
+                        }
+                    }
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog(resultId);
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+            event2.withOption(new DialogOption("Leave it alone")
+                .withRunnable(() -> {
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_TreasureChest_Leave_1");
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_TreasureChest_Trap;:It was a trap! All heroes took damage!");
+        dialogMakerHelper("Event_TreasureChest_Good;:You found healing potions inside! All heroes recovered 250 HP and 150 MP!");
+        dialogMakerHelper("Event_TreasureChest_Great;:You found a great treasure! All heroes recovered 500 HP and 250 MP, and you found some gold!");
+        dialogMakerHelper("Event_TreasureChest_Leave;:You decided to leave the chest untouched and continue on your way.");
+        
+        // Event 3: Rockslide
+        dialogMakerHelperWithPurpose("Event_Rockslide;:Rocks are falling from above! You must quickly find shelter.", "event");
+        DialogEntry event3 = library.getDialog("Event_Rockslide_1");
+        if (event3 != null) {
+            event3.withOption(new DialogOption("Try to dodge")
+                .withRunnable(() -> {
+                    int outcome = finalRandom.nextInt(10);
+                    String resultId;
+                    if (outcome <= 3) {
+                        // 30% chance: Bad - heavy damage
+                        float damage = 150 + finalRandom.nextInt(200); // 150-350 damage
+                        damageCharacter.accept(damage);
+                        resultId = "Event_Rockslide_DodgeBad_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You couldn't dodge in time! All heroes lost " + (int)damage + " HP!");
+                        }
+                    } else if (outcome <= 6) {
+                        // 30% chance: Neutral - minor damage
+                        float damage = 50 + finalRandom.nextInt(100); // 50-150 damage
+                        damageCharacter.accept(damage);
+                        resultId = "Event_Rockslide_DodgeNeutral_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You dodged most of the rocks but still got hurt. All heroes lost " + (int)damage + " HP.");
+                        }
+                    } else {
+                        // 40% chance: Good - find treasure
+                        healCharacter.accept(200f);
+                        restoreMp.accept(200f);
+                        resultId = "Event_Rockslide_DodgeGood_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You found treasure in the rubble! All heroes recovered 200 HP and 200 MP!");
+                        }
+                    }
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog(resultId);
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+            event3.withOption(new DialogOption("Take cover")
+                .withRunnable(() -> {
+                    float damage = 10 + finalRandom.nextInt(90);
+                    damageCharacter.accept(damage);
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_Rockslide_Cover_1");
+                    if (result != null) {
+                        setDialogText(result, "You took cover safely but still got slightly injured. All heroes lost " + (int)damage + " HP.");
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_Rockslide_DodgeBad;:You couldn't dodge in time! All heroes took significant damage!");
+        dialogMakerHelper("Event_Rockslide_DodgeNeutral;:You dodged most of the rocks but still got hurt. All heroes took some damage.");
+        dialogMakerHelper("Event_Rockslide_DodgeGood;:You found treasure in the rubble! All heroes recovered 200 HP and 200 MP!");
+        dialogMakerHelper("Event_Rockslide_Cover;:You took cover safely but still got slightly injured. All heroes took minor damage.");
+        
+        // Event 4: Mysterious Cave
+        dialogMakerHelperWithPurpose("Event_MysteriousCave;:A mysterious cave appears before you. There is a strange light inside.", "event");
+        DialogEntry event4 = library.getDialog("Event_MysteriousCave_1");
+        if (event4 != null) {
+            event4.withOption(new DialogOption("Enter the cave")
+                .withRunnable(() -> {
+                    int outcome = finalRandom.nextInt(10);
+                    String resultId;
+                    if (outcome <= 2) {
+                        // 20% chance: Monster attack
+                        damageCharacter.accept(200f);
+                        resultId = "Event_MysteriousCave_Monster_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "A cave monster attacks! All heroes lost 200 HP!");
+                        }
+                    } else if (outcome <= 4) {
+                        // 20% chance: Cursed
+                        if (finalHero1 != null) finalHero1.setCurrentMp(Math.max(0, finalHero1.getCurrentMp() - 150));
+                        if (finalHero2 != null) finalHero2.setCurrentMp(Math.max(0, finalHero2.getCurrentMp() - 150));
+                        if (finalHero3 != null) finalHero3.setCurrentMp(Math.max(0, finalHero3.getCurrentMp() - 150));
+                        resultId = "Event_MysteriousCave_Cursed_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "The cave is cursed! All heroes lost 150 MP!");
+                        }
+                    } else if (outcome <= 7) {
+                        // 30% chance: Good - crystals
+                        healCharacter.accept(400f);
+                        restoreMp.accept(300f);
+                        resultId = "Event_MysteriousCave_Crystals_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "Magic crystals enhance your power! All heroes recovered 400 HP and 300 MP!");
+                        }
+                    } else {
+                        // 30% chance: Great - wisdom
+                        if (finalHero1 != null) {
+                            finalHero1.setCurrentHp(finalHero1.getCharacter().getHp());
+                            restoreMp.accept(finalHero1.getCharacter().getMp());
+                        }
+                        if (finalHero2 != null) {
+                            finalHero2.setCurrentHp(finalHero2.getCharacter().getHp());
+                            restoreMp.accept(finalHero2.getCharacter().getMp());
+                        }
+                        if (finalHero3 != null) {
+                            finalHero3.setCurrentHp(finalHero3.getCharacter().getHp());
+                            restoreMp.accept(finalHero3.getCharacter().getMp());
+                        }
+                        resultId = "Event_MysteriousCave_Wisdom_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "Ancient wisdom flows through you! All heroes fully recovered HP and MP!");
+                        }
+                    }
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog(resultId);
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+            event4.withOption(new DialogOption("Avoid the cave")
+                .withRunnable(() -> {
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_MysteriousCave_Avoid_1");
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_MysteriousCave_Crystals;:Magic crystals enhance your power! All heroes recovered 400 HP and 300 MP!");
+        dialogMakerHelper("Event_MysteriousCave_Cursed;:The cave is cursed! All heroes lost 150 MP!");
+        dialogMakerHelper("Event_MysteriousCave_Wisdom;:Ancient wisdom flows through you! All heroes fully recovered HP and MP!");
+        dialogMakerHelper("Event_MysteriousCave_Monster;:A cave monster attacks! All heroes lost 200 HP!");
+        dialogMakerHelper("Event_MysteriousCave_Avoid;:You decided not to enter the cave.");
+        
+        // Event 5: Mountain Summit
+        dialogMakerHelperWithPurpose("Event_MountainSummit;:You have reached the sacred mountain summit. The mountain gods bestow their blessing upon your journey.", "event");
+        DialogEntry event5 = library.getDialog("Event_MountainSummit_1");
+        if (event5 != null) {
+            event5.withOption(new DialogOption("Receive the blessing (pay tribute)")
+                .withRunnable(() -> {
+                    if (characters.SpecialTalents.inventory != null && characters.SpecialTalents.inventory.getGold() >= 150) {
+                        characters.SpecialTalents.inventory.spendGold(150);
+                        healCharacter.accept(500f);
+                        restoreMp.accept(300f);
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_MountainSummit_Result_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    } else {
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_MountainSummit_NoGold_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    }
+                }));
+            event5.withOption(new DialogOption("Pray for guidance (free)")
+                .withRunnable(() -> {
+                    restoreMp.accept(200f);
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_MountainSummit_Pray_1");
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_MountainSummit_Result;:You paid 150 gold as tribute and received the blessing of the sacred mountain! All heroes recovered 500 HP and 300 MP!");
+        dialogMakerHelper("Event_MountainSummit_NoGold;:You don't have enough gold to pay tribute for the blessing.");
+        dialogMakerHelper("Event_MountainSummit_Pray;:Your prayer was answered. All heroes recovered 200 MP!");
+        
+        // Event 6: Village Shop
+        dialogMakerHelperWithPurpose("Event_VillageShop;:A village shop has many useful items. The shopkeeper is friendly to customers.", "event");
+        DialogEntry event6 = library.getDialog("Event_VillageShop_1");
+        if (event6 != null) {
+            event6.withOption(new DialogOption("Buy healing potions (100 gold)")
+                .withRunnable(() -> {
+                    if (characters.SpecialTalents.inventory != null && characters.SpecialTalents.inventory.getGold() >= 100) {
+                        characters.SpecialTalents.inventory.spendGold(100);
+                        healCharacter.accept(250f);
+                        restoreMp.accept(150f);
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_VillageShop_Buy_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    } else {
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_VillageShop_NoGold_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    }
+                }));
+            event6.withOption(new DialogOption("Buy premium potions (200 gold)")
+                .withRunnable(() -> {
+                    if (characters.SpecialTalents.inventory != null && characters.SpecialTalents.inventory.getGold() >= 200) {
+                        characters.SpecialTalents.inventory.spendGold(200);
+                        healCharacter.accept(400f);
+                        restoreMp.accept(250f);
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_VillageShop_Premium_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    } else {
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_VillageShop_NoGold_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    }
+                }));
+            event6.withOption(new DialogOption("Leave without buying")
+                .withRunnable(() -> {
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_VillageShop_Leave_1");
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_VillageShop_Buy;:You bought healing potions for 100 gold! All heroes recovered 250 HP and 150 MP!");
+        dialogMakerHelper("Event_VillageShop_Premium;:You bought premium potions for 200 gold! All heroes recovered 400 HP and 250 MP!");
+        dialogMakerHelper("Event_VillageShop_NoGold;:You don't have enough gold to buy anything.");
+        dialogMakerHelper("Event_VillageShop_Leave;:You decided to leave the shop without buying anything.");
+        
+        // Event 7: Resting Inn
+        dialogMakerHelperWithPurpose("Event_RestingInn;:A cozy inn with comfortable beds. You can rest and recover your strength.", "event");
+        DialogEntry event7 = library.getDialog("Event_RestingInn_1");
+        if (event7 != null) {
+            event7.withOption(new DialogOption("Rest at the inn (50 gold)")
+                .withRunnable(() -> {
+                    if (characters.SpecialTalents.inventory != null && characters.SpecialTalents.inventory.getGold() >= 50) {
+                        characters.SpecialTalents.inventory.spendGold(50);
+                        if (finalHero1 != null) {
+                            finalHero1.setCurrentHp(finalHero1.getCharacter().getHp());
+                            finalHero1.setCurrentMp(finalHero1.getCharacter().getMp());
+                        }
+                        if (finalHero2 != null) {
+                            finalHero2.setCurrentHp(finalHero2.getCharacter().getHp());
+                            finalHero2.setCurrentMp(finalHero2.getCharacter().getMp());
+                        }
+                        if (finalHero3 != null) {
+                            finalHero3.setCurrentHp(finalHero3.getCharacter().getHp());
+                            finalHero3.setCurrentMp(finalHero3.getCharacter().getMp());
+                        }
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_RestingInn_Rest_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    } else {
+                        DialogSystem system = DialogSystem.getInstance();
+                        DialogEntry result = library.getDialog("Event_RestingInn_NoGold_1");
+                        if (result != null) {
+                            system.addDialogToQueue(result);
+                        }
+                    }
+                }));
+            event7.withOption(new DialogOption("Just rest briefly (free)")
+                .withRunnable(() -> {
+                    healCharacter.accept(150f);
+                    restoreMp.accept(100f);
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog("Event_RestingInn_Brief_1");
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_RestingInn_Rest;:You paid 50 gold and rested completely, fully recovering HP and MP!");
+        dialogMakerHelper("Event_RestingInn_NoGold;:You don't have enough gold to rest at the inn.");
+        dialogMakerHelper("Event_RestingInn_Brief;:You took a brief rest. All heroes recovered 150 HP and 100 MP!");
+        
+        // Event 8: Helpful Villager
+        dialogMakerHelperWithPurpose("Event_HelpfulVillager;:A villager has an interesting story and might be able to help you.", "event");
+        DialogEntry event8 = library.getDialog("Event_HelpfulVillager_1");
+        if (event8 != null) {
+            event8.withOption(new DialogOption("Talk to the villager")
+                .withRunnable(() -> {
+                    int outcome = finalRandom.nextInt(3);
+                    String resultId = "Event_HelpfulVillager_Result" + outcome + "_1";
+                    if (outcome == 0) {
+                        healCharacter.accept(200f);
+                    } else if (outcome == 1) {
+                        restoreMp.accept(200f);
+                    } else {
+                        healCharacter.accept(150f);
+                        restoreMp.accept(100f);
+                    }
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog(resultId);
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+            event8.withOption(new DialogOption("Offer to help")
+                .withRunnable(() -> {
+                    int outcome = finalRandom.nextInt(10);
+                    String resultId;
+                    if (outcome <= 2) {
+                        // 20% chance: Something goes wrong
+                        damageCharacter.accept(50f);
+                        resultId = "Event_HelpfulVillager_HelpBad_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "Something went wrong while helping! All heroes lost 50 HP.");
+                        }
+                    } else if (outcome <= 6) {
+                        // 40% chance: Earn gold
+                        int goldEarned = 0;
+                        if (characters.SpecialTalents.inventory != null) {
+                            goldEarned = 100 + finalRandom.nextInt(100); // 100-200 gold
+                            characters.SpecialTalents.inventory.addGold(goldEarned);
+                        }
+                        resultId = "Event_HelpfulVillager_HelpGold_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You helped the villager with their task and earned " + goldEarned + " gold!");
+                        }
+                    } else {
+                        // 40% chance: Earn gold + healing
+                        int goldEarned = 0;
+                        if (characters.SpecialTalents.inventory != null) {
+                            goldEarned = 150 + finalRandom.nextInt(100); // 150-250 gold
+                            characters.SpecialTalents.inventory.addGold(goldEarned);
+                        }
+                        healCharacter.accept(200f);
+                        restoreMp.accept(150f);
+                        resultId = "Event_HelpfulVillager_HelpGreat_1";
+                        DialogEntry result = library.getDialog(resultId);
+                        if (result != null) {
+                            setDialogText(result, "You helped the villager and they rewarded you with " + goldEarned + " gold and healing items! All heroes recovered 200 HP and 150 MP!");
+                        }
+                    }
+                    DialogSystem system = DialogSystem.getInstance();
+                    DialogEntry result = library.getDialog(resultId);
+                    if (result != null) {
+                        system.addDialogToQueue(result);
+                    }
+                }));
+        }
+        dialogMakerHelper("Event_HelpfulVillager_Result0;:The kind villager gave you medicine! All heroes recovered 200 HP!");
+        dialogMakerHelper("Event_HelpfulVillager_Result1;:The wise elder taught you magic! All heroes recovered 200 MP!");
+        dialogMakerHelper("Event_HelpfulVillager_Result2;:The merchant sold you items at a cheap price! All heroes recovered 150 HP and 100 MP!");
+        dialogMakerHelper("Event_HelpfulVillager_HelpBad;:Something went wrong while helping! All heroes took minor damage.");
+        dialogMakerHelper("Event_HelpfulVillager_HelpGold;:You helped the villager with their task and earned some gold!");
+        dialogMakerHelper("Event_HelpfulVillager_HelpGreat;:You helped the villager and they rewarded you with gold and healing items! All heroes recovered HP and MP!");
+        
+        eventDialogsRegistered = true;
+        System.out.println("Registered 8 random event dialogs with purpose 'event'");
+    }
+    public static void registerBasicCampDialog(){
+        removeAllDialogContainTitle("camp");
+        dialogMakerHelper("campBegin;" +
+                ":The party is resting, all recover to full. Azar seem to checking at his party...;");
+        dialogMakerHelper("camp0;" +
+                "Azar:What even is this???;" +
+                "Azar:How did they manage to make a tavern here???;" +
+                "???:Welcome, I have heard about you, feel free to rest in here and oder some food!;" +
+                "Azar:Hey how did you build this thing here?;" +
+                "???:(walk away)You need to find it yourself~;" +
+                "Azar:Hey wait I'm not done!;" +
+                "Azar:...And who even is this?;" +
+                "Crowd:WooHoo! Can't believe we can listen to Sera singing here!;" +
+                "Azar:...I guess resting is important too.;");
+        if(battleSystem.hasHeroName("Chigon")) {
+            dialogMakerHelperWithPrevious("camp0Chigon;" +
+                    "Chigon:Yay! I want to have some food!", "camp0");
+        }
+        if(battleSystem.hasHeroName("Leuna")) {
+            dialogMakerHelperWithPrevious("camp0Leuna;" +
+                    "Leuna:You guy got any book here?;", "camp0");
+        }
+        if(battleSystem.hasHeroName("Flamita")) {
+            dialogMakerHelperWithPrevious("camp0Flamita;" +
+                    "Flamita:This place is unnecessary, could we move on now?;", "camp0");
+        }
+        if(battleSystem.hasHeroName("Flamita")&&battleSystem.hasHeroName("Flatina")) {
+            dialogMakerHelperWithPrevious("camp0FlamitaFlatina;" +
+                    "Flamita:Hey! Kid can't drink wine;" +
+                    "Flatina:I'm definitely old enough for this...Nooo give it back >.<;", "camp0");
+        }
+        if(battleSystem.hasHeroName("Pieberry")) {
+            dialogMakerHelperWithPrevious("camp0Pieberry;" +
+                    "Pieberry:Wa...Just like in Vavelia;", "camp0");
+        }
+        dialogMakerHelper("camp1Flamita;" +
+                ":Flamita seem to channeling the flame in front of her, trying to harden it up into a dense core...;" +
+                "Azar:So how exactly does your power work?;" +
+                "Flamita:What?;" +
+                "Azar:You know...The...Phoenix 'thing'?;" +
+                "Flamita:You just control it like your mana, but as if it continuing casting heal to yourself;" +
+                "Flamita:It also very effective to cast 'Fire' type spell...;" +
+                "Flamita:But I usually didn't think much and just let it do itself;" +
+                "Azar:Okay so free heal...but what happened if like some kind of instant splash your body away? As I know no heal spell can recovery from that;" +
+                "Flamita:Firstly...That rude ._.;" +
+                "Azar:Sorry :P;" +
+                "Flamita:Even if all of my body turning to dust, it will always be able to generate a new one;" +
+                "Azar:How do you feel when that happened?;" +
+                "Flamita:Just like when you pass out.;" +
+                "Azar:Is it happened fast or like take a while?;" +
+                "Flamita:Quite a while for a full recovery, but if it just a limb then it quite fast;" +
+                "Flamita:Like...ehm...Give me your sword;" +
+                "Azar:What?;" +
+                "Flamita:Mine is magic type so it can't deal much physical damage;" +
+                "Azar:Sure...here.;" +
+                ":She take the sword then slide her arm, no blood is drop but instead a red-golden liquid, it smoke up into the wound and heal it up quickly;" +
+                "Flamita:And even if this!(she chop her arm all the way down);" +
+                ":Strangely the cut part not even drop down but it stick to other part like the red-golden liquid is holding it up and patch it just after a second.;" +
+                "Azar:Damn...Seem like I will leave the frontline to you for a long time;" +
+                "Flamita:Any time.;");
+
+        dialogMakerHelper("camp2FlamitaFlatina;" +
+                "Flamita:Isn't you are responsible to command the main army? Why are you here?;" +
+                "Flatina:Dad said he went to back from retirement to deal with the elf who is annoying us.;" +
+                "Flamita:Why don't you go support for him then?;" +
+                "Flatina:Ask the one who go to have fun all the time!? ._.;" +
+                "Flatina:He want me to have some vacation during this...;" +
+                "Flamita:And you choose to find me?;" +
+                "Flatina:Well... what can I even do?;" +
+                "Flamita:Just...be careful this is not a place for kid;" +
+                "Flatina:Hey I'm not a kid anymore >.<;");
+
+        dialogMakerHelper("camp1Leuna;" +
+                "Leuna:So how much exactly do you know about this 'world'?;" +
+                "Azar:What do you mean?;" +
+                "Leuna:Like... what is your purpose in this world?;" +
+                "Azar:Ehm...solving mysteries?;" +
+                "Leuna:Ok so not that much...;" +
+                "Azar:What???;" +
+                "Leuna:Don't worry you'll know the truth later...;" +
+                "Azar:.-.?");
+        if(!battleSystem.hasHeroName("Vivia")) {
+            dialogMakerHelper("camp2LeunaChigon;" +
+                    "Leuna:There's no way he tell you to come here.;" +
+                    "Chigon:Master said there're unique food in here UwU.;" +
+                    "Leuna:Of course he said that...;" +
+                    "Leuna:But where's Vivia though?;" +
+                    "Chigon:She currently finishing some work before joining us.;" +
+                    "Leuna:...;");
+        }
+        dialogMakerHelper("camp2LeunaPieberry;" +
+                "Leuna:Strange...you don't seem to be from this world.;" +
+                "Pieberry:Yea~ As I said, I come from Vavelia.;" +
+                "Leuna:No...I mean not in 'this universe';" +
+                "Pieberry:OwO?;" +
+                "Leuna:Which mean you have some sort of protection even from the 'creator' himself." +
+                "Pieberry:What are you talking about @@?;" +
+                "Leuna:Don't worry, you don't have to understand.(I didn't said this for you to hear though);");
+
+        dialogMakerHelper("camp3FlamitaLeunaChigon;" +
+                "Flamita:Hey Chigon, let's fight 1v1 outside;" +
+                "Chigon:Okay...I have some itchy spot need to be scratch;" +
+                "Leuna:Stop you two! We need to rest for the next fight;" +
+                "Flamita&Chigon:(Next time);");
+        dialogMakerHelper("camp1Pieberry;" +
+                "Pieberry:I wonder where's he...?;" +
+                "Azar:What's the matter;" +
+                "Pieberry:I have a companion which go with me to here but I don't know why we lost each other just after a while of walking;" +
+                "Azar:Ah...This place call 'Lost Dungeon' for a reason.;" +
+                "Pieberry:Strange...I could summon him very time I want, but not in here.;" +
+                "Azar:(Summon?);" +
+                "Pieberry:If you find any ugly bird then please tell me.;");
+
+        dialogMakerHelper("campNoDialogFound;" +
+                ":Seem like there're only some small talk.");
+    }
+
     public static void showOfficeDialog() {
         dialogMakerHelperWithPurpose("officeDialogBasic1;" +
                 "Azar:(Every day is the same...There are no clues for 'it'...);" +
@@ -615,7 +1302,7 @@ public class DialogRegistrations {
                 "Azar:What else?;" +
                 "Clint:How long until you decide to have a family?;" +
                 "Azar:Wha...What kind of question is that?;" +
-                "Clint:You have working here for 10 years Azar...Don't you thing it's time to take some rest?;" +
+                "Clint:You have working here for 10 years Azar...Don't you think it's time to take some rest?;" +
                 "Azar:I'm still doing good, and also I cannot stop until I find out 'what happened' then;" +
                 "Clint:Seem like I can't stop you Azar...but I must say...;" +
                 "Clint:Having a purpose in life is good but...You must also seek happiness for yourself;" +
@@ -626,7 +1313,7 @@ public class DialogRegistrations {
                 "Clint:Hey...How is it going Azar?;" +
                 "Azar:So far so good...I got every info I need to deal with this case;" +
                 "Clint:I saw you bring the Necro Sword to your warehouse, I'll not ask why you need it but is it ok to go get it alone?;" +
-                "Azar:Why do you thing I'd go alone?;" +
+                "Azar:Why do you think I'd go alone?;" +
                 "Clint:Oh come on… like I don’t know you already...;" +
                 "Clint:The great Azar always 'Well this case needs to be kept confidential, no ally allow';" +
                 "Azar:...;" +
@@ -637,7 +1324,7 @@ public class DialogRegistrations {
                 "Clint:A GIRL!?;" +
                 "Clint:Ok so when do I can get your wedding invitation card;" +
                 "Azar:The fuck? We just met... and beside we're just partner of this one case;" +
-                "Clint:Oh~I~Don't~Thing~So~Azar~;" +
+                "Clint:Oh~I~Don't~Think~So~Azar~;" +
                 "Azar:...;" +
                 "Clint:Anyway...All the way from Aureaxis ha? I'll check about that girl for you;" +
                 "Azar:Hey I didn't said I ne...;" +
@@ -647,7 +1334,7 @@ public class DialogRegistrations {
                 "Clint:I have check all the operational cooperation file with Aureaxis but I have no information about your Litaru;" +
                 "Azar:(Your? ._.) Seem like she maybe a secret agent then?;" +
                 "Clint:I don't know Azar... They always have paper work for every guy work in there;" +
-                "Azar:Why do you thing they have to tell you everything;" +
+                "Azar:Why do you think they have to tell you everything;" +
                 "Clint:Well...ye... you got a point...;" +
                 "Clint:But you need to be careful Azar...;" +
                 "Azar:Sure...sure...;");
@@ -681,7 +1368,6 @@ public class DialogRegistrations {
             showRandomDialogWithPurpose("officeDialog", "menu");
         }
     }
-
     public static void showLitaruStartDialog() {
         dialogMakerHelper("LitaruStart;" +
                 ":(At a random village...);" +
@@ -725,7 +1411,7 @@ public class DialogRegistrations {
                 "Litaru:Oh...that was quick;" +
                 "Litaru:Hmmm...They said to buy the item in the next few day so... we'll need to wait;" +
                 "Azar:Ah...that fine...I'll need to rest for a bit for the show down battle with them;" +
-                "Litaru:Ehe...I don't thing you will need to fight at all;" +
+                "Litaru:Ehe...I don't think you will need to fight at all;" +
                 "Azar:Oh...Why are you so sure?;" +
                 "Litaru:Detective instinct:>;" +
                 "Azar:._.???;");
@@ -788,7 +1474,7 @@ public class DialogRegistrations {
             showDialogByTitle("LitaruEndDialog2","");
             DialogSystem system = DialogSystem.getInstance();
             system.setOnDialogEnd(() -> {
-                AudioManager.getInstance().setMusicVolume(0.5);
+                AudioManager.getInstance().setMusicVolume(0.1);
                 showDialogByTitle("LitaruEndDialog3","litaru_last_battle");
                 AudioManager.getInstance().playMusic("litaru.mp3",true);
             });
@@ -828,10 +1514,44 @@ public class DialogRegistrations {
         }else if(testing.status != null && testing.storyItemInventory.hasStoryItem("necro_sword") && !testing.status.contains("StartDungeonLitaruDialog2") ){
             showDialogByTitle("StartDungeonLitaruDialog2","");
         }else{
-            mapUI.showSelectedPath();
+            if(testing.getCurrentFloor()==2) {
+                dialogMakerHelper("floor2Unlock;" +
+                        "Azar:Hmmm...Seem like the dungeon is safer now, we can get to floor 2.");
+                dialogMakerHelper("floor2UnlockHero;" +
+                        "Hero:And when can I get a name?;" +
+                        "dev:No...Not now v:;");
+                dialogMakerHelper("floor2UnlockFlamita;" +
+                        "Flamita:Let's go to the last floor...;" +
+                        "dev:No...Not now v:;");
+                dialogMakerHelper("floor2UnlockLeuna;" +
+                        "Leuna:What exactly is floor 2? We didn't climb any stair.;" +
+                        "Azar:Floor 2 is 10 node away from the center of this dungeon.;");
+                dialogMakerHelper("floor2UnlockChigon;" +
+                        "Chigon:I hope you bring some food UwU.;");
+                for (Observer.characterSlot hero : battleSystem.getAllHeroes()) {
+                    if(hero!=null) {
+                        linkChainToTheEndOf("floor2Unlock", "floor2Unlock" + hero.getCharacter().getName()+"_1");
+                        showDialogByTitle("floor2Unlock", "");
+                    }
+                }
+            }else{
+                mapUI.showSelectedPath();
+            }
         }
     }
-
+    public static void showEquipmentDialog(String string){
+        dialogMakerHelper("FlamitaAshbringerDialog;" +
+                "Flamita:Oh...how did you find it?;" +
+                "Flamita:It got teleport away when I get here.;" +
+                "Flamita:Weird...I usually can summon it whenever I want, but not in here.;");
+        dialogMakerHelper("FlatinaAshbringerDialog;" +
+                "Flatina:How did you find this sword?;" +
+                "Flatina:My sister always unsummon it when she don't need it.;" +
+                "Flatina:Well... store it somewhere, I don't think I need it.");
+        dialogMakerHelper("PieberryBlue Flower StaffDialog;" +
+                "Pieberry:I wonder how did it get here.;");
+        showDialogByTitle(string,"current");
+    }
 
     public static void showRandomDialogWithPurpose(String purpose,String returnPlace) {
         if (purpose == null || purpose.trim().isEmpty()) {
@@ -841,28 +1561,7 @@ public class DialogRegistrations {
         DialogLibrary library = DialogLibrary.getInstance();
         DialogContext context = new DialogContext();
         DialogEntry entry = library.getDialogByPurpose(purpose, context);
-        if (entry == null) {
-            System.out.println("No dialogs found with purpose: " + purpose);
-            return;
-        }
-        String firstId = entry.getId();
-        DialogSystem system = DialogSystem.getInstance();
-        List<String> dialogIds = new ArrayList<>();
-        dialogIds.add(firstId);
-        if("menu".equals(returnPlace)){
-            system.setOnDialogEnd(() -> {
-                // Show menu UI instead of map
-                if (menuUI != null) {
-                    menuUI.show();
-                }
-                system.setOnDialogEnd(() -> {
-                    if (mapUI != null) {
-                        mapUI.showSelectedPath();
-                    }
-                });
-            });
-        }
-        system.startDialog(dialogIds, context);
+        showDialogByTitle(entry.getId().replaceFirst("_1",""), returnPlace);
     }
 
     public static void dialogMakerHelper(String dialogString) {
@@ -939,6 +1638,49 @@ public class DialogRegistrations {
         System.out.println("DialogMakerHelper: Registered " + dialogEntries.size() + " dialog entries with base ID: " + title);
     }
 
+    /**
+     * Helper that creates a dialog using dialogMakerHelper and links it to the last dialog of a given previous title.
+     * @param dialogString The dialog string in format "Title;Hero:text;Hero:text;..."
+     * @param previousTitle The title of the dialog chain to link from (the last dialog of this chain will link to the new dialog)
+     */
+    public static void dialogMakerHelperWithPrevious(String dialogString, String previousTitle) {
+        if (dialogString == null || dialogString.trim().isEmpty()) {
+            System.out.println("dialogMakerHelperWithPrevious: Empty or null string provided");
+            return;
+        }
+        if (previousTitle == null || previousTitle.trim().isEmpty()) {
+            System.out.println("dialogMakerHelperWithPrevious: Previous title cannot be empty");
+            return;
+        }
+        
+        // Remove all \n characters
+        String cleanedString = dialogString.replaceAll("\n", "").trim();
+        
+        // Split by semicolon to get parts
+        String[] parts = cleanedString.split(";");
+        
+        if (parts.length < 2) {
+            System.out.println("dialogMakerHelperWithPrevious: Invalid format. Need at least 'Title;Hero:text'");
+            return;
+        }
+        
+        // First part is the title/base ID
+        String title = parts[0].trim();
+        if (title.isEmpty()) {
+            System.out.println("dialogMakerHelperWithPrevious: Title cannot be empty");
+            return;
+        }
+        
+        // Use dialogMakerHelper to create the dialog
+        dialogMakerHelper(dialogString);
+        
+        // Link the last dialog of previousTitle to the first dialog of the new title
+        String firstDialogId = title + "_1";
+        linkChainToTheEndOf(previousTitle, firstDialogId);
+        
+        System.out.println("dialogMakerHelperWithPrevious: Created dialog '" + title + "' and linked from '" + previousTitle + "' to '" + firstDialogId + "'");
+    }
+    
     /**
      * Helper that also assigns a purpose to each entry.
      */
@@ -1031,7 +1773,7 @@ public class DialogRegistrations {
      * Unlike linkChainTo which relies on incremental IDs, this walks the actual nextDialog chain
      * starting from title_1 until a dialog with no nextDialog is found (or a loop is detected).
      */
-    private static void linkChainToTheEndOf(String title, String targetDialogId) {
+    public static void linkChainToTheEndOf(String title, String targetDialogId) {
         DialogLibrary library = DialogLibrary.getInstance();
         
         // Start from the first dialog in the chain
@@ -1070,12 +1812,202 @@ public class DialogRegistrations {
     }
     
     /**
+     * Find the beginning of a dialog chain by tracing back through previous dialogs.
+     * @param title The title to start searching from
+     * @return The title of the beginning dialog, or the original title if no previous dialog found
+     */
+    private static String findBeginningOfChain(String title) {
+        DialogLibrary library = DialogLibrary.getInstance();
+        String currentTitle = title;
+        Set<String> visited = new HashSet<>(); // Prevent infinite loops
+        
+        while (currentTitle != null && !visited.contains(currentTitle)) {
+            visited.add(currentTitle);
+            String firstDialogId = currentTitle + "_1";
+            DialogEntry firstEntry = library.getDialog(firstDialogId);
+            
+            if (firstEntry == null) {
+                // Current title doesn't exist, return the last valid title
+                break;
+            }
+            
+            // Find all dialogs that point to this first dialog
+            String previousTitle = findDialogThatPointsTo(firstDialogId);
+            
+            if (previousTitle == null) {
+                // No previous dialog found, this is the beginning
+                return currentTitle;
+            }
+            
+            // Continue searching from the previous dialog
+            currentTitle = previousTitle;
+        }
+        
+        // If we've visited all or found a loop, return the current title
+        return currentTitle != null ? currentTitle : title;
+    }
+    
+    /**
+     * Find the title of a dialog that points to the given dialog ID.
+     * @param targetDialogId The dialog ID to search for
+     * @return The title of the dialog that points to targetDialogId, or null if not found
+     */
+    private static String findDialogThatPointsTo(String targetDialogId) {
+        DialogLibrary library = DialogLibrary.getInstance();
+        Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+        
+        for (Map.Entry<String, DialogEntry> entry : allDialogs.entrySet()) {
+            DialogEntry dialog = entry.getValue();
+            List<String> nextDialogs = dialog.getNextDialogIds();
+            
+            if (nextDialogs != null && nextDialogs.contains(targetDialogId)) {
+                // Found a dialog that points to targetDialogId
+                // Extract the title from the dialog ID (remove _1, _2, etc.)
+                String dialogId = entry.getKey();
+                int lastUnderscore = dialogId.lastIndexOf('_');
+                if (lastUnderscore > 0) {
+                    String afterUnderscore = dialogId.substring(lastUnderscore + 1);
+                    try {
+                        Integer.parseInt(afterUnderscore);
+                        // It's a number, extract the title
+                        return dialogId.substring(0, lastUnderscore);
+                    } catch (NumberFormatException e) {
+                        // Not a number format, use full ID as title
+                        return dialogId;
+                    }
+                }
+                return dialogId;
+            }
+        }
+        
+        return null; // No dialog points to this one
+    }
+    
+    /**
+     * Show a dialog by tracing back to the beginning of its chain and showing from there.
+     * This will find all previous dialogs (with different titles) that link to the given dialog,
+     * trace all the way back to the beginning, and then show the dialog starting from the beginning title.
+     * @param title The base title/ID used when creating the dialog
+     * @param returnPlace Where to return after dialog ends
+     */
+    public static void showBeginDialogByTitle(String title, String returnPlace) {
+        // Find the beginning of the chain
+        String beginningTitle = findBeginningOfChain(title);
+        
+        // Show the dialog starting from the beginning
+        showDialogByTitle(beginningTitle, returnPlace);
+    }
+    
+    /**
+     * Link multiple dialog titles together in sequence and show the first one.
+     * This will link: title[0] -> title[1] -> title[2] -> ... -> title[n]
+     * Then show the dialog starting from title[0].
+     * @param titles Array of dialog titles to link together
+     * @param returnPlace Where to return after dialog ends
+     */
+    public static void showManyDialogByTitle(String[] titles, String returnPlace) {
+        if (titles == null || titles.length == 0) {
+            System.out.println("showManyDialogByTitle: titles array is null or empty");
+            return;
+        }
+        
+        if (titles.length == 1) {
+            // Only one title, just show it
+            showDialogByTitle(titles[0], returnPlace);
+            return;
+        }
+        
+        // Link each title to the next one
+        for (int i = 0; i < titles.length - 1; i++) {
+            String currentTitle = titles[i];
+            String nextTitle = titles[i + 1];
+            
+            if (currentTitle == null || currentTitle.trim().isEmpty()) {
+                System.out.println("showManyDialogByTitle: title at index " + i + " is null or empty, skipping");
+                continue;
+            }
+            if (nextTitle == null || nextTitle.trim().isEmpty()) {
+                System.out.println("showManyDialogByTitle: title at index " + (i + 1) + " is null or empty, skipping");
+                continue;
+            }
+            
+            // Link the end of currentTitle to the first dialog of nextTitle
+            String nextFirstDialogId = nextTitle.trim() + "_1";
+            linkChainToTheEndOf(currentTitle.trim(), nextFirstDialogId);
+        }
+        
+        // Show the dialog starting from the first title
+        showDialogByTitle(titles[0].trim(), returnPlace);
+    }
+    
+    /**
+     * Remove all dialogs from the library that contain the given title string in their dialog ID.
+     * @param titleString The string to search for in dialog IDs
+     */
+    public static void removeAllDialogContainTitle(String titleString) {
+        if (titleString == null || titleString.trim().isEmpty()) {
+            System.out.println("removeAllDialogContainTitle: titleString cannot be null or empty");
+            return;
+        }
+        
+        DialogLibrary library = DialogLibrary.getInstance();
+        Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+        
+        // Collect all dialog IDs that contain the title string
+        List<String> dialogsToRemove = new ArrayList<>();
+        for (String dialogId : allDialogs.keySet()) {
+            if (dialogId.contains(titleString)) {
+                dialogsToRemove.add(dialogId);
+            }
+        }
+        
+        // Remove all matching dialogs
+        int removedCount = 0;
+        for (String dialogId : dialogsToRemove) {
+            if (library.removeDialog(dialogId)) {
+                removedCount++;
+            }
+        }
+        
+        System.out.println("removeAllDialogContainTitle: Removed " + removedCount + " dialog(s) containing '" + titleString + "'");
+    }
+    
+    /**
      * Show a dialog created by dialogMakerHelper
      * @param title The base title/ID used when creating the dialog
      */
     public static void showDialogByTitle(String title,String returnPlace) {
         DialogSystem system = DialogSystem.getInstance();
         DialogContext context = new DialogContext();
+        
+        // Track which UI was active before starting the dialog (for "current" returnPlace)
+        if ("current".equals(returnPlace)) {
+            // Check UI visibility in priority order: shop/inventory (overlays) > menu > map > battle
+            if (shopUI != null && shopUI.isVisible()) {
+                previousUIState = "shop";
+                // Shop is only available in map mode, so underlying UI is always map
+                previousUnderlyingUIState = "map";
+            } else if (inventoryUI != null && inventoryUI.isVisible()) {
+                previousUIState = "inventory";
+                // Track underlying UI for inventory (can be map or battle)
+                if (menuUI != null && menuUI.isVisible()) {
+                    previousUnderlyingUIState = "menu";
+                } else if (testing.inMapMode) {
+                    previousUnderlyingUIState = "map";
+                } else {
+                    previousUnderlyingUIState = "battle";
+                }
+            } else if (menuUI != null && menuUI.isVisible()) {
+                previousUIState = "menu";
+                previousUnderlyingUIState = null; // Menu is a main UI, not an overlay
+            } else if (testing.inMapMode) {
+                previousUIState = "map";
+                previousUnderlyingUIState = null; // Map is a main UI, not an overlay
+            } else {
+                previousUIState = "battle";
+                previousUnderlyingUIState = null; // Battle is a main UI, not an overlay
+            }
+        }
         
         // Clear any existing filter
         system.setNextDialogFilter(null);
@@ -1086,8 +2018,71 @@ public class DialogRegistrations {
         dialogIds.add(firstDialogId);
         boolean run = system.startDialog(dialogIds, context);
         if(!run){return;}
+        
+        // If returnPlace is null, just hide the dialogUI without changing any other UI
+        if("null".equals(returnPlace)){
+            system.setOnDialogEnd(() -> {
+                // Do nothing - just let the dialogUI hide
+                // The dialogUI is already hidden by DialogSystem.endDialog()
+            });
+        }
+        // If returnPlace is "current", restore the UI that was active before the dialog
+        else if("current".equals(returnPlace)){
+            system.setOnDialogEnd(() -> {
+                if ("shop".equals(previousUIState)) {
+                    // First restore the underlying UI (map), then show shop on top
+                    if ("map".equals(previousUnderlyingUIState)) {
+                        if (mapUI != null) {
+                            mapUI.showSelectedPath();
+                        }
+                        testing.inMapMode = true;
+                    }
+                    // Then show shop UI on top
+                    if (shopUI != null) {
+                        shopUI.show();
+                    }
+                } else if ("inventory".equals(previousUIState)) {
+                    // First restore the underlying UI (menu, map, or battle), then show inventory on top
+                    if ("menu".equals(previousUnderlyingUIState)) {
+                        if (menuUI != null) {
+                            menuUI.show();
+                        }
+                    } else if ("map".equals(previousUnderlyingUIState)) {
+                        if (mapUI != null) {
+                            mapUI.showSelectedPath();
+                        }
+                        testing.inMapMode = true;
+                    } else if ("battle".equals(previousUnderlyingUIState)) {
+                        // Battle UI is typically shown automatically when in battle mode
+                        testing.inMapMode = false;
+                    }
+                    // Then show inventory UI on top
+                    if (inventoryUI != null) {
+                        inventoryUI.show();
+                    }
+                } else if ("menu".equals(previousUIState)) {
+                    // Restore menu UI (main UI, not an overlay)
+                    if (menuUI != null) {
+                        menuUI.show();
+                    }
+                } else if ("map".equals(previousUIState)) {
+                    // Restore map UI (main UI, not an overlay)
+                    if (mapUI != null) {
+                        mapUI.showSelectedPath();
+                    }
+                    testing.inMapMode = true;
+                } else if ("battle".equals(previousUIState)) {
+                    // Restore battle UI - battle should already be active, just ensure it's visible
+                    // Battle UI is typically shown automatically when in battle mode
+                    testing.inMapMode = false;
+                }
+                // Clear the previous state after restoring
+                previousUIState = null;
+                previousUnderlyingUIState = null;
+            });
+        }
         //If intro then show the menu
-        if("menu".equals(returnPlace)){
+        else if("menu".equals(returnPlace)){
             system.setOnDialogEnd(() -> {
                 // Show menu UI instead of map
                 if (menuUI != null) {
@@ -1109,22 +2104,22 @@ public class DialogRegistrations {
                     if (gameMap != null) {
                         // Create Flamita boss fight node
                         map.MapNode flamitaBossNode = gameMap.addFlamitaTheImmortalPhoenixBossFight("forest");
-                        
+
                         if (flamitaBossNode != null) {
                             // Set heroes to only Lucia
                             String[] luciaOnly = {"Lucia"};
                             battleSystem.configureBattle(false, luciaOnly);
-                            
+
                             // Set up battle with map enemies
                             List<Observer.characterSlot> mapEnemies = flamitaBossNode.getEnemies();
                             if (!mapEnemies.isEmpty()) {
                                 Observer.characterSlot enemy1 = mapEnemies.get(0);
                                 Observer.characterSlot enemy2 = mapEnemies.size() > 1 ? mapEnemies.get(1) : null;
                                 Observer.characterSlot enemy3 = mapEnemies.size() > 2 ? mapEnemies.get(2) : null;
-                                
+
                                 battleSystem.clearEnemyData();
                                 battleSystem.setMapEnemies(enemy1, enemy2, enemy3);
-                                
+
                                 // Switch to battle mode
                                 mapUI.requestBattleMode();
                             }
@@ -1177,6 +2172,13 @@ public class DialogRegistrations {
                         mapUI.showSelectedPath();
                     }
                 });
+            });
+
+        }else{
+            system.setOnDialogEnd(() -> {
+                if (mapUI != null) {
+                    mapUI.showSelectedPath();
+                }
             });
         }
     }

@@ -11,7 +11,7 @@ public class ItemRegistry {
     public static void init() {
         // Clear existing registry
         registry.clear();
-        // ===================== EQUIPMENT ITEMS =====================
+        // ===================== STORY ITEMS =====================
         registerItem(new StoryItem("necro_sword","Necro Sword",
                         "A sword that consume their user strength to make a lethal cut at their enemy",
                         0,
@@ -35,87 +35,92 @@ public class ItemRegistry {
         // Healing Potions
         registerItem(new ConsumableItem(
             "health_potion_small", "Small Health Potion", "Restores 100 HP",
-            50, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_HP, 100, 0, "Heal 100 HP"
+            200, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_HP, 100, 0, "Heal 100 HP"
         ));
         
         registerItem(new ConsumableItem(
             "health_potion_medium", "Medium Health Potion", "Restores 250 HP",
-            120, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_HP, 250, 0, "Heal 250 HP"
+            300, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_HP, 250, 0, "Heal 250 HP"
         ));
         
         registerItem(new ConsumableItem(
             "health_potion_large", "Large Health Potion", "Restores 500 HP",
-            200, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.HEAL_HP, 500, 0, "Heal 500 HP"
+            500, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.HEAL_HP, 500, 0, "Heal 500 HP"
+        ));
+
+        registerItem(new ConsumableItem(
+                "potion_of_revival", "Potion of Revival", "Bring one hero back to the fight",
+                1000, Item.ItemRarity.RARE, ConsumableItem.ConsumableType.HEAL_HP, 50, 0, "revive"
         ));
         
         // Mana Potions
         registerItem(new ConsumableItem(
             "mana_potion_small", "Small Mana Potion", "Restores 50 MP",
-            40, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_MP, 50, 0, "Restore 50 MP"
+            200, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_MP, 50, 0, "Restore 50 MP"
         ));
         
         registerItem(new ConsumableItem(
             "mana_potion_medium", "Medium Mana Potion", "Restores 150 MP",
-            100, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_MP, 150, 0, "Restore 150 MP"
+            300, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.HEAL_MP, 150, 0, "Restore 150 MP"
         ));
         
         registerItem(new ConsumableItem(
             "mana_potion_large", "Large Mana Potion", "Restores 300 MP",
-            180, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.HEAL_MP, 300, 0, "Restore 300 MP"
+            500, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.HEAL_MP, 300, 0, "Restore 300 MP"
         ));
         
         // Combined Potions
         registerItem(new ConsumableItem(
             "elixir_small", "Small Elixir", "Restores 150 HP and 75 MP",
-            150, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.HEAL_BOTH, 150, 0, "Heal 150 HP & 75 MP"
+            300, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.HEAL_BOTH, 150, 0, "Heal 150 HP & 75 MP"
         ));
         
         registerItem(new ConsumableItem(
             "elixir_large", "Large Elixir", "Restores 400 HP and 200 MP",
-            350, Item.ItemRarity.RARE, ConsumableItem.ConsumableType.HEAL_BOTH, 400, 0, "Heal 400 HP & 200 MP"
+            500, Item.ItemRarity.RARE, ConsumableItem.ConsumableType.HEAL_BOTH, 400, 0, "Heal 400 HP & 200 MP"
         ));
         
         // Status Effect Items (Enemy targeting)
         registerItem(new ConsumableItem(
             "fire_bomb", "Fire Bomb", "Burns enemy for 3 turns",
-            80, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.BURN, ConsumableItem.TargetType.ENEMY, 50, 3, "Burn for 50 damage/turn"
+            200, Item.ItemRarity.COMMON, ConsumableItem.ConsumableType.BURN, ConsumableItem.TargetType.ENEMY, 50, 3, "Burn for 50 damage/turn"
         ));
         
         registerItem(new ConsumableItem(
             "poison_dart", "Poison Dart", "Poisons enemy for 5 turns",
-            100, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.POISON, ConsumableItem.TargetType.ENEMY, 30, 5, "Poison for 30 damage/turn"
+            200, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.POISON, ConsumableItem.TargetType.ENEMY, 30, 5, "Poison for 30 damage/turn"
         ));
         
         registerItem(new ConsumableItem(
-            "ice_shard", "Ice Shard", "Freezes enemy for 2 turns",
-            120, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.FREEZE, ConsumableItem.TargetType.ENEMY, 0, 2, "Freeze for 2 turns"
+            "ice_shard", "Ice Shard", "Freezes enemy for 1 turns",
+            750, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.FREEZE, ConsumableItem.TargetType.ENEMY, 0, 1, "Freeze for 1 turns"
         ));
         
         // Debuff Items
         registerItem(new ConsumableItem(
             "weakness_potion", "Weakness Potion", "Weakens enemy attack for 4 turns",
-            90, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.DEBUFF_ENEMY, ConsumableItem.TargetType.ENEMY, 25, 4, "Reduce enemy ATK by 25%"
+            350, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.DEBUFF_ENEMY, ConsumableItem.TargetType.ENEMY, 25, 4, "Reduce enemy ATK by 25%"
         ));
         
         // Buff Items
         registerItem(new ConsumableItem(
-            "strength_potion", "Strength Potion", "Increases attack by 20 for 5 turns",
-            150, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.BUFF_ATTACK, 20, 5, "+20 ATK for 5 turns"
+            "strength_potion", "Strength Potion", "Increases attack by 20% for 3 turns",
+            250, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.BUFF_ATTACK, 20, 3, "+20 ATK for 5 turns"
         ));
         
         registerItem(new ConsumableItem(
-            "defense_potion", "Defense Potion", "Increases defense by 15 for 5 turns",
-            150, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.BUFF_DEFENSE, 15, 5, "+15 DEF for 5 turns"
+            "defense_potion", "Defense Potion", "Increases defense by 30% for 5 turns",
+            250, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.BUFF_DEFENSE, 30, 3, "+15 DEF for 5 turns"
         ));
         
         registerItem(new ConsumableItem(
-            "speed_potion", "Speed Potion", "Increases speed by 10 for 5 turns",
-            150, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.BUFF_SPEED, 10, 5, "+10 SPD for 5 turns"
+            "speed_potion", "Speed Potion", "Increases speed by 25% for 3 turns",
+            250, Item.ItemRarity.UNCOMMON, ConsumableItem.ConsumableType.BUFF_SPEED, 25, 3, "+10 SPD for 5 turns"
         ));
         
         registerItem(new ConsumableItem(
             "shield_potion", "Shield Potion", "Creates a protective barrier",
-            200, Item.ItemRarity.RARE, ConsumableItem.ConsumableType.SHIELD, 100, 3, "Shield for 100 damage"
+            400, Item.ItemRarity.RARE, ConsumableItem.ConsumableType.SHIELD, 100, 3, "Shield for 100 damage"
         ));
         
         // ===================== EQUIPMENT ITEMS =====================
@@ -139,11 +144,11 @@ public class ItemRegistry {
             "magic_staff", "Magic Staff", "A staff imbued with magical power",
             400, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.WEAPON,
             EquipmentItem.EquipmentSlot.WEAPON,
-            new EquipmentItem.StatBonus(0, 50, 0, 20, 0, 0, 0)
+            new EquipmentItem.StatBonus(0, 50, 20, 0, 0, 0, 0)
         ));
         
         registerItem(new EquipmentItem(
-            "flame_blade", "Flame Blade", "A sword wreathed in eternal flames",
+            "flame_blade", "Flame Blade", "Apply 1 stack of burn debuff",
             800, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.WEAPON,
             EquipmentItem.EquipmentSlot.WEAPON,
             new EquipmentItem.StatBonus(0, 0, 35, 10, 0, 0, 0)
@@ -151,9 +156,23 @@ public class ItemRegistry {
         
         registerItem(new EquipmentItem(
             "legendary_sword", "Excalibur", "The legendary sword of kings",
-            2000, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.WEAPON,
+            1500, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.WEAPON,
             EquipmentItem.EquipmentSlot.WEAPON,
-            new EquipmentItem.StatBonus(100, 50, 50, 25, 0, 0, 5)
+            new EquipmentItem.StatBonus(100, 50, 50, 0, 0, 0, 5)
+        ));
+
+        registerItem(new EquipmentItem(
+                "ashbringer", "Ashbringer", "Gain 1.25x time amount of burning rage",
+                1500, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.WEAPON,
+                EquipmentItem.EquipmentSlot.WEAPON,
+                new EquipmentItem.StatBonus(200, 0, 25, 0, 0, 0, 0)
+        ));
+
+        registerItem(new EquipmentItem(
+                "blue_flower_staff", "Blue Flower Staff", "Regen 10% of hp and 10% of mp each time the user act",
+                1500, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.WEAPON,
+                EquipmentItem.EquipmentSlot.WEAPON,
+                new EquipmentItem.StatBonus(0, 100, 25, 0, 10,10 , 0)
         ));
         
         // Armor
@@ -168,26 +187,33 @@ public class ItemRegistry {
             "chain_mail", "Chain Mail", "Interlocked metal rings",
             350, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
-            new EquipmentItem.StatBonus(100, 0, 0, 0, 20, 10, -2)
+            new EquipmentItem.StatBonus(100, 0, 0, 0, 20, 10, -1)
         ));
         
         registerItem(new EquipmentItem(
             "plate_armor", "Plate Armor", "Heavy metal plates",
             600, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
-            new EquipmentItem.StatBonus(200, 0, 0, 0, 35, 15, -5)
+            new EquipmentItem.StatBonus(200, 0, 0, 0, 35, 15, -3)
         ));
         
         registerItem(new EquipmentItem(
             "mage_robes", "Mage Robes", "Enchanted robes for spellcasters",
             400, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
-            new EquipmentItem.StatBonus(50, 100, 0, 15, 5, 20, 0)
+            new EquipmentItem.StatBonus(50, 100, 15, 0, 5, 20, 0)
+        ));
+
+        registerItem(new EquipmentItem(
+                "ice_witch_scarf", "Ice Witch Scarf", "Gain immunity to frozen",
+                600, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
+                EquipmentItem.EquipmentSlot.ARMOR,
+                new EquipmentItem.StatBonus(50, 50, 10, 0, 5, 5, 0)
         ));
         
         registerItem(new EquipmentItem(
             "dragon_scale_armor", "Dragon Scale Armor", "Armor forged from dragon scales",
-            1500, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.ARMOR,
+            3000, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
             new EquipmentItem.StatBonus(300, 100, 0, 0, 50, 30, 0)
         ));
@@ -195,37 +221,44 @@ public class ItemRegistry {
         // Accessories
         registerItem(new EquipmentItem(
             "power_ring", "Ring of Power", "Increases all combat abilities",
-            300, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ACCESSORY,
+            332, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
             new EquipmentItem.StatBonus(0, 0, 10, 10, 5, 5, 0)
         ));
         
         registerItem(new EquipmentItem(
             "speed_boots", "Boots of Speed", "Lightweight boots that enhance movement",
-            250, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ACCESSORY,
+            333, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
-            new EquipmentItem.StatBonus(0, 0, 0, 0, 0, 0, 15)
+            new EquipmentItem.StatBonus(0, 0, 0, 0, 0, 0, 3)
         ));
         
         registerItem(new EquipmentItem(
             "health_amulet", "Amulet of Vitality", "Increases maximum health",
-            400, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
+            500, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
             new EquipmentItem.StatBonus(200, 0, 0, 0, 0, 0, 0)
         ));
         
         registerItem(new EquipmentItem(
             "mana_crystal", "Crystal of Mana", "Increases magical power",
-            350, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
+            500, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
-            new EquipmentItem.StatBonus(0, 150, 0, 25, 0, 10, 0)
+            new EquipmentItem.StatBonus(0, 150, 25, 0, 0, 10, 0)
+        ));
+
+        registerItem(new EquipmentItem(
+                "heart_of_fury", "Heart of Fury", "Gain 1.5x damage when current hp below 36%",
+                800, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
+                EquipmentItem.EquipmentSlot.ACCESSORY,
+                new EquipmentItem.StatBonus(0, 0, 10, 0, 0, 0, 0)
         ));
         
         registerItem(new EquipmentItem(
             "crown_of_kings", "Crown of Kings", "The ultimate accessory for rulers",
-            3000, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.ACCESSORY,
+            5000, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
-            new EquipmentItem.StatBonus(200, 200, 30, 30, 20, 20, 10)
+            new EquipmentItem.StatBonus(200, 200, 30, 30, 20, 20, 5)
         ));
     }
     
@@ -240,7 +273,13 @@ public class ItemRegistry {
     public static Collection<Item> getAllItems() {
         return registry.values();
     }
-    
+    public static Collection<Item> getAllItemsButNoStoryItem() {
+        return registry.values()
+                .stream()
+                .filter(item -> item.getItemType() != Item.ItemType.STORY_ITEM)
+                .toList(); // Java 16+
+    }
+
     public static List<Item> getItemsByType(Item.ItemType type) {
         List<Item> result = new ArrayList<>();
         for (Item item : registry.values()) {

@@ -6,11 +6,15 @@ import characters.BuffDebuff;
 import characters.Characters;
 import characters.Observer;
 import characters.SpecialTalents;
+import items.EquipmentItem;
 import javafx.scene.shape.Line;
 import ui.SimpleLine;
 import javafx.util.Duration;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
@@ -92,12 +96,17 @@ public class BattleSystem {
     private String[] selectedHeroes = {"Flamita"}; // Default heroes
     // Callback for battle end
     private Runnable onBattleWon;
+    private Runnable onBattleLost;
     
     // Audio system
     public static AudioManager audioManager;
     
     // Flag to control battle loop
     private boolean battleLoopActive = false;
+    
+    // Frame-rate independent battle loop timer
+    private ScheduledExecutorService battleLoopExecutor;
+    private static final long BATTLE_LOOP_INTERVAL_MS = 5; // 5ms = 200 updates per second
     
     public BattleSystem() {
         this.audioManager = AudioManager.getInstance();
@@ -128,6 +137,21 @@ public class BattleSystem {
         return new Observer.characterSlot[]{heroSlot, heroSlot2, heroSlot3};
     }
 
+    public void removeAllHeroes() {
+        heroSlot = null;
+        heroSlot2 = null;
+        heroSlot3 = null;
+    }
+    public int getIndex(Observer.characterSlot slot){
+        if(slot == heroSlot){return 0;}
+        else if(slot == heroSlot2){return 1;}
+        else if(slot == heroSlot3){return 2;}
+        else if(slot == enemySlot){return 3;}
+        else if(slot == enemySlot2){return 4;}
+        else if(slot == enemySlot3){return 5;}
+        else return -1;
+    }
+
     public void resetHeroes() {
         removeAllBuffsDebuffsFromHeroes();
         healToFullAllHeroes();
@@ -150,6 +174,18 @@ public class BattleSystem {
             }
         }
         return result;
+    }
+    public boolean hasAliveEnemy() {
+        if(enemySlot!=null){
+            return true;
+        }
+        if(enemySlot2!=null){
+            return true;
+        }
+        if(enemySlot3!=null){
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -302,6 +338,7 @@ public class BattleSystem {
         Random random = new Random();
         return aliveHeroes.get(random.nextInt(aliveHeroes.size()));
     }
+
     public void resetLine(Observer.characterSlot slot) {
         double barX = battleUI.getBarX();
         slot.getLine().setStartX(barX);
@@ -457,18 +494,18 @@ public class BattleSystem {
         // Hero slots - use configured heroes
         Observer.CharacterSlotRegistry.init();
 
-        heroSlot=null;
-        heroSlot2=null;
-        heroSlot3=null;
-        if(selectedHeroes.length > 0) {
+//        heroSlot=null;
+//        heroSlot2=null;
+//        heroSlot3=null;
+        if(selectedHeroes.length > 0&&heroSlot==null) {
             heroSlot = Observer.CharacterSlotRegistry.getByName(selectedHeroes[0]);
         }
 
-        if(selectedHeroes.length > 1) {
+        if(selectedHeroes.length > 1&&heroSlot2==null) {
             heroSlot2 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[1]);
         }
 
-        if(selectedHeroes.length > 2) {
+        if(selectedHeroes.length > 2&&heroSlot3==null) {
             heroSlot3 = Observer.CharacterSlotRegistry.getByName(selectedHeroes[2]);
         }
     }
@@ -488,6 +525,10 @@ public class BattleSystem {
     
     public void setOnBattleWon(Runnable callback) {
         this.onBattleWon = callback;
+    }
+    
+    public void setOnBattleLost(Runnable callback) {
+        this.onBattleLost = callback;
     }
 
     private static final Map<String, Runnable> SPECIAL_MUSIC = Map.of(
@@ -557,7 +598,12 @@ public class BattleSystem {
 
         // Set current acting hero
         currentActingHero = heroSlot;
-
+        // Set equipment stat
+        for(Observer.characterSlot hero: getAllHeroes()){
+            if(hero!=null){
+                SpecialTalents.applyStatModifications(hero,null);
+            }
+        }
 
     }
     
@@ -565,22 +611,52 @@ public class BattleSystem {
         // Stop any existing battle loop first
         stopBattleLoop();
 
-        // Start new battle loop
+        // Start new battle loop using ScheduledExecutorService for frame-rate independent timing
         battleLoopActive = true;
-        startBattleLoopRecursive();
-    }
-    
-    private void startBattleLoopRecursive() {
-        if (battleLoopActive) {
-            updateLines();
-            runOnce(() -> startBattleLoopRecursive(), Duration.millis(5));
-        }
+        
+        // Use ScheduledExecutorService for frame-rate independent timing
+        battleLoopExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "BattleLoopThread");
+            t.setDaemon(true);
+            return t;
+        });
+        
+        // Schedule updates at fixed 5ms intervals (frame-rate independent)
+        battleLoopExecutor.scheduleAtFixedRate(
+            () -> {
+                if (battleLoopActive) {
+                    // Run on JavaFX application thread
+                    javafx.application.Platform.runLater(() -> {
+                        if (battleLoopActive) {
+                            updateLines();
+                        }
+                    });
+                }
+            },
+            0,
+            BATTLE_LOOP_INTERVAL_MS,
+            TimeUnit.MILLISECONDS
+        );
     }
     
     public void stopBattleLoop() {
         // Stop the battle loop
         battleLoopActive = false;
         setMoving(false);
+        
+        // Shutdown the executor
+        if (battleLoopExecutor != null) {
+            battleLoopExecutor.shutdown();
+            try {
+                if (!battleLoopExecutor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                    battleLoopExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                battleLoopExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            battleLoopExecutor = null;
+        }
     }
 
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
@@ -632,9 +708,14 @@ public class BattleSystem {
             float rageConsumed = handleBurningRageEffects(attacker, skill);
             burnBonus = calculateDamageWithRage(rageConsumed, skill, attacker);
         }
+
         double talentBonus = calculateDamageWithTalentBonus(skill, attacker);
         double specialDmgBonus = calculateSpecialDmgBonus(attacker, skill);
-        double finalDmg = baseDamage+burnBonus+talentBonus+specialDmgBonus;
+        double equipmentDmgBonus = handleSpecialEquipmentDamage(attacker,target,skill,baseDamage);
+        double finalDmg = baseDamage+burnBonus+talentBonus+specialDmgBonus+equipmentDmgBonus;
+        //Calculate damage after def/res reduction
+        finalDmg = characters.SpecialTalents.calculateDefResReduction(skill,attacker, target, finalDmg);
+
         // Calculate final damage with Burning Rage bonuses, talent bonuses, and special skill bonuses
         applyDamage(target, finalDmg);
         // Delay hit effect animation by 0.5 seconds
@@ -680,7 +761,7 @@ public class BattleSystem {
             }
         }
 
-        System.out.println(attacker.getCharacter().getName()+" use "+skill.getName()+  " at "+ target.getCharacter().getName());
+        System.out.println(attacker.getCharacter().getName()+" use "+skill.getName()+  " at "+ target.getCharacter().getName()+" for "+ finalDmg+" damage ");
     }
     
     /**
@@ -761,9 +842,11 @@ public class BattleSystem {
         
         // Apply turn-based effects (like regeneration)
         characters.SpecialTalents.onTurnStart(actingEnemy);
-        if(actingEnemy.getCurrentHp()==0){
+        if(actingEnemy.getCurrentHp()<=0){
             battleUI.updateHealthUI(actingEnemy);
+            defeatEnemies.add(actingEnemy.getCharacter().getName());
             removeCharacterLine(actingEnemy);
+            handleDeadEnemyCleanup(actingEnemy);
             checkVictoryCondition();
             moving = true;
             return;
@@ -774,7 +857,7 @@ public class BattleSystem {
             battleUI.updateHealthUI(actingEnemy);
         }
         //Check Stunned
-        if(actingEnemy.containsBuffDebuff("Stunned")){
+        if(actingEnemy.containsEffectBuffDebuff("Stunned")){
             moving = true;
             pushCharacterLine(actingEnemy,actingEnemy.getCharacter().getAV());
             SpecialTalents.onTurnEnd(actingEnemy);
@@ -816,10 +899,7 @@ public class BattleSystem {
             for (Ability.skill skill : actingEnemy.getSkills()) {
                 // Check if skill is not null
                 if (skill == null) continue;
-                
-                if (skill.getMpCost() <= 0) {
-                    availableSkills.add(skill);
-                }
+                availableSkills.add(skill);
             }
         }
         
@@ -845,8 +925,10 @@ public class BattleSystem {
         }
         
         // Pick random living hero as target if offensive
-        if (chosenSkill.getAtkScale() < 0||chosenSkill.getTarget().equals("Self")) {
+        if (chosenSkill.getTarget().equals("Self")) {
             useSkill(actingEnemy, actingEnemy, chosenSkill);
+        }else if(chosenSkill.getTarget().equals("Ally")){
+            useSkill(actingEnemy,getRandomAliveEnemy(),chosenSkill);
         }else if(chosenSkill.getName().equals("Family united")){
             useSkill(actingEnemy, enemySlot2, chosenSkill);
         }else if(chosenSkill.getTarget().equals("Aoe enemy") || chosenSkill.getTarget().equals("Aoe ally")){
@@ -932,12 +1014,8 @@ public class BattleSystem {
         if (!moving || battleUI == null) {
             return;
         }
-        if(enemySlot2!=null) {
-            if (enemySlot2.getCharacter().getName().equals("Oufuu daddy") && (int) enemySlot2.getCurrentHp() == 0) {
-                enemySlot.setCurrentHp(0);
-                enemySlot3.setCurrentHp(0);
-                checkVictoryCondition();
-            }
+        if(defeatEnemies.contains("Oufuu daddy")) {
+            checkVictoryCondition();
         }
         // Handle Rage empowerment mechanics
         if(hasHeroName("Flatina")) {
@@ -946,7 +1024,7 @@ public class BattleSystem {
             Observer.characterSlot rageHero = hasRageEmpowerment();
             if (Flatina != null) {
                 if (Flatina.getCharacter().getUniqueValueAsFloat("Burning rage") > 0) {
-                    Flatina.getCharacter().addToUniqueValue("Burning rage", -0.1f);
+                    Flatina.getCharacter().addToUniqueValue("Burning rage", -0.2f);
                     SpecialTalents.applyBuffDebuff(rageHero, BuffDebuff.getByName("Rage empowerment"));
                 } else {
                     Flatina.getActiveEffects().remove(Flatina.getBuffDebuffByName("Rage empowerment host"));
@@ -1147,6 +1225,8 @@ public class BattleSystem {
                     if(currentActingHero.getCurrentHp()==0){
                         battleUI.updateHealthUI(currentActingHero);
                         removeCharacterLine(currentActingHero);
+                        // Check if all heroes are defeated
+                        checkLoseCondition();
                         moving = true;
                     }
                     battleUI.refreshAllCharacterUI();
@@ -1228,6 +1308,9 @@ public class BattleSystem {
                 
                 // Check if all enemies are defeated
                 checkVictoryCondition();
+                
+                // Check if all heroes are defeated
+                checkLoseCondition();
             }
         }
     }
@@ -1305,8 +1388,36 @@ public class BattleSystem {
                 onBattleWon.run();
             }
         }
+        if(defeatEnemies.contains("Oufuu daddy")){
+            if (onBattleWon != null) {
+                onBattleWon.run();
+            }
+        }
     }
-//------------------------------------------------BURNING RAGE------------------------------------------------------------------
+    
+    private void checkLoseCondition() {
+        // Check if all heroes are defeated
+        Observer.characterSlot[] heroes = getAllHeroes();
+        boolean allHeroesDefeated = true;
+        
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                allHeroesDefeated = false;
+                break;
+            }
+        }
+        
+        if (allHeroesDefeated) {
+            System.out.println("Defeat! All heroes are defeated!");
+            // Play defeat music (if available) or stop battle music
+            // audioManager.playDefeatMusic(); // Uncomment if you add defeat music
+            
+            if (onBattleLost != null) {
+                onBattleLost.run();
+            }
+        }
+    }
+//------------------------------------------------DAMAGE BONUS------------------------------------------------------------------
     /**
      * Handle all Burning Rage interactions for a skill
      * @param attacker The character using the skill
@@ -1325,6 +1436,9 @@ public class BattleSystem {
         attacker.getCharacter().addToUniqueValue("Burning rage",-rageConsumed);
         // Gain Burning Rage after using skill
         if (rageGained > 0) {
+            if(SpecialTalents.inventory.containsEquipment(attacker,"ashbringer")){
+                rageGained*=1.25f;
+            }
             characters.SpecialTalents.gainBurningRage(attacker, rageGained);
         }
         
@@ -1574,10 +1688,32 @@ public class BattleSystem {
         else if(skill.getName().equals("Channeling flame")){
             spawnFireOrb();
         }
-
+        handleSpecialEquipmentEffect(attacker,target,skill);
         // No special skill handled, continue with normal processing
         return false;
     }
+    private void handleSpecialEquipmentEffect(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill){
+        // Check if flame_blade is equipped
+        if (SpecialTalents.inventory.containsEquipment(attacker, "flame_blade")) {
+            SpecialTalents.applyBuffDebuff(target,BuffDebuff.getByName("Burn").copy());
+        }else if (SpecialTalents.inventory.containsEquipment(attacker, "blue_flower_staff")) {
+            applyDamage(attacker,-attacker.getCharacter().getHp()*0.1);
+            attacker.regenerateMp(attacker.getCharacter().getMp()*0.1f);
+        }
+    }
+    private double handleSpecialEquipmentDamage(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill, double baseDamage){
+        double equipmentDamageBonus=0;
+        if(SpecialTalents.inventory.containsEquipment(attacker, "heart_of_fury")&&attacker.getCurrentHp()<attacker.getCharacter().getHp()*0.36f) {
+            equipmentDamageBonus=baseDamage*0.5;
+        }
+        return equipmentDamageBonus;
+    }
+
+
+
+
+
+
     public void spawnFireOrb(){
         if(enemySlot2!=null){
             selectedEnemyTarget=enemySlot;

@@ -128,6 +128,16 @@ public class DialogSystem {
     }
     
     /**
+     * Add a dialog entry to the queue (for use in runnables/actions)
+     * @param entry Dialog entry to add
+     */
+    public void addDialogToQueue(DialogEntry entry) {
+        if (entry != null) {
+            dialogQueue.offer(entry);
+        }
+    }
+    
+    /**
      * Process the next dialog in the queue
      */
     private void processNextDialog() {
@@ -254,9 +264,14 @@ public class DialogSystem {
         
         DialogOption option = currentDialog.getOptions().get(optionIndex);
         
-        // Execute option action
+        // Execute option action (with context)
         if (option.getAction() != null) {
             option.getAction().apply(currentContext);
+        }
+        
+        // Execute simple runnable (no parameters)
+        if (option.getRunnable() != null) {
+            option.getRunnable().run();
         }
         
         // Add next dialog if specified (filtered if filter is set)

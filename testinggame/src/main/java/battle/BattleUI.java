@@ -1256,7 +1256,7 @@ public class  BattleUI {
     /**
      * Get the line for a character slot
      */
-    private Line getLineForCharacter(Observer.characterSlot slot) {
+    public Line getLineForCharacter(Observer.characterSlot slot) {
         if (slot == null) return null;
         if (slot == battleSystem.getHeroSlot()) return blueLine;
         if (slot == battleSystem.getHeroSlot2()) return greenLine;
@@ -3598,7 +3598,7 @@ public class  BattleUI {
         buttonText.setTranslateX(x + 2);
         buttonText.setTranslateY(y + 22); // Adjusted for larger button
         buttonText.setWrappingWidth(46); // Increased wrapping width for larger button
-
+        buttonText.setMouseTransparent(true);
         // Store text as user data for cleanup
         button.setUserData(buttonText);
 
@@ -3655,6 +3655,8 @@ public class  BattleUI {
 
             // Re-render item buttons to show updated state
             createItemButtons(hero);
+            createAndRenderHeroSkillBoxes(hero);
+
         } else {
             System.out.println("Failed to use " + consumable.getName());
         }

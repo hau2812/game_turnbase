@@ -120,5 +120,29 @@ public class DialogLibrary {
     public Map<String, DialogEntry> getAllDialogs() {
         return new HashMap<>(dialogs);
     }
+    
+    /**
+     * Remove a dialog by ID
+     * @param dialogId The ID of the dialog to remove
+     * @return true if the dialog was removed, false if it didn't exist
+     */
+    public boolean removeDialog(String dialogId) {
+        DialogEntry removed = dialogs.remove(dialogId);
+        if (removed != null) {
+            // Also remove from purpose index if it has a purpose
+            if (removed.getPurpose() != null) {
+                List<String> purposeDialogs = purposeIndex.get(removed.getPurpose());
+                if (purposeDialogs != null) {
+                    purposeDialogs.remove(dialogId);
+                    // Clean up empty purpose lists
+                    if (purposeDialogs.isEmpty()) {
+                        purposeIndex.remove(removed.getPurpose());
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 }
 

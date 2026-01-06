@@ -2,6 +2,7 @@ package items;
 
 import characters.Observer;
 import characters.BuffDebuff;
+import characters.SpecialTalents;
 
 /**
  * Consumable items that can be used during battle
@@ -110,17 +111,27 @@ public class ConsumableItem extends Item {
                 break;
                 
             case BUFF_ATTACK:
-                // Add temporary buff (would need to implement buff system)
-                target.getCharacter().setAtk(target.getCharacter().getAtk() + effectValue);
+                BuffDebuff atkBuff = BuffDebuff.getByName("Strength Boost").copy();
+                atkBuff.setValue(effectValue/100);
+                atkBuff.setDuration(duration);
+                SpecialTalents.applyBuffDebuff(target, atkBuff);
+                SpecialTalents.applyStatModifications(target,null);
                 break;
                 
             case BUFF_DEFENSE:
-                target.getCharacter().setDef(target.getCharacter().getDef() + effectValue);
+                BuffDebuff defBuff = BuffDebuff.getByName("Defend Boost").copy();
+                defBuff.setValue(effectValue/100);
+                defBuff.setDuration(duration);
+                SpecialTalents.applyBuffDebuff(target, defBuff);
+                SpecialTalents.applyStatModifications(target,null);
                 break;
                 
             case BUFF_SPEED:
-                target.getCharacter().setSpd(target.getCharacter().getSpd() + effectValue);
-                target.getCharacter().updateAV();
+                BuffDebuff spdBuff = BuffDebuff.getByName("Speed Boost").copy();
+                spdBuff.setValue(effectValue/100);
+                spdBuff.setDuration(duration);
+                SpecialTalents.applyBuffDebuff(target, spdBuff);
+                SpecialTalents.applyStatModifications(target,null);
                 break;
                 
             case SHIELD:
@@ -139,7 +150,7 @@ public class ConsumableItem extends Item {
                 
             case FREEZE:
                 // Add freeze debuff (reduces speed)
-                addDebuff(target, "Freeze", "SPD", -effectValue/100f, duration);
+                addDebuff(target, "Frozen", "Stunned", 0, duration);
                 break;
                 
             case DEBUFF_ENEMY:

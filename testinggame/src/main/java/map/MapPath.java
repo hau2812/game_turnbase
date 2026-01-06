@@ -24,7 +24,7 @@ public class MapPath {
     private String id;
     private PathType pathType;
     private List<MapNode> nodes;
-    private int currentNodeIndex;
+    public int currentNodeIndex;
     private boolean completed;
 
     public MapPath(String id, PathType pathType) {

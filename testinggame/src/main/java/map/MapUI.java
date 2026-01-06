@@ -4,6 +4,8 @@ import audio.AudioManager;
 import dialog.DialogRegistrations;
 import dialog.DialogSystem;
 import dialog.DialogUI;
+import dialog.DialogLibrary;
+import dialog.DialogEntry;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -15,12 +17,18 @@ import com.almasb.fxgl.dsl.FXGL;
 import characters.Observer;
 import event.MapEvent;
 import battle.BattleSystem;
+import org.example.testing;
 import shop.Shop;
 import ui.ShopUI;
 import items.Inventory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 
 public class MapUI {
     private GameMap gameMap;
@@ -47,6 +55,9 @@ public class MapUI {
     
     // Reference to testing instance for resetBackToMenu
     private org.example.testing testingInstance;
+    
+    // Current event node for dialog system
+    private MapNode currentEventNode;
 
     public MapUI(GameMap gameMap) {
         this.gameMap = gameMap;
@@ -91,10 +102,18 @@ public class MapUI {
     public GameMap getGameMap() {
         return gameMap;
     }
+    
+    /**
+     * Set the game map reference (used when creating floor 2)
+     */
+    public void setGameMap(GameMap newGameMap) {
+        this.gameMap = newGameMap;
+    }
 
     public void showPathSelection() {
         clearUI();
         createPathSelectionUI();
+        testingInstance.inMapMode = true;
         // Start map exploration music
         if(battleSystem!=null&&!battleSystem.hasHeroName("Litaru ")) {
             audioManager.playMapMusic();
@@ -102,7 +121,13 @@ public class MapUI {
     }
 
     public void showSelectedPath() {
+        testing.inMapMode = true;
         if (gameMap.getSelectedPath() != null) {
+            clearUI();
+            createPathUI();
+            pathSelected = true;
+        }else{
+            gameMap.setSelectedPath(gameMap.getPaths().getFirst());
             clearUI();
             createPathUI();
             pathSelected = true;
@@ -387,17 +412,9 @@ public class MapUI {
 
                 break;
             case EVENT:
-                if (node.getEvent() instanceof MapEvent) {
-                    MapEvent mapEvent = (MapEvent) node.getEvent();
-                    mapEvent.trigger();
-                    // Apply event effects to current active heroes
-                    if (battleSystem != null) {
-                        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
-                        Observer.characterSlot hero1 = heroes.length > 0 ? heroes[0] : null;
-                        Observer.characterSlot hero2 = heroes.length > 1 ? heroes[1] : null;
-                        mapEvent.applyEffect(hero1, hero2);
-                    }
-                }
+                // Show random event dialog
+                DialogRegistrations.registerBasicEventDialog();
+                DialogRegistrations.showRandomDialogWithPurpose("event", "current");
                 break;
             case BATTLE:
                 // Start battle with enemies in this node
@@ -414,7 +431,7 @@ public class MapUI {
                             switchToBattleMode();
                             // Restore default: when future dialogs end (like victory dialog),
                             // the map path is shown/updated.
-                            dialogSystem.setOnDialogEnd(() -> showSelectedPath());
+                            dialogSystem.setOnDialogEnd(this::showSelectedPath);
                         });
                         DialogRegistrations.showDialogByTitle("FlamitaBossFightBegin",null);
                     }else {
@@ -450,17 +467,156 @@ public class MapUI {
                 }
                 break;
             case REST:
-                System.out.println("Resting at: " + node.getName());
-                // Full heal for current active heroes
-                if (battleSystem != null) {
-                    Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
-                    for (Observer.characterSlot hero : heroes) {
-                        if (hero != null) {
-                            hero.setCurrentHp(hero.getCharacter().getHp());
-                            hero.setCurrentMp(hero.getCharacter().getMp());
+                DialogRegistrations.registerBasicCampDialog();
+                if(testingInstance.getReturn_time()>=5&&!testing.status.contains("camp0")&&!battleSystem.hasHeroName("Azar")){
+                    DialogRegistrations.showDialogByTitle("camp0","current");
+                    audioManager.playMusic("camp0.mp3",true);
+                    return;
+                }
+                //Heal to full
+                for(Observer.characterSlot hero : battleSystem.getAllHeroes()){
+                    if (hero != null) {
+                        hero.setCurrentHp(hero.getCharacter().getHp());
+                        hero.setCurrentMp(hero.getCharacter().getMp());
+                    }
+                }
+
+                ArrayList<Observer.characterSlot> heroes = new ArrayList<>(Arrays.asList(battleSystem.getAllHeroes()));
+                // Remove null heroes
+                heroes.removeIf(h -> h == null);
+                Collections.shuffle(heroes);
+
+                // Limit to 3 heroes
+                if (heroes.size() > 3) {
+                    heroes = new ArrayList<>(heroes.subList(0, 3));
+                }
+
+                // Always use all heroes to search
+                int numHeroesToSearch = heroes.size();
+
+                if (numHeroesToSearch == 0 || heroes.isEmpty()) {
+                    // No heroes, show default dialog
+                    DialogRegistrations.showDialogByTitle("campNoDialogFound", "current");
+                    break;
+                }
+
+                // Get hero names
+                List<String> heroNames = new ArrayList<>();
+                for (int i = 0; i < numHeroesToSearch && i < heroes.size(); i++) {
+                    String heroName = heroes.get(i).getCharacter().getName();
+                    heroNames.add(heroName);
+                }
+
+                // Search types: 1, 2, 3
+                List<Integer> searchTypes = new ArrayList<>(Arrays.asList(1, 2, 3));
+                Collections.shuffle(searchTypes);
+
+                String foundDialogTitle = null;
+
+                // Try each search type
+                for (int searchType : searchTypes) {
+                    List<String> matchingDialogs = new ArrayList<>();
+                    boolean found = false;
+                    if (searchType == 1 && numHeroesToSearch >= 1) {
+                        // Search for "camp1" + hero name (try each hero one by one)
+                        DialogLibrary library = DialogLibrary.getInstance();
+                        Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+
+                        for (String heroName : heroNames) {
+                            String searchPattern = "camp1" + heroName;
+
+
+                            for (String dialogId : allDialogs.keySet()) {
+                                // Check if dialog title contains the pattern
+                                if (dialogId.contains(searchPattern)) {
+                                    String baseTitle = dialogId.substring(0, dialogId.lastIndexOf('_'));
+                                    if (!matchingDialogs.contains(baseTitle)) {
+                                        matchingDialogs.add(baseTitle);
+                                        found = true;
+                                    }
+
+                                }
+                            }
+
+                            // If found with this hero, stop searching
+                            if (found) {
+                                break;
+                            }
+                        }
+                    } else if (searchType == 2 && numHeroesToSearch >= 2) {
+                        // Search for "camp2" + combinations of 2 hero names
+                        // Check both orderings since dialog might be "camp2Hero1Hero2" or "camp2Hero2Hero1"
+                        DialogLibrary library = DialogLibrary.getInstance();
+                        Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+
+                        for (int i = 0; i < heroNames.size(); i++) {
+                            for (int j = i + 1; j < heroNames.size(); j++) {
+                                String hero1 = heroNames.get(i);
+                                String hero2 = heroNames.get(j);
+
+                                // Check if dialog contains both hero names (order doesn't matter)
+                                for (String dialogId : allDialogs.keySet()) {
+                                    if (dialogId.contains("camp2") &&
+                                        dialogId.contains(hero1) &&
+                                        dialogId.contains(hero2)) {
+                                        String baseTitle = dialogId.substring(0, dialogId.lastIndexOf('_'));
+                                        if (!matchingDialogs.contains(baseTitle)) {
+                                            matchingDialogs.add(baseTitle);
+                                            found = true;
+                                        }
+                                    }
+                                }
+                                // If found with this combination, stop searching
+                                if (found) {
+                                    break;
+                                }
+                            }
+                            // If found with this hero, stop searching
+                            if (found) {
+                                break;
+                            }
+                        }
+                    } else if (searchType == 3 && numHeroesToSearch >= 3) {
+                        // Search for "camp3" + all 3 hero names
+                        // Check if dialog contains all 3 hero names (order doesn't matter)
+                        if (heroNames.size() >= 3) {
+                            String hero1 = heroNames.get(0);
+                            String hero2 = heroNames.get(1);
+                            String hero3 = heroNames.get(2);
+
+                            DialogLibrary library = DialogLibrary.getInstance();
+                            Map<String, DialogEntry> allDialogs = library.getAllDialogs();
+
+                            for (String dialogId : allDialogs.keySet()) {
+                                // Check if dialog contains "camp3" and all three hero names
+                                if (dialogId.contains("camp3") &&
+                                    dialogId.contains(hero1) &&
+                                    dialogId.contains(hero2) &&
+                                    dialogId.contains(hero3)) {
+                                    matchingDialogs.add(dialogId.substring(0, dialogId.lastIndexOf('_')));
+                                    found = true;
+                                }
+                            }
                         }
                     }
-                    System.out.println("Fully rested! HP and MP restored!");
+
+                    // If found dialogs, randomly pick one
+                    if (!matchingDialogs.isEmpty()) {
+                        Collections.shuffle(matchingDialogs);
+                        foundDialogTitle = matchingDialogs.get(0);
+                        break; // Found a dialog, stop searching
+                    }
+                }
+
+                // Show found dialog or default
+                if (foundDialogTitle != null) {
+                    String[] titles = {"campBegin",foundDialogTitle};
+                    DialogRegistrations.showManyDialogByTitle(titles, "current");
+                    System.out.println("Found dialog with title: " + foundDialogTitle);
+                } else {
+                    String[] titles = {"campBegin","campNoDialogFound"};
+                    DialogRegistrations.showManyDialogByTitle(titles, "current");
+                    System.out.println("Found nothing");
                 }
                 break;
             case BOSS:
@@ -476,10 +632,18 @@ public class MapUI {
 //                    switchToBattleMode();
 //                }
 
-                // Reset back to menu using the testing instance
-                if (testingInstance != null) {
-                    testingInstance.setReturn_time(testingInstance.getReturn_time()+1);
-                    testingInstance.resetBackToMenu();
+                // Check if we're on floor 1, if so, create floor 2 instead of resetting to menu
+                if (testingInstance != null&&!battleSystem.hasHeroName("Azar")) {
+                    if (testing.getCurrentFloor() == 1&&testingInstance.getReturn_time()>=5) {
+                        // Create floor 2 with 1.5x enemy stats
+                        testingInstance.initializeFloor2();
+                        // Refresh the map UI to show the new floor
+                        showSelectedPath();
+                    } else {
+                        // Floor 2 boss defeated, reset to menu
+                        testingInstance.setReturn_time(testingInstance.getReturn_time()+1);
+                        testingInstance.resetBackToMenu();
+                    }
                 } else {
                     System.out.println("Error: testingInstance is null, cannot reset to menu");
                 }
@@ -488,11 +652,7 @@ public class MapUI {
         
 
         
-        // Only refresh the UI if it's not a battle node (battle nodes switch to battle mode)
-        if (node.getType() != MapNode.NodeType.START&&node.getType() != MapNode.NodeType.BATTLE && node.getType() != MapNode.NodeType.RECRUIT && node.getType() != MapNode.NodeType.SHOP && node.getType() != MapNode.NodeType.BOSS) {
-            // Refresh the UI to show updated status
-            showSelectedPath();
-        }
+
     }
 
     private void clearUI() {
@@ -611,5 +771,12 @@ public class MapUI {
      */
     public void requestBattleMode() {
         switchToBattleMode();
+    }
+    
+    /**
+     * Get the current event node (for dialog system)
+     */
+    public MapNode getCurrentEventNode() {
+        return currentEventNode;
     }
 }

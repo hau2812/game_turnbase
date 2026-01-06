@@ -25,6 +25,7 @@ import java.util.List;
  */
 public class DialogUI {
     private Group mainContainer;
+    private Rectangle fullScreenBackground; // Full screen background to hide battle UI
     private Rectangle dialogBox;
     private Rectangle characterImageBox;
     private ImageView characterImage;
@@ -68,6 +69,13 @@ public class DialogUI {
         mainContainer = new Group();
         optionButtons = new ArrayList<>();
         optionTexts = new ArrayList<>();
+        
+        // Full screen background to hide battle UI and other UIs
+        fullScreenBackground = new Rectangle(800, 600, Color.LIGHTGRAY);
+        fullScreenBackground.setTranslateX(0);
+        fullScreenBackground.setTranslateY(0);
+        fullScreenBackground.setVisible(false); // Hidden by default
+        fullScreenBackground.setMouseTransparent(false); // Block clicks to prevent interaction with UI behind
         
         // Main dialog box (long rectangle)
         dialogBox = new Rectangle(800, DIALOG_BOX_HEIGHT, Color.rgb(240, 240, 240));
@@ -127,7 +135,8 @@ public class DialogUI {
         skipButton = buildSkipButton();
 
         mainContainer.getChildren().addAll(
-            backgroundImage, // Background first (behind everything)
+            fullScreenBackground, // Full screen background first (covers everything)
+            backgroundImage, // Background image second (on top of full screen background)
             dialogBox,
             characterImageBox,
             characterImage,
@@ -142,6 +151,9 @@ public class DialogUI {
      * Show a dialog with typewriter effect
      */
     public void showDialog(String speakerName, String text, String imagePath, List<DialogOption> options) {
+        // Show full screen background to hide battle UI and other UIs
+        fullScreenBackground.setVisible(true);
+        
         // Stop any existing typewriter animation
         stopTypewriter();
         
@@ -470,6 +482,9 @@ public class DialogUI {
     public void hide() {
         // Stop typewriter animation when hiding
         stopTypewriter();
+        
+        // Hide full screen background
+        fullScreenBackground.setVisible(false);
         
         // Remove background when hiding
         backgroundImage.setVisible(false);

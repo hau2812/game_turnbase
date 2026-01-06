@@ -3,6 +3,7 @@ package map;
 import characters.Characters;
 import characters.Observer;
 import abilities.Ability;
+import dialog.DialogRegistrations;
 import org.example.testing;
 
 import java.util.Arrays;
@@ -19,9 +20,19 @@ public class GameMap {
     private boolean mapCompleted;
     int currentNodeNumber = 1;
 
+    private float statMultiplier = 1.0f; // Multiplier for enemy stats (1.0 for floor 1, 1.5 for floor 2)
+    
     public GameMap() {
         this.paths = new ArrayList<>();
         this.mapCompleted = false;
+        this.statMultiplier = 1.0f;
+        initializeMap();
+    }
+    
+    public GameMap(float statMultiplier) {
+        this.paths = new ArrayList<>();
+        this.mapCompleted = false;
+        this.statMultiplier = statMultiplier;
         initializeMap();
     }
 
@@ -35,12 +46,6 @@ public class GameMap {
         paths.add(forestPath);
         paths.add(mountainPath);
         paths.add(villagePath);
-
-        //Custom boss
-        //addOufuuBossFight("forest");
-        //addFlamitaBossFight("forest");
-        //addMabelBossFight("forest");
-
         // Initialize paths với random system
         if(testing.status.contains("LitaruStart")&&!testing.status.contains("battleVictorySolareth")) {
             initializeLitaruPath(forestPath);
@@ -49,7 +54,9 @@ public class GameMap {
             initializeRandomPath(forestPath);
             initializeRandomPath(mountainPath);
             initializeRandomPath(villagePath);
-            createRandomBossFight(forestPath.getId());
+            if(testing.getCurrentFloor()==2) {
+                createRandomBossFight(forestPath.getId());
+            }
         }
 
 
@@ -81,10 +88,17 @@ public class GameMap {
                                    MapNode.NodeType.START, 100, getPathStartY(path.getPathType()));
         path.addNode(start);
 
-
+        //create shop
+//       MapNode shopNode2 = RandomMapGenerator.createRandomShopNode(pathName,1);
+//       path.addNode(shopNode2);
+        //create rest
+//        MapNode restNode2 = RandomMapGenerator.createRandomRestNode(pathName,1);
+//        path.addNode(restNode2);
+//        MapNode restNode3 = RandomMapGenerator.createRandomRestNode(pathName,1);
+//        path.addNode(restNode3);
 
         // Random number of nodes (4-6 nodes) - RANDOM
-        int nodeCount = 3 + (int)(Math.random() * 3); // 4-6 random nodes
+        int nodeCount = 4 + (int)(Math.random() * 2); // 4-6 random nodes
         if(testing.SKIP_TO_BOSS){
             nodeCount = 0;
             return;
@@ -95,12 +109,13 @@ public class GameMap {
 
         for (; i <= nodeCount/1.5; i++) {
             MapNode randomNode = createRandomNode(pathName, i, path.getPathType());
-            //randomNode = RandomMapGenerator.createRandomBattleNode(pathName,i,path.getPathType(),1);
+            //MapNode randomNode = RandomMapGenerator.createRandomEventNode(pathName, i, path.getPathType());
             path.addNode(randomNode);
             if(path.getId().equals("forest")) {
                 currentNodeNumber++;
             }
         }
+
         //create recruit
         MapNode recruitNode = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
         path.addNode(recruitNode);
@@ -118,12 +133,14 @@ public class GameMap {
             }
         }
         //create recruit
-        MapNode recruitNode2 = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
-        path.addNode(recruitNode2);
-        i++;
-        currentNodeNumber+=1;
+//        MapNode recruitNode2 = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
+//        path.addNode(recruitNode2);
+//
+//        currentNodeNumber+=1;
 
-
+        MapNode restNode = RandomMapGenerator.createRandomRestNode(pathName,i);
+        path.addNode(restNode);
+        currentNodeNumber++;
         // Final event/battle - CO DINH (nhung khac nhau cho moi path)
         MapNode finalNode = createFixedFinalNode(pathName, path.getPathType());
         path.addNode(finalNode);
@@ -188,7 +205,7 @@ public class GameMap {
         
         switch (nodeType) {
             case BATTLE:
-                return RandomMapGenerator.createRandomBattleNode(pathName, nodeNumber, pathType, nodeNumber);
+                return RandomMapGenerator.createRandomBattleNode(pathName, nodeNumber, pathType, nodeNumber, statMultiplier);
             case EVENT:
                 return RandomMapGenerator.createRandomEventNode(pathName, nodeNumber, pathType);
             case SHOP:
@@ -196,7 +213,7 @@ public class GameMap {
             case REST:
                 return RandomMapGenerator.createRandomRestNode(pathName, nodeNumber);
             default:
-                return RandomMapGenerator.createRandomBattleNode(pathName, nodeNumber, pathType, nodeNumber);
+                return RandomMapGenerator.createRandomBattleNode(pathName, nodeNumber, pathType, nodeNumber, statMultiplier);
         }
     }
     
@@ -211,10 +228,10 @@ public class GameMap {
                                                  MapNode.NodeType.BATTLE, 200 + (currentNodeNumber * 50), 220);
                 currentNodeNumber++;
                 Characters.character forestGuardian = new Characters.character(
-                    (int)(Math.random() * 1000), "Forest Guardian", 75, 30, 20, 10, 10, 800, 0, new ArrayList<>()
+                    (int)(Math.random() * 1000), "Forest Guardian", 125, 30, 40, 40, 10, 1200, 0, new ArrayList<>()
                 );
                 forestGuardian.setUniqueValue("Regeneration","200");
-                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,0,0,0,0,0));
+                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,4,0,0,0,0));
                 return forestFinal;
                 // Forest Guardian - CO DINH
 
@@ -298,8 +315,15 @@ public class GameMap {
     // Helper methods to create enemies - giữ lại cho tương lai nếu cần
 
     private Characters.character createBossCharacter() {
+        // Apply stat multiplier for floor 2
+        int hp = (int)(5000 * statMultiplier);
+        int atk = (int)(1000 * statMultiplier);
+        int matk = (int)(800 * statMultiplier);
+        int def = (int)(100 * statMultiplier);
+        int res = (int)(80 * statMultiplier);
+        int mp = (int)(1000 * statMultiplier);
         return new Characters.character(
-            9999, "Ancient Dragon", 1000, 800, 100, 80, 10, 5000, 1000, new ArrayList<>()
+            9999, "Ancient Dragon", atk, matk, def, res, 10, hp, mp, new ArrayList<>()
         );
     }
     
@@ -367,6 +391,7 @@ public class GameMap {
         return customNode;
     }
     public void createRandomBossFight(String pathId){
+        currentNodeNumber+=2;
         Random random = new Random();
         int randomInt = 1 + random.nextInt(3);
         //randomInt = 1;

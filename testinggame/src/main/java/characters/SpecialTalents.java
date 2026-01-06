@@ -1,5 +1,6 @@
 package characters;
 
+import abilities.Ability;
 import battle.BattleSystem;
 import battle.BattleUI;
 import characters.Observer.characterSlot;
@@ -29,7 +30,7 @@ public class SpecialTalents {
     // Static reference to BattleUI for use in static methods
     private static BattleUI battleUI;
     private static BattleSystem battleSystem;
-    private static Inventory inventory;
+    public static Inventory inventory;
     
     /**
      * Set the BattleUI reference for use in static methods
@@ -216,7 +217,11 @@ public class SpecialTalents {
         // Burning Rage - increases by 1 for each 1 HP lost
         if (character.getUniqueValue(BURNING_RAGE) != null) {
             if(slot.currentHp>0) {
-                character.addToUniqueValue(BURNING_RAGE, damageAmount);
+                if(inventory.containsEquipment(slot,"ashbringer")){
+                    character.addToUniqueValue(BURNING_RAGE, damageAmount*1.25f);
+                }else {
+                    character.addToUniqueValue(BURNING_RAGE, damageAmount);
+                }
             }else{
                 character.setUniqueValue(BURNING_RAGE,"0");
             }
@@ -416,12 +421,13 @@ public class SpecialTalents {
      * Apply stat modifications from buff/debuff effects
      */
     public static void resetStatModification(characterSlot slot) {
+
         character character = slot.getCharacter();
         character baseCharacter = slot.getBaseCharacter();
 
         character.setHp(baseCharacter.getHp());
         character.setMp(baseCharacter.getMp());
-        character.setAtk(baseCharacter.getAtk() );
+        character.setAtk(baseCharacter.getAtk());
         character.setMatk(baseCharacter.getMatk());
         character.setDef(baseCharacter.getDef());
         character.setRes(baseCharacter.getRes());
@@ -433,7 +439,7 @@ public class SpecialTalents {
         if (inventory == null) {
             return; // Can't apply equipment stats without inventory reference
         }
-        
+
         character character = slot.getCharacter();
         
         // Get all equipped items for this character
@@ -442,7 +448,7 @@ public class SpecialTalents {
         if (equippedItems == null || equippedItems.isEmpty()) {
             return; // No equipment to apply
         }
-        
+
         // Sum up stat bonuses from all equipped items
         float totalHpBonus = 0;
         float totalMpBonus = 0;
@@ -464,21 +470,27 @@ public class SpecialTalents {
                 totalSpdBonus += statBonus.getSpdBonus();
             }
         }
-        
+
         // Apply stat bonuses to character
         character.setHp(character.getHp() + totalHpBonus);
-        character.setMp(character.getMp() + totalMpBonus);
+        if(!character.getName().equals("Ina")) {
+            character.setMp(character.getMp() + totalMpBonus);
+        }
         character.setAtk(character.getAtk() + totalAtkBonus);
         character.setMatk(character.getMatk() + totalMatkBonus);
         character.setDef(character.getDef() + totalDefBonus);
         character.setRes(character.getRes() + totalResBonus);
         character.setSpd(character.getSpd() + totalSpdBonus);
         character.updateAV();
+
     }
-    public static void applyStatModifications(characterSlot slot, BuffDebuff effect) {
-        character basecharacter = slot.getBaseCharacter();
+    public static void  applyStatModifications(characterSlot slot, BuffDebuff effect) {
+        if(slot == null) {
+            System.out.println("the slot is null");
+            return;
+        }
         character character = slot.getCharacter();
-        // Reset character stats to base character stats
+        // Reset character stats to base character stats (this also applies equipment)
         resetStatModification(slot);
         float totalAtk = 1;
         float totalDef = 1;
@@ -499,10 +511,12 @@ public class SpecialTalents {
         if(slot.getCharacter().getName().equals("Flamita The Immortal Phoenix")){
             totalAtk+=(slot.getCharacter().getHp()-5000)/5000;
         }
-        character.setAtk(basecharacter.getAtk()*totalAtk);
-        character.setDef(basecharacter.getDef()*totalDef);
-        character.setSpd(basecharacter.getSpd()*totalSpd);
-        character.setHp(basecharacter.getHp()*totalHp);
+        // Use character's current stats (which include equipment) as base for multipliers
+        // This preserves equipment bonuses while applying buff/debuff multipliers
+        character.setAtk(character.getAtk()*totalAtk);
+        character.setDef(character.getDef()*totalDef);
+        character.setSpd(character.getSpd()*totalSpd);
+        character.setHp(character.getHp()*totalHp);
         character.updateAV();
     }
     
@@ -510,6 +524,10 @@ public class SpecialTalents {
      * Apply a buff/debuff effect to a character
      */
     public static void applyBuffDebuff(characterSlot slot, BuffDebuff effect) {
+
+        if(inventory.containsEquipment(slot,"ice_witch_scarf")&&effect.getName().equals("Frozen")){
+            return;
+        }
         if(effect.getName().equals("Prey")){
             if(battleSystem.getPreyEnemies()!=null){
                 battleSystem.getPreyEnemies().removeBuffDebuffByName(effect.getName());
@@ -577,6 +595,49 @@ public class SpecialTalents {
             }
         }
     }
+    /**
+     * Calculate damage after def/res reduction
+     * @param skill The skill being used
+     * @param target The target character slot
+     * @param damage The damage before reduction
+     * @return The damage after def/res reduction
+     */
+    public static double calculateDefResReduction(Ability.skill skill, characterSlot attacker , characterSlot target, double damage) {
+        if (skill == null || target == null) {
+            return damage;
+        }
+        // Check skill type
+        String skillType = skill.getType();
+        if (skillType == null) {
+            return damage;
+        }
+        
+        float defResValue;
+        
+        // Use DEF for Physical, RES for Magic
+        if ("Physical".equals(skillType)) {
+            defResValue = target.getCharacter().getDef();
+        } else if ("Magic".equals(skillType)) {
+            defResValue = target.getCharacter().getRes();
+        } else {
+            // Not a damage skill (e.g., Heal), return original damage
+            return damage;
+        }
+        
+        // Formula: dmgAfterDef = dmg * (1 - (def/(def+100)))
+        double reductionFactor = 1.0 - (defResValue / (defResValue + 100.0));
+        return damage * reductionFactor;
+    }
+
+
+
+
+
+
+
+
+
+
     
     /**
      * Create a character with berserker talent
@@ -599,47 +660,7 @@ public class SpecialTalents {
         return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
     }
     
-    /**
-     * Create a character with critical strike talent
-     */
-    public static character createRogue(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, String talentDiscription) {
-        java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
-        uniqueValues.add(new Characters.uniqueValue(CRITICAL_STRIKE, "0.3")); // 30% crit chance
-        
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
-    }
-    
-    /**
-     * Create an enemy with regeneration talent
-     */
-    public static character createRegenerationEnemy(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float regenAmount, String talentDiscription) {
-        java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
-        uniqueValues.add(new Characters.uniqueValue(REGENERATION, String.valueOf(regenAmount)));
-        
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
-    }
-    
-    /**
-     * Create a character with burning rage talent
-     */
-    public static character createBurningRageCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, String talentDiscription) {
-        java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
-        uniqueValues.add(new Characters.uniqueValue(BURNING_RAGE, "0")); // Start with 0 rage
-        
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
-    }
-    
-    /**
-     * Create a character with MP regeneration talent
-     * @param mpRegenAmount Amount of MP regenerated per turn
-     */
-    public static character createMpRegenCharacter(int id, String name, float atk, float matk, float def, float res, float spd, float hp, float mp, float mpRegenAmount, String talentDiscription) {
-        java.util.ArrayList<Characters.uniqueValue> uniqueValues = new java.util.ArrayList<>();
-        uniqueValues.add(new Characters.uniqueValue(MP_REGENERATION, String.valueOf(mpRegenAmount)));
-        
-        return new character(id, name, atk, matk, def, res, spd, hp, mp, talentDiscription, uniqueValues);
-    }
-    
+
     /**
      * Check if a character has enough Burning Rage to use a skill
      */

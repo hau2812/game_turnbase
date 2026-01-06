@@ -37,7 +37,7 @@ public class AudioManager {
     private Music currentMusic;
     private boolean musicEnabled = true;
     private boolean soundEnabled = true;
-    private double musicVolume = 0.02;
+    private double musicVolume = 0.1;
     private double soundVolume = 0.05;
     
     private AudioManager() {
@@ -68,6 +68,7 @@ public class AudioManager {
             loadMusic(Flamita_BOSS_MUSIC);
             loadMusic(Mabel_BOSS_MUSIC);
             loadMusic(Litaru_MUSIC);
+            loadMusic("camp0.mp3");
             // Load sound effects
             loadSound(SWORD_SLASH);
             loadSound(MAGIC_CAST);

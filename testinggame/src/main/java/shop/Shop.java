@@ -50,17 +50,16 @@ public class Shop {
         availableItems.clear();
         
         // Get all available items
-        List<Item> allItems = new ArrayList<>(ItemRegistry.getAllItems());
+        List<Item> allItems = new ArrayList<>(ItemRegistry.getAllItemsButNoStoryItem());
         
         // Select 6-10 random items
         int itemCount = 6 + random.nextInt(5);
         Collections.shuffle(allItems);
-        
+
         for (int i = 0; i < Math.min(itemCount, allItems.size()); i++) {
             Item item = allItems.get(i);
             int quantity = getRandomQuantity(item);
             int price = getShopPrice(item);
-            
             availableItems.add(new ShopItem(item, quantity, price));
         }
     }
@@ -86,11 +85,11 @@ public class Shop {
     }
     
     /**
-     * Get shop price (usually 10-20% more than base value)
+     * Get shop price (usually -10%->30% more than base value)
      */
     private int getShopPrice(Item item) {
         int basePrice = item.getValue();
-        int markup = (int)(basePrice * (0.1 + random.nextDouble() * 0.1)); // 10-20% markup
+        int markup = (int)(basePrice * (-0.1 + random.nextDouble() * 0.4)); // -10%->30% markup
         return basePrice + markup;
     }
     

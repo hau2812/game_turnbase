@@ -94,6 +94,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Necro Sword", "Buff", 9999, "ATK", 5.0f, 1, 1, "Skill"));
 
         // DEF Buffs
+        register(new BuffDebuff("Defend Boost", "Buff", 4, "DEF", 0.3f, 1, 3, "Skill"));
         register(new BuffDebuff("Iron Skin", "Buff", 4, "DEF", 0.3f, 1, 2, "Skill"));
         register(new BuffDebuff("Shield", "Buff", 2, "DEF", 0.8f, 1, 1, "Skill"));
 
@@ -102,6 +103,8 @@ public class BuffDebuff {
         register(new BuffDebuff("Wither", "Debuff", 2, "HP", -0.1f, 1, 1000, "Skill"));
 
         // SPD Buffs
+        register(new BuffDebuff("Speed Boost", "Buff", 3, "SPD", 0.4f, 1, 3, "Skill"));
+
         register(new BuffDebuff("Haste", "Buff", 3, "SPD", 0.4f, 1, 2, "Skill"));
         register(new BuffDebuff("Wind Speed", "Buff", 2, "SPD", 0.6f, 1, 1, "Skill"));
         register(new BuffDebuff("Gathering", "Buff", 20, "SPD", 100.0f, 1, 1, "Skill"));
@@ -123,7 +126,7 @@ public class BuffDebuff {
         
         // Special Effects
         register(new BuffDebuff("Poison", "Debuff", 5, "DOT", 10f, 1, 3, "Skill"));
-        register(new BuffDebuff("Burn", "Debuff", 3, "DOT", 15f, 1, 5, "Skill"));
+        register(new BuffDebuff("Burn", "Debuff", 3, "DOT", 20f, 1, 10, "Skill"));
         register(new BuffDebuff("Void burn", "Debuff", 2, "DOT", 5f, 1, 99, "Skill"));
 
         register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 25f, 1, 10, "Skill"));
@@ -143,6 +146,8 @@ public class BuffDebuff {
         register(new BuffDebuff("Vulnerable", "Buff", 2, "Vulnerable", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Rage absorption", "Buff", 2, "", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Stunned", "Debuff", 1, "Stunned", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Frozen", "Debuff", 1, "Stunned", 0f, 1, 1, "Skill"));
+
         register(new BuffDebuff("Resurrection", "Buff", 1, "", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Sunset", "Buff", 1, "", 0f, 1, 1, "Skill"));
 

@@ -8,6 +8,8 @@ import items.ItemRegistry;
 import items.Item;
 import items.ConsumableItem;
 import items.EquipmentItem;
+import org.example.testing;
+
 import java.util.*;
 
 /**
@@ -51,11 +53,12 @@ public class    RandomMapGenerator {
     
     // Pool enemy templates
     private static final EnemyTemplate[] FOREST_ENEMIES = {
-        new EnemyTemplate("Forest Wolf", 300, 25, 15, 10, 0, new String[]{"1", "0", "0", "0"}, null),
-        new EnemyTemplate("Wild Bear", 500, 35, 20, 8, 0, new String[]{"1", "0", "0", "0"}, null),
-        new EnemyTemplate("Giant Spider", 400, 30, 18, 10, 0, new String[]{"1", "0", "0", "0"}, null),
-        new EnemyTemplate("Forest Troll", 600, 40, 25, 6, 0, new String[]{"1", "4", "0", "0"}, null),
-        new EnemyTemplate("Shadow Beast", 250, 45, 15, 20, 0, new String[]{"1", "0", "0", "0"}, null)
+        new EnemyTemplate("Forest Wolf", 300, 50, 15, 10, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Wild Bear", 500, 70, 20, 8, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Giant Spider", 400, 60, 18, 10, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Forest Troll", 600, 80, 25, 6, 0, new String[]{"1", "0", "0", "0"}, null),
+        new EnemyTemplate("Wizard Troll", 400, 60, 10, 10, 0, new String[]{"1", "3", "0", "0"}, null),
+        new EnemyTemplate("Shadow Beast", 250, 60, 15, 15, 0, new String[]{"1", "0", "0", "0"}, null)
     };
     
     private static final EnemyTemplate[] MOUNTAIN_ENEMIES = {
@@ -78,17 +81,25 @@ public class    RandomMapGenerator {
      * Tao random enemy dua tren path type
      */
     public static Observer.characterSlot createRandomEnemy(MapPath.PathType pathType, int difficultyLevel) {
+        return createRandomEnemy(pathType, difficultyLevel, 1.0f);
+    }
+    
+    /**
+     * Tao random enemy dua tren path type with floor multiplier
+     */
+    public static Observer.characterSlot createRandomEnemy(MapPath.PathType pathType, int difficultyLevel, float floorMultiplier) {
         EnemyTemplate[] enemyPool = getEnemyPool(pathType);
         EnemyTemplate template = enemyPool[random.nextInt(enemyPool.length)];
         
-        // Tang stats theo difficulty level
+        // Tang stats theo difficulty level and floor multiplier
         float difficultyMultiplier = 1.0f + (difficultyLevel * 0.1f);
+        float totalMultiplier = difficultyMultiplier * floorMultiplier;
         
-        int hp = (int)(template.baseHp * difficultyMultiplier);
-        int atk = (int)(template.baseAtk * difficultyMultiplier);
-        int def = (int)(template.baseDef * difficultyMultiplier);
-        int spd = (int)(template.baseSpd * difficultyMultiplier);
-        int mp = (int)(template.baseMp * difficultyMultiplier);
+        int hp = (int)(template.baseHp * totalMultiplier);
+        int atk = (int)(template.baseAtk * totalMultiplier);
+        int def = (int)(template.baseDef * totalMultiplier);
+        int spd = (int)(template.baseSpd * totalMultiplier);
+        int mp = (int)(template.baseMp * totalMultiplier);
         
         // Tao character
         Characters.character enemy = new Characters.character(
@@ -153,6 +164,9 @@ public class    RandomMapGenerator {
         
         // Tao 1-3 enemies random
         int enemyCount = 1 + random.nextInt(3); // 1-3 enemies
+        if(testing.getCurrentFloor()>1){
+            enemyCount = 2 + random.nextInt(2);
+        }
         if(nodeNumber < 3) {
             enemyCount = 1;
         }
@@ -163,7 +177,42 @@ public class    RandomMapGenerator {
             difficultyLevel=(difficultyLevel-1)/3+1;
         }
         for (int i = 0; i < enemyCount; i++) {
-            Observer.characterSlot enemy = createRandomEnemy(pathType, difficultyLevel);
+            Observer.characterSlot enemy = createRandomEnemy(pathType, difficultyLevel, 1.0f);
+            battleNode.addEnemy(enemy);
+        }
+        
+        return battleNode;
+    }
+    
+    /**
+     * Tao random battle node with floor multiplier
+     */
+    public static MapNode createRandomBattleNode(String pathPrefix, int nodeNumber, MapPath.PathType pathType, int difficultyLevel, float floorMultiplier) {
+        MapNode battleNode = new MapNode(
+            pathPrefix + "_battle" + nodeNumber,
+            "Random Battle",
+            "Mot cuoc chien bat ngo!",
+            MapNode.NodeType.BATTLE,
+            100 + (nodeNumber * 50),
+            200 + (random.nextInt(200))
+        );
+        
+        // Tao 1-3 enemies random
+        int enemyCount = 1 + random.nextInt(3); // 1-3 enemies
+        if(testing.getCurrentFloor()>1){
+            enemyCount = 2 + random.nextInt(2);
+        }
+        if(nodeNumber < 3) {
+            enemyCount = 1;
+        }
+        if(enemyCount==2){
+            difficultyLevel=(difficultyLevel-1)/2+1;
+        }
+        if(enemyCount==3){
+            difficultyLevel=(difficultyLevel-1)/3+1;
+        }
+        for (int i = 0; i < enemyCount; i++) {
+            Observer.characterSlot enemy = createRandomEnemy(pathType, difficultyLevel, floorMultiplier);
             battleNode.addEnemy(enemy);
         }
         
@@ -194,11 +243,6 @@ public class    RandomMapGenerator {
             100 + (nodeNumber * 50),
             200 + (random.nextInt(200))
         );
-        
-        // Random event type dua tren path
-        MapEvent randomEvent = createRandomEvent(pathType);
-        eventNode.setEvent(randomEvent);
-        
         return eventNode;
     }
     
@@ -449,24 +493,24 @@ public class    RandomMapGenerator {
         );
         
         // Rest luon hoi phuc tot
-        restNode.setEvent(new MapEvent("Ban tim thay mot noi an toan de nghi ngoi va hoi phuc suc luc.") {
-            @Override
-            public void trigger() {
-                System.out.println(getDescription());
-            }
-            
-            @Override
-            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
-                // Rest hoi phuc mot phan lon HP va MP
-                float healAmount = 400 + random.nextInt(300);
-                float mpAmount = 200 + random.nextInt(200);
-                healCharacter(hero1, healAmount);
-                healCharacter(hero2, healAmount);
-                restoreMp(hero1, mpAmount);
-                restoreMp(hero2, mpAmount);
-                System.out.println("Nghi ngoi hoan toan! +" + (int)healAmount + " HP va +" + (int)mpAmount + " MP!");
-            }
-        });
+//        restNode.setEvent(new MapEvent("Ban tim thay mot noi an toan de nghi ngoi va hoi phuc suc luc.") {
+//            @Override
+//            public void trigger() {
+//                System.out.println(getDescription());
+//            }
+//
+//            @Override
+//            public void applyEffect(Observer.characterSlot hero1, Observer.characterSlot hero2) {
+//                // Rest hoi phuc mot phan lon HP va MP
+//                float healAmount = 400 + random.nextInt(300);
+//                float mpAmount = 200 + random.nextInt(200);
+//                healCharacter(hero1, healAmount);
+//                healCharacter(hero2, healAmount);
+//                restoreMp(hero1, mpAmount);
+//                restoreMp(hero2, mpAmount);
+//                System.out.println("Nghi ngoi hoan toan! +" + (int)healAmount + " HP va +" + (int)mpAmount + " MP!");
+//            }
+//        });
         
         return restNode;
     }
