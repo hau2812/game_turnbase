@@ -523,10 +523,10 @@ public class    RandomMapGenerator {
         
         switch (pathType) {
             case FOREST:
-                // Forest: 60% battle, 30% event, 5% shop, 5% rest
-                if (roll < 60) return RandomNodeType.BATTLE;
-                if (roll < 90) return RandomNodeType.EVENT;
-                if (roll < 95) return RandomNodeType.SHOP;
+                // Forest: 40% battle, 30% event, 20% shop, 10% rest
+                if (roll < 40) return RandomNodeType.BATTLE;
+                if (roll < 70) return RandomNodeType.EVENT;
+                if (roll < 90) return RandomNodeType.SHOP;
                 return RandomNodeType.REST;
                 
             case MOUNTAIN:

@@ -303,9 +303,9 @@ public class ShopUI {
         }
         
         // Position detail panel on the right
-        detailBackground.setTranslateX(550);
+        detailBackground.setTranslateX(450);
         detailBackground.setTranslateY(50);
-        detailContainer.setTranslateX(560);
+        detailContainer.setTranslateX(460);
         detailContainer.setTranslateY(60);
     }
     

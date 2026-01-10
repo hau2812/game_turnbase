@@ -94,7 +94,44 @@ public class SpecialTalents {
 
                 }else if("Invulnerable".equals(effect.getEffects())){
                     return 0;
-                }else if("Vulnerable".equals(effect.getEffects())){
+
+                }
+                else if("Combo Target".equals(effect.getName())){
+                    Observer.characterSlot chigon =  battleSystem.getEnemySlot();
+                    BuffDebuff comboTarget = chigon.getBuffDebuffByName("Combo Target");
+                    if(comboTarget != null && comboTarget.getStack()>1) {
+                        comboTarget.setStack(comboTarget.getStack() - 1);
+                    }else{
+                        chigon.removeBuffDebuffByName("Combo Target");
+                        
+                        // Complete trial cleanup (applies Stunned and removes debuffs)
+                        if (battleSystem != null) {
+                            battleSystem.completeTrialCleanup();
+                        }
+                    }
+                    return 0;
+                }
+                else if("Power Target".equals(effect.getName())){
+                    Observer.characterSlot chigon =  battleSystem.getEnemySlot();
+                    BuffDebuff powerTarget = chigon.getBuffDebuffByName("Power Target");
+                    if(powerTarget != null) {
+                        int powerDamage = (int)actualDamage;
+                        if(powerTarget.getStack() > powerDamage) {
+                            // Reduce stack by damage amount
+                            powerTarget.setStack(powerTarget.getStack() - powerDamage);
+                        } else {
+                            // Stack is depleted, remove Power Target
+                            chigon.removeBuffDebuffByName("Power Target");
+                            
+                            // Complete trial cleanup (applies Stunned and removes debuffs)
+                            if (battleSystem != null) {
+                                battleSystem.completeTrialCleanup();
+                            }
+                        }
+                    }
+                    return 0;
+                }
+                else if("Vulnerable".equals(effect.getEffects())){
                     actualDamage*=1.5f;
                 }
             }
@@ -159,7 +196,6 @@ public class SpecialTalents {
             actualDamage = 0;
             slot.setCurrentHp(character.getHp());
             character.getUniqueValues().remove(character.getUniqueValue("Phase 1"));
-            character.addToUniqueValue(GUTS,1);
             character.addToUniqueValue("Phase 2",1);
         }else if(character.getUniqueValue("Phase 3")!=null&&character.getUniqueValueAsFloat("Phase 2") > 0 && slot.getCurrentHp() <= actualDamage&& slot.getFloatBuffDebuffByName("Guts")==0) {
             actualDamage = 0;
@@ -183,6 +219,8 @@ public class SpecialTalents {
 
             }else {
                 slot.setCurrentHp(character.getHp());
+                character.getUniqueValues().remove(character.getUniqueValue("Phase 2"));
+                character.addToUniqueValue("Phase 3",1);
             }
 
         }
@@ -236,6 +274,9 @@ public class SpecialTalents {
         }
         if(character.getName().equals("Flamita The Immortal Phoenix")){
             character.addToUniqueValue("actionCount",(int)(damageAmount/100));
+        }
+        if(character.getName().equals("Chigon The All Mighty Dragon")&&slot.getBuffDebuffByName("Dragon breath!")!=null){
+            slot.setCurrentHp(slot.getCurrentHp()+damageAmount);
         }
 
     }
@@ -547,6 +588,10 @@ public class SpecialTalents {
         }
         
         if (existingEffect != null) {
+            //Check Ignite
+            if(effect.getName().equals("Ignite")&&slot.getBuffDebuffByName("Burn")!=null){
+                slot.getBuffDebuffByName("Burn").setMaxStack(20);
+            }
 
             // Character already has this effect
             if (existingEffect.canStack()) {

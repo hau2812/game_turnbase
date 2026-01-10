@@ -133,7 +133,7 @@ public class testing extends GameApplication {
     private GameMap gameMap;
     private MapUI mapUI;
     public static boolean inMapMode = false;
-    private static int currentFloor = 1; // Track current floor (1 or 2)
+    private static int currentFloor = 1; // Track current floor (1, 2, or 3)
     
     public static int getCurrentFloor() {return currentFloor;}
     
@@ -355,12 +355,19 @@ public class testing extends GameApplication {
 
         onKeyDown(KeyCode.B, () -> {
                 // Debug key - can be used for testing
-            battleSystem.applyDamage(battleSystem.getHeroSlot(),300);
+            battleSystem.getHeroSlot().setCurrentHp(10);
+            //battleSystem.applyDamage(battleSystem.getHeroSlot(),300);
         });
 
         // M key to return to map mode from battle
         onKeyDown(KeyCode.M, () -> {
-            audioManager.playMusic("camp0.mp3",true);
+            try {
+                System.out.println(battleSystem.getEnemySlot().getCurrentMp());
+//                System.out.println(battleSystem.getHeroSlot().getCharacter().toString());
+//                System.out.println(battleSystem.getEnemySlot().getCharacter().toString());
+            }catch(Exception e) {
+
+            }
         });
 
         // F1 key to toggle audio settings
@@ -628,6 +635,7 @@ public class testing extends GameApplication {
      * Initialize floor 2 with 1.5x enemy stats
      */
     public void initializeFloor2() {
+        battleSystem.healToFullAllHeroes();
         currentFloor = 2;
         // Create new GameMap with 1.5x stat multiplier
         gameMap = new GameMap(1.25f);
@@ -640,29 +648,51 @@ public class testing extends GameApplication {
     }
     
     /**
+     * Initialize floor 3 with 1.5x enemy stats
+     */
+    public void initializeFloor3() {
+        battleSystem.healToFullAllHeroes();
+        currentFloor = 3;
+        // Create new GameMap with 1.5x stat multiplier
+        gameMap = new GameMap(1.5f);
+        mapUI.setGameMap(gameMap);
+        // Reset the selected path's currentNodeIndex to start from the beginning
+        if (gameMap.getSelectedPath() != null) {
+            gameMap.getSelectedPath().currentNodeIndex = 0;
+        }
+        System.out.println("Floor 3 initialized with 1.5x enemy stats");
+    }
+    
+    /**
      * Reset game back to menu - resets heroes, clears battle data, and restarts game
      * Can be called from MapUI when clicking on boss node or from N key
      */
     public void resetBackToMenu() {
         try {
+            //reseting event
+            setStatus(status.replaceAll("camp0",""));
             //restart inventory
             inventory.addGold(-inventory.getGold()+300);
             inventory.removeAllItems();
             giveStartingItems();
 
             currentFloor = 1; // Reset floor to 1 when returning to menu
+            //reset heroes
+            battleUI.removeAllHeroesLine();
             battleSystem.resetHeroes();
-            if("Azar".equals(selectedHeroes[0])||"Litaru ".equals(selectedHeroes[0])) {
+
+            if("Azar".equals(battleSystem.getHeroSlot().getCharacter().getName())||"Litaru ".equals(battleSystem.getHeroSlot().getCharacter().getName())) {
                 battleSystem.removeAllCharacters();
                 setSelectedHeroes(new String[]{"Hero"});
                 battleSystem.configureBattle(battleSystem.getHideTalents(), new String[]{"Hero"});
             }else{
-                AudioManager.getInstance().playMenuMusic();
+                audioManager.playMenuMusic();
                 battleSystem.removeAllCharacters();
                 setSelectedHeroes(new String[]{selectedHeroes[0]});
                 battleSystem.configureBattle(battleSystem.getHideTalents(),new String[]{selectedHeroes[0]});
             }
             // Clear old enemy data to prevent showing dead enemies in next battle
+
             battleSystem.clearEnemyData();
             battleSystem.setPartyMp(0);
             // Stop the battle loop properly
@@ -670,6 +700,11 @@ public class testing extends GameApplication {
             battleUI.clearAllBattleUI();
             mapUI.hide();
             menuUI.show();
+            
+            // Auto-save to slot 6 when returning to menu
+            if (menuUI != null) {
+                menuUI.autoSave();
+            }
 
             startGame();
             //create new link
@@ -681,11 +716,14 @@ public class testing extends GameApplication {
     }
 
     private void handleBattleVictory() {
+
         //Gain gold
         if(mapUI.getGameMap().getSelectedPath() != null) {
             int index = mapUI.getGameMap().getSelectedPath().currentNodeIndex;
+            double floorScale = 0.75+currentFloor*0.25;
             for (String enemy : battleSystem.defeatEnemies) {
-                inventory.addGold(100 + 25 * index);
+                int gold = (int)(100 + 25 * index*floorScale);
+                inventory.addGold(gold);
             }
         }
 
@@ -704,12 +742,9 @@ public class testing extends GameApplication {
 
         // Return to map mode - show the selected path instead of path selection
         inMapMode = true;
-        if (gameMap.getSelectedPath() != null) {
+        if (gameMap.getSelectedPath() != null&&!battleSystem.hasHeroName("Litaru ")) {
             // Show the selected path with nodes
             mapUI.showSelectedPath();
-        } else {
-            // Fallback to path selection if no path is selected
-            mapUI.showPathSelection();
         }
         // Show victory dialog
 
@@ -742,6 +777,10 @@ public class testing extends GameApplication {
         // Give player some starting equipment
         inventory.addItem(ItemRegistry.getItem("iron_sword"), 1);
         inventory.addItem(ItemRegistry.getItem("leather_armor"), 1);
+
+        //Give all items for testing (each item 3 times)
+        //inventory.giveAllItems();
+
     }
 
     private void showBossSelection() {

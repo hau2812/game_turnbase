@@ -57,6 +57,9 @@ public class GameMap {
             if(testing.getCurrentFloor()==2) {
                 createRandomBossFight(forestPath.getId());
             }
+            if(testing.getCurrentFloor()==3) {
+                createRandomBossFight(forestPath.getId());
+            }
         }
 
 
@@ -117,9 +120,11 @@ public class GameMap {
         }
 
         //create recruit
-        MapNode recruitNode = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
-        path.addNode(recruitNode);
-        i++;
+        if(testing.getCurrentFloor()<3) {
+            MapNode recruitNode = RandomMapGenerator.createRecruitNode(pathName, i, path.getPathType());
+            path.addNode(recruitNode);
+            i++;
+        }
         //create shop
         MapNode shopNode = RandomMapGenerator.createRandomShopNode(pathName,i);
         path.addNode(shopNode);
@@ -132,11 +137,12 @@ public class GameMap {
                 currentNodeNumber++;
             }
         }
-        //create recruit
-//        MapNode recruitNode2 = RandomMapGenerator.createRecruitNode(pathName,i,path.getPathType());
-//        path.addNode(recruitNode2);
-//
-//        currentNodeNumber+=1;
+        if(testing.getCurrentFloor()>=3) {
+            //create shop
+            MapNode shopNode2 = RandomMapGenerator.createRandomShopNode(pathName,i);
+            path.addNode(shopNode2);
+            i++;
+        }
 
         MapNode restNode = RandomMapGenerator.createRandomRestNode(pathName,i);
         path.addNode(restNode);
@@ -227,11 +233,12 @@ public class GameMap {
                 MapNode forestFinal = new MapNode(pathName + "_final", "Forest Guardian", "Thu ho rung", 
                                                  MapNode.NodeType.BATTLE, 200 + (currentNodeNumber * 50), 220);
                 currentNodeNumber++;
+                int scale = testing.getCurrentFloor();
                 Characters.character forestGuardian = new Characters.character(
-                    (int)(Math.random() * 1000), "Forest Guardian", 125, 30, 40, 40, 10, 1200, 0, new ArrayList<>()
+                    (int)(Math.random() * 1000), "Forest Guardian", 100+25*scale, 0, 30+10*scale, 30+10*scale, 8+2*scale, 1000+200*scale, 0, new ArrayList<>()
                 );
-                forestGuardian.setUniqueValue("Regeneration","200");
-                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,4,0,0,0,0));
+                forestGuardian.setUniqueValue("Regeneration",100+50*scale+"");
+                forestFinal.addEnemy(createEnemySlotWithSkills(forestGuardian,1,53,3,0,0,0));
                 return forestFinal;
                 // Forest Guardian - CO DINH
 
@@ -327,19 +334,7 @@ public class GameMap {
         );
     }
     
-    /**
-     * Add a custom node to a specific path
-     * @param pathId The ID of the path to add the node to ("forest", "mountain", "village")
-     * @param nodeId Unique identifier for the node
-     * @param nodeName Display name of the node
-     * @param nodeDescription Description of the node
-     * @param nodeType Type of the node (BATTLE, EVENT, SHOP, REST, START, BOSS)
-     * @param x X coordinate for the node
-     * @param y Y coordinate for the node
-     * @param enemyCharacters Array of up to 3 characters to use as enemies (null if not a battle node)
-     * @param skillIds Array of skill ID arrays for each enemy (can be null if not a battle node)
-     * @return The created MapNode, or null if path not found
-     */
+
     public MapNode addCustomNode(String pathId, String nodeId, String nodeName, String nodeDescription, 
                                 MapNode.NodeType nodeType, int x, int y, 
                                 Characters.character[] enemyCharacters, int[][] skillIds) {
@@ -380,7 +375,7 @@ public class GameMap {
         }
         
         // Add the node to the path
-        if(nodeId!="flamita_boss2") {
+        if(!nodeId.equals("flamita_boss2") ||testing.getCurrentFloor()>=3) {
             targetPath.addNode(customNode);
             currentNodeNumber++;
         }
@@ -391,9 +386,14 @@ public class GameMap {
         return customNode;
     }
     public void createRandomBossFight(String pathId){
-        currentNodeNumber+=2;
+        currentNodeNumber=Math.min(13,currentNodeNumber+1);
         Random random = new Random();
-        int randomInt = 1 + random.nextInt(3);
+        int randomInt=0;
+        if(testing.getCurrentFloor()>=3) {
+            randomInt = 4 + random.nextInt(2);
+        }else{
+            randomInt = 1 + random.nextInt(3);
+        }
         //randomInt = 1;
         if(randomInt == 1&&!testing.getSelectedHeroes().equals("Flamita")){
             addFlamitaBossFight(pathId);
@@ -409,13 +409,17 @@ public class GameMap {
             testing.hasFlamitaBoss = false;
             addMabelBossFight(pathId);
         }
+        else if(randomInt == 3){
+            testing.hasFlamitaBoss = false;
+            addOufuuBossFight(pathId);
+        }
         else if(randomInt == 4){
             testing.hasFlamitaBoss = false;
             addFlamitaTheImmortalPhoenixBossFight(pathId);
         }
-        else {
+        else if(randomInt == 5){
             testing.hasFlamitaBoss = false;
-            addOufuuBossFight(pathId);
+            addChigonTheAllMightyDragonBossFight(pathId);
         }
     }
 
@@ -442,9 +446,13 @@ public class GameMap {
                            MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
     }
     public MapNode addFlamitaTheImmortalPhoenixBossFight(String pathId) {
+        int atk = 200;
+        if(testing.getCurrentFloor()>=3) {
+            atk = 100;
+        }
         // Create corrupted Flamita character
         Characters.character corruptedFlamita = new Characters.character(
-                (int)(Math.random() * 1000), "Flamita The Immortal Phoenix", 200, 30, 20, 10, 10, 5000, 0, new ArrayList<>()
+                (int)(Math.random() * 1000), "Flamita The Immortal Phoenix", atk, 30, 20, 10, 10, 5000, 0, new ArrayList<>()
         );
         corruptedFlamita.setUniqueValue("Burning rage", "0");
         corruptedFlamita.setUniqueValue("Guts", "1");
@@ -461,6 +469,21 @@ public class GameMap {
         System.out.println(currentNodeNumber);
         // Add the custom node
         return addCustomNode(pathId, "flamita_boss2", "flamita ?", "Internal Burning",
+                MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
+    }
+    public MapNode addChigonTheAllMightyDragonBossFight(String pathId) {
+        // Create corrupted Chigon character
+        Characters.character corruptedChigon = new Characters.character(
+                (int)(Math.random() * 1000), "Chigon The All Mighty Dragon", 100, 0, 20, 20, 11, 5000, 60, new ArrayList<>()
+        );
+        corruptedChigon.setUniqueValue("Phase 1", "1");
+        corruptedChigon.setUniqueValue("Phase 2", "0");
+        corruptedChigon.setUniqueValue("Phase 3", "0");
+        // Skill IDs: 6, 7, 8, 9
+        Characters.character[] enemies = {corruptedChigon};
+        int[][] skillIds = {{54,55,56,57,58,0}};
+        // Add the custom node
+        return addCustomNode(pathId, "chigon_boss", "chigon ?", "Internal Burning",
                 MapNode.NodeType.BATTLE, 100+currentNodeNumber*50, 400, enemies, skillIds);
     }
     
@@ -495,7 +518,7 @@ public class GameMap {
     public MapNode addOufuuBossFight(String pathId) {
         // Create Oufuu daddy character
         Characters.character oufuuDad = new Characters.character(
-                (int)(Math.random() * 1000), "Oufuu daddy", 50, 50, 30, 15, 20, 3000, 100, new ArrayList<>()
+                (int)(Math.random() * 1000), "Oufuu daddy", 50, 50, 50, 50, 20, 5000, 100, new ArrayList<>()
         );
         
         // Create 2 Oufuu characters
@@ -520,7 +543,7 @@ public class GameMap {
     public MapNode addVirellBossFight(String pathId) {
         // Create corrupted Flamita character
         Characters.character Virell = new Characters.character(
-                (int)(Math.random() * 1000), "Virell the Lifedrinker Sentinel", 100, 30, 20, 10, 5, 3000, 0, new ArrayList<>()
+                (int)(Math.random() * 1000), "Virell the Lifedrinker Sentinel", 100, 30, 20, 10, 5, 5000, 0, new ArrayList<>()
         );
 
         // Skill IDs: 6, 7, 8, 9
@@ -534,7 +557,7 @@ public class GameMap {
     public MapNode addSolarethBossFight(String pathId) {
         // Create corrupted Flamita character
         Characters.character Solareth = new Characters.character(
-                (int)(Math.random() * 1000), "Solareth the Living Beacon", 100, 30, 20, 10, 5, 3000, 0, new ArrayList<>()
+                (int)(Math.random() * 1000), "Solareth the Living Beacon", 100, 30, 20, 10, 5, 5000, 0, new ArrayList<>()
         );
 
         // Skill IDs: 6, 7, 8, 9

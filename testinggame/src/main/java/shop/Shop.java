@@ -1,6 +1,8 @@
 package shop;
 
 import items.*;
+import org.example.testing;
+
 import java.util.*;
 
 /**
@@ -52,8 +54,8 @@ public class Shop {
         // Get all available items
         List<Item> allItems = new ArrayList<>(ItemRegistry.getAllItemsButNoStoryItem());
         
-        // Select 6-10 random items
-        int itemCount = 6 + random.nextInt(5);
+        // Select random items
+        int itemCount = 6 + random.nextInt(3)+2*testing.getCurrentFloor();
         Collections.shuffle(allItems);
 
         for (int i = 0; i < Math.min(itemCount, allItems.size()); i++) {

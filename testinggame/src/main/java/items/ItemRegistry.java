@@ -132,6 +132,20 @@ public class ItemRegistry {
             EquipmentItem.EquipmentSlot.WEAPON,
             new EquipmentItem.StatBonus(0, 0, 15, 0, 0, 0, 0)
         ));
+
+        registerItem(new EquipmentItem(
+                "light_shield", "Light Shield", "A sturdy shield",
+                300, Item.ItemRarity.COMMON, EquipmentItem.EquipmentType.WEAPON,
+                EquipmentItem.EquipmentSlot.WEAPON,
+                new EquipmentItem.StatBonus(100, 0, 0, 0, 20, 20, 0)
+        ));
+
+        registerItem(new EquipmentItem(
+                "heavy_shield", "Heavy Shield", "A sturdier shield",
+                900, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.WEAPON,
+                EquipmentItem.EquipmentSlot.WEAPON,
+                new EquipmentItem.StatBonus(200, 0, 0, 0, 50, 50, -1)
+        ));
         
         registerItem(new EquipmentItem(
             "steel_sword", "Steel Sword", "A sharp steel blade",
@@ -148,7 +162,7 @@ public class ItemRegistry {
         ));
         
         registerItem(new EquipmentItem(
-            "flame_blade", "Flame Blade", "Apply 1 stack of burn debuff",
+            "flame_blade", "Flame Blade", "Apply 1 stack of burn debuff to enemy each attack",
             800, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.WEAPON,
             EquipmentItem.EquipmentSlot.WEAPON,
             new EquipmentItem.StatBonus(0, 0, 35, 10, 0, 0, 0)
@@ -158,7 +172,7 @@ public class ItemRegistry {
             "legendary_sword", "Excalibur", "The legendary sword of kings",
             1500, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.WEAPON,
             EquipmentItem.EquipmentSlot.WEAPON,
-            new EquipmentItem.StatBonus(100, 50, 50, 0, 0, 0, 5)
+            new EquipmentItem.StatBonus(100, 50, 50, 0, 0, 0, 2)
         ));
 
         registerItem(new EquipmentItem(
@@ -185,21 +199,21 @@ public class ItemRegistry {
         
         registerItem(new EquipmentItem(
             "chain_mail", "Chain Mail", "Interlocked metal rings",
-            350, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
+            750, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
-            new EquipmentItem.StatBonus(100, 0, 0, 0, 20, 10, -1)
+            new EquipmentItem.StatBonus(150, 0, 0, 0, 25, 25, -1)
         ));
         
         registerItem(new EquipmentItem(
             "plate_armor", "Plate Armor", "Heavy metal plates",
-            600, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ARMOR,
+            1500, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
-            new EquipmentItem.StatBonus(200, 0, 0, 0, 35, 15, -3)
+            new EquipmentItem.StatBonus(250, 0, 0, 0, 40, 40, -2)
         ));
         
         registerItem(new EquipmentItem(
             "mage_robes", "Mage Robes", "Enchanted robes for spellcasters",
-            400, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
+            500, Item.ItemRarity.UNCOMMON, EquipmentItem.EquipmentType.ARMOR,
             EquipmentItem.EquipmentSlot.ARMOR,
             new EquipmentItem.StatBonus(50, 100, 15, 0, 5, 20, 0)
         ));
@@ -235,16 +249,16 @@ public class ItemRegistry {
         
         registerItem(new EquipmentItem(
             "health_amulet", "Amulet of Vitality", "Increases maximum health",
-            500, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
+            600, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
             new EquipmentItem.StatBonus(200, 0, 0, 0, 0, 0, 0)
         ));
         
         registerItem(new EquipmentItem(
             "mana_crystal", "Crystal of Mana", "Increases magical power",
-            500, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
+            800, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
-            new EquipmentItem.StatBonus(0, 150, 25, 0, 0, 10, 0)
+            new EquipmentItem.StatBonus(0, 150, 10, 0, 0, 10, 0)
         ));
 
         registerItem(new EquipmentItem(
@@ -253,12 +267,19 @@ public class ItemRegistry {
                 EquipmentItem.EquipmentSlot.ACCESSORY,
                 new EquipmentItem.StatBonus(0, 0, 10, 0, 0, 0, 0)
         ));
+
+        registerItem(new EquipmentItem(
+                "fire_ring", "Fire Ring", "Attack apply 'Ignite' debuff to the enemy (make Burn debuff stack up to 20)",
+                800, Item.ItemRarity.RARE, EquipmentItem.EquipmentType.ACCESSORY,
+                EquipmentItem.EquipmentSlot.ACCESSORY,
+                new EquipmentItem.StatBonus(50, 50, 10, 0, 0, 0, 0)
+        ));
         
         registerItem(new EquipmentItem(
             "crown_of_kings", "Crown of Kings", "The ultimate accessory for rulers",
-            5000, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.ACCESSORY,
+            3000, Item.ItemRarity.LEGENDARY, EquipmentItem.EquipmentType.ACCESSORY,
             EquipmentItem.EquipmentSlot.ACCESSORY,
-            new EquipmentItem.StatBonus(200, 200, 30, 30, 20, 20, 5)
+            new EquipmentItem.StatBonus(300, 200, 30, 30, 20, 20, 3)
         ));
     }
     

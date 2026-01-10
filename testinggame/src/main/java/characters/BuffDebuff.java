@@ -46,6 +46,7 @@ public class BuffDebuff {
     
     public int getStack() { return stack; }
     public void setStack(int stack) { this.stack = stack; }
+    public BuffDebuff withStack(int stack) { this.stack = stack; return this; }
     
     public int getMaxStack() { return maxStack; }
     public void setMaxStack(int maxStack) { this.maxStack = maxStack; }
@@ -92,6 +93,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Boiling blood", "Buff", 2, "ATK", 0.5f, 1, 1, "Skill"));
         register(new BuffDebuff("Combustion", "Buff", 999, "ATK", 0.2f, 1, 999, "Skill"));
         register(new BuffDebuff("Necro Sword", "Buff", 9999, "ATK", 5.0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Flame increment", "Buff", 9999, "ATK", 0.25f, 1, 999, "Skill"));
 
         // DEF Buffs
         register(new BuffDebuff("Defend Boost", "Buff", 4, "DEF", 0.3f, 1, 3, "Skill"));
@@ -111,6 +113,7 @@ public class BuffDebuff {
         register(new BuffDebuff("Conserve", "Buff", 1, "SPD", 0.2f, 5, 999, "Skill"));
         register(new BuffDebuff("Judgment", "Buff", 1, "SPD", 0.0f, 1, 999, "Skill"));
         register(new BuffDebuff("Last dance", "Buff", 1, "SPD", 10.0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Excite", "Buff", 1, "SPD", 1.0f, 1, 1, "Skill"));
 
         // ATK Debuffs
         register(new BuffDebuff("Weakness", "Debuff", 3, "ATK", -0.1f, 1, 5, "Skill"));
@@ -127,7 +130,9 @@ public class BuffDebuff {
         // Special Effects
         register(new BuffDebuff("Poison", "Debuff", 5, "DOT", 10f, 1, 3, "Skill"));
         register(new BuffDebuff("Burn", "Debuff", 3, "DOT", 20f, 1, 10, "Skill"));
-        register(new BuffDebuff("Void burn", "Debuff", 2, "DOT", 5f, 1, 99, "Skill"));
+        register(new BuffDebuff("Void burn", "Debuff", 2, "DOT", 10f, 1, 99, "Skill"));
+        register(new BuffDebuff("Ignite", "Debuff", 999, "DOT", 0f, 1, 1, "Skill"));
+
 
         register(new BuffDebuff("Regeneration", "Buff", 4, "HOT", 25f, 1, 10, "Skill"));
         register(new BuffDebuff("Mana Shield", "Buff", 3, "MP_COST", 0.5f, 1, 1, "Skill"));
@@ -147,12 +152,29 @@ public class BuffDebuff {
         register(new BuffDebuff("Rage absorption", "Buff", 2, "", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Stunned", "Debuff", 1, "Stunned", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Frozen", "Debuff", 1, "Stunned", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Mercy", "Debuff", 3, "Stunned", 0f, 1, 1, "Skill"));
+
 
         register(new BuffDebuff("Resurrection", "Buff", 1, "", 0f, 1, 1, "Skill"));
         register(new BuffDebuff("Sunset", "Buff", 1, "", 0f, 1, 1, "Skill"));
 
         register(new BuffDebuff("Arua's charge", "Buff", 999, "", 0f, 1, 3, "Skill"));
         register(new BuffDebuff("Elysion break down", "Debuff", 5, "", 0f, 1, 1, "Skill"));
+
+        register(new BuffDebuff("Challenge", "Debuff", 999, "NoMp", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Challenge2", "Debuff", 999, "NoMp", 0f, 1, 1, "Skill"));
+
+        register(new BuffDebuff("Confront", "Debuff", 999, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Banish", "Debuff", 999, "", 0f, 1, 1, "Skill"));
+
+        register(new BuffDebuff("Power Trial", "Debuff", 999, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Power Target", "Debuff", 999, "", 0f, 750, 1, "Skill"));
+
+        register(new BuffDebuff("Combo Trial", "Debuff", 999, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Combo Target", "Debuff", 999, "", 0f, 5, 9999, "Skill"));
+
+        register(new BuffDebuff("Recovery Trial", "Debuff", 999, "", 0f, 1, 1, "Skill"));
+        register(new BuffDebuff("Dragon breath!", "Buff", 999, "", 0f, 1, 1, "Skill"));
 
     }
     
@@ -187,7 +209,7 @@ public class BuffDebuff {
     
     @Override
     public String toString() {
-        return String.format("%s (%s) - %s: %.1f x%d (%d turns)", 
-            name, type, effects, value, stack, duration);
+        return String.format("%s (%s) - %s: %.1f x%d (%d turns)(%d max stack)",
+            name, type, effects, value, stack, duration,maxStack);
     }
 }

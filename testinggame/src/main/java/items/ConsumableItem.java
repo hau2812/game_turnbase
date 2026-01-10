@@ -95,15 +95,19 @@ public class ConsumableItem extends Item {
                 break;
                 
             case HEAL_MP:
-                target.setCurrentMp(Math.min(target.getCharacter().getMp(), 
-                    target.getCurrentMp() + effectValue));
+                if(!target.getCharacter().getName().equals("Ina")) {
+                    target.setCurrentMp(Math.min(target.getCharacter().getMp(),
+                            target.getCurrentMp() + effectValue));
+                }
                 break;
                 
             case HEAL_BOTH:
                 target.setCurrentHp(Math.min(target.getCharacter().getHp(), 
                     target.getCurrentHp() + effectValue));
-                target.setCurrentMp(Math.min(target.getCharacter().getMp(), 
-                    target.getCurrentMp() + effectValue));
+                if(!target.getCharacter().getName().equals("Ina")) {
+                    target.setCurrentMp(Math.min(target.getCharacter().getMp(),
+                            target.getCurrentMp() + effectValue));
+                }
                 break;
                 
             case DAMAGE_OVER_TIME:
@@ -135,7 +139,7 @@ public class ConsumableItem extends Item {
                 break;
                 
             case SHIELD:
-                // Add shield effect (would need to implement shield system)
+                SpecialTalents.applyBuffDebuff(target,BuffDebuff.getByName("Barrier").copy().withStack((int)effectValue));
                 break;
                 
             case BURN:
@@ -157,7 +161,6 @@ public class ConsumableItem extends Item {
                 // Generic debuff (reduces attack)
                 addDebuff(target, "Weakened", "ATK", -effectValue/100f, duration);
                 break;
-                
             default:
                 // For other effects, just log
                 System.out.println("Applied " + type.getDisplayName() + " effect: " + effectDescription);

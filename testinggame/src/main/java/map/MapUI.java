@@ -232,6 +232,7 @@ public class MapUI {
     }
     private Text title ;
     private Text progress ;
+    private Text floorText ;
     private void createPathUI() {
         // Background
         mapBackground = new Rectangle(800, 600, Color.LIGHTCYAN);
@@ -251,12 +252,20 @@ public class MapUI {
         FXGL.getGameScene().addUINode(title);
 
         // Progress indicator
-        progress = new Text("Tiến độ: " + selectedPath.getProgress() + "/" + selectedPath.getTotalNodes());
+        progress = new Text("Progress: " + selectedPath.getProgress() + "/" + selectedPath.getTotalNodes());
         progress.setFont(new Font(14));
         progress.setFill(Color.BLACK);
         progress.setTranslateX(50);
         progress.setTranslateY(50);
         FXGL.getGameScene().addUINode(progress);
+        
+        // Current floor indicator
+        floorText = new Text("Current Floor: " + testing.getCurrentFloor());
+        floorText.setFont(new Font(14));
+        floorText.setFill(Color.BLACK);
+        floorText.setTranslateX(50);
+        floorText.setTranslateY(70);
+        FXGL.getGameScene().addUINode(floorText);
 
         // Draw path nodes
         List<MapNode> nodes = selectedPath.getNodes();
@@ -468,11 +477,6 @@ public class MapUI {
                 break;
             case REST:
                 DialogRegistrations.registerBasicCampDialog();
-                if(testingInstance.getReturn_time()>=5&&!testing.status.contains("camp0")&&!battleSystem.hasHeroName("Azar")){
-                    DialogRegistrations.showDialogByTitle("camp0","current");
-                    audioManager.playMusic("camp0.mp3",true);
-                    return;
-                }
                 //Heal to full
                 for(Observer.characterSlot hero : battleSystem.getAllHeroes()){
                     if (hero != null) {
@@ -480,6 +484,12 @@ public class MapUI {
                         hero.setCurrentMp(hero.getCharacter().getMp());
                     }
                 }
+                if(testingInstance.getReturn_time()>=5&&!testing.status.contains("camp0")&&!battleSystem.hasHeroName("Azar")){
+                    DialogRegistrations.showDialogByTitle("camp0","current");
+                    audioManager.playMusic("camp0.mp3",true);
+                    return;
+                }
+
 
                 ArrayList<Observer.characterSlot> heroes = new ArrayList<>(Arrays.asList(battleSystem.getAllHeroes()));
                 // Remove null heroes
@@ -632,15 +642,20 @@ public class MapUI {
 //                    switchToBattleMode();
 //                }
 
-                // Check if we're on floor 1, if so, create floor 2 instead of resetting to menu
-                if (testingInstance != null&&!battleSystem.hasHeroName("Azar")) {
-                    if (testing.getCurrentFloor() == 1&&testingInstance.getReturn_time()>=5) {
+                // Check current floor and initialize next floor or reset to menu
+                if (testingInstance != null) {
+                    if (testing.getCurrentFloor() == 1&&testingInstance.getReturn_time()>=5&&!battleSystem.hasHeroName("Azar")) {
                         // Create floor 2 with 1.5x enemy stats
                         testingInstance.initializeFloor2();
                         // Refresh the map UI to show the new floor
                         showSelectedPath();
+                    } else if (testing.getCurrentFloor() == 2&&testingInstance.getReturn_time()>=10&&!battleSystem.hasHeroName("Azar")) {
+                        // Create floor 3 with 1.5x enemy stats
+                        testingInstance.initializeFloor3();
+                        // Refresh the map UI to show the new floor
+                        showSelectedPath();
                     } else {
-                        // Floor 2 boss defeated, reset to menu
+                        // Floor 3 boss defeated, reset to menu
                         testingInstance.setReturn_time(testingInstance.getReturn_time()+1);
                         testingInstance.resetBackToMenu();
                     }
@@ -686,6 +701,9 @@ public class MapUI {
         }
         if(progress!=null) {
             FXGL.getGameScene().removeUINode(progress);
+        }
+        if(floorText!=null) {
+            FXGL.getGameScene().removeUINode(floorText);
         }
         if(title2!=null) {
             FXGL.getGameScene().removeUINode(title2);

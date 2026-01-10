@@ -443,17 +443,14 @@ public interface Ability {
             
             register(new Ability.skill(
                     10,
-                    "Berserker's Fury",
-                    "Gain extra Burning Rage when taking damage",
-                    "Support",
+                    "Steady",
+                    "Will take turn after next character act",
+                    "Heal",
                     "Self",
                     0.0f,
-                    1.0f,
+                    0.0f,
                     0,
                     0,
-                    0,     // No Burning Rage required
-                    0,     // Consumes 0 Burning Rage
-                    25,     // Gains 25 Burning Rage
                     ""
             ));
             register(new Ability.skill(
@@ -513,14 +510,14 @@ public interface Ability {
                     "Ally",
                     0.0f,
                     1.0f,
-                    50,
+                    100,
                     0,
                     ""
             ));
             // Add Barrier effect to the Barrier skill
             Ability.skill barrier = getByName("Barrier");
             if (barrier != null) {
-                barrier.addEffect("Barrier", 3, 100);
+                barrier.addEffect("Barrier", 3, 200);
             }
 
             register(new Ability.skill(
@@ -1099,6 +1096,104 @@ public interface Ability {
             if (Sunset != null) {
                 Sunset.addEffect("Sunset", 30, 1);
             }
+            register(new Ability.skill(
+                    53,
+                    "Heavy hit",
+                    "",
+                    "Physical",
+                    "Enemy",
+                    1.5f,
+                    1.5f,
+                    0,
+                    0,
+                    ""
+            ));
+            //CHIGON BOSS-------------------------------------------------------
+            register(new Ability.skill(
+                    54,
+                    "CBS1",
+                    "",
+                    "Physical",
+                    "Enemy",
+                    1.0f,
+                    1.0f,
+                    -10,
+                    0,
+                    ""
+            ));
+            register(new Ability.skill(
+                    55,
+                    "CBS2",
+                    "",
+                    "Physical",
+                    "Aoe enemy",
+                    1.0f,
+                    0.5f,
+                    -5,
+                    0,
+                    ""
+            ));
+            register(new Ability.skill(
+                    56,
+                    "CBMark",
+                    "",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    1.0f,
+                    40,
+                    0,
+                    ""
+            ));
+            Ability.skill CBMark = getByName("CBMark");
+            if (CBMark != null) {
+                CBMark.addEffect("Challenge", 999, 1);
+            }
+            register(new Ability.skill(
+                    57,
+                    "CBMark2",
+                    "",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    1.0f,
+                    40,
+                    0,
+                    ""
+            ));
+            Ability.skill CBMark2 = getByName("CBMark2");
+            if (CBMark2 != null) {
+                CBMark2.addEffect("Challenge2", 999, 1);
+            }
+
+            register(new Ability.skill(
+                    58,
+                    "CBUlt",
+                    "",
+                    "Heal",
+                    "Self",
+                    0.0f,
+                    2.0f,
+                    40,
+                    0,
+                    ""
+            ));
+            Ability.skill CBUlt = getByName("CBUlt");
+            if (CBUlt != null) {
+                CBUlt.addEffect("Dragon breath!", 999, 1);
+            }
+            register(new Ability.skill(
+                    59,
+                    "CBFire",
+                    "",
+                    "Physical",
+                    "Enemy",
+                    0.002f,
+                    0.0f,
+                    0,
+                    0,
+                    ""
+            ));
         }
 
     }

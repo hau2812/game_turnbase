@@ -259,7 +259,7 @@ public interface Observer {
             Characters.CharacterRegistry.init();
 
 
-            createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack", null);
+            createCharacterSlot("Hero", "Slash", "Fireball", "heavy attack", "Steady");
             createCharacterSlot("Hero2", "Charge attack", "Fireball", "Heal", "Barrier");
             createCharacterSlot("Flamita", "Rage Strike", "Burning slash", "Rage Heal", "Rage Burst");
             createCharacterSlot("Pieberry", "Charge attack", "5-Orb Flame", "7-Fork Lightning", "Ecarr Vertel");

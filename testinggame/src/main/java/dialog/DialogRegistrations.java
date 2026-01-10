@@ -111,6 +111,8 @@ public class DialogRegistrations {
                 ":Line1;" +
                 ":Line2;" +
                 ":Line3");
+        dialogMakerHelper("ChigonMockingDialog;" +
+                "Chigon The All Mighty Dragon:That's it ? Get up! I want more!");
     }
 
     public static List<String> get3RandomHero(List<String> heroList) {
@@ -412,7 +414,9 @@ public class DialogRegistrations {
                 ":(Outside the dungeon);" +
                 ":Azar:(I should make a report about this);" +
                 "(A random poster):Warning...Crazy red women inside");
-        showDialogByTitle("FlamitaBoss2BattleVictory","");
+        if(battleSystem.hasHeroName("Lucia")) {
+            showDialogByTitle("FlamitaBoss2BattleVictory", "");
+        }
     }
     public static void showBattleVictoryDialogVirell(){
         dialogMakerHelper("battleVictoryDialogVirell;" +
@@ -615,9 +619,6 @@ public class DialogRegistrations {
         }
     }
     public static void registerBasicEventDialog(){
-        if (eventDialogsRegistered) {
-            return; // Already registered
-        }
         
         if (battleSystem == null) {
             System.out.println("BattleSystem not initialized, cannot register event dialogs");
@@ -698,11 +699,11 @@ public class DialogRegistrations {
                 .withRunnable(() -> {
                     int outcome = finalRandom.nextInt(10);
                     String resultId;
-                    if (outcome < 5) {
+                    if (outcome < 4) {
                         // 40% chance: Cursed water - take damage
                         damageCharacter.accept(100f);
                         resultId = "Event_HealingSpring_Cursed_1";
-                    } else if (outcome < 8) {
+                    } else if (outcome < 7) {
                         // 30% chance: Good healing
                         float healAmount = 100 + finalRandom.nextInt(100); // 100-300 HP
                         healCharacter.accept(healAmount);
@@ -751,8 +752,8 @@ public class DialogRegistrations {
                 .withRunnable(() -> {
                     int outcome = finalRandom.nextInt(10);
                     String resultId;
-                    if (outcome <= 5) {
-                        // 50% chance: Trap
+                    if (outcome <4) {
+                        // 40% chance: Trap
                         float damage = 100 + finalRandom.nextInt(200); // 100-300 damage
                         damageCharacter.accept(damage);
                         resultId = "Event_TreasureChest_Trap_1";
@@ -760,8 +761,8 @@ public class DialogRegistrations {
                         if (result != null) {
                             setDialogText(result, "It was a trap! All heroes lost " + (int)damage + " HP!");
                         }
-                    } else if (outcome <= 8) {
-                        // 30% chance: Good treasure
+                    } else if (outcome < 8) {
+                        // 40% chance: Good treasure
                         healCharacter.accept(250f);
                         restoreMp.accept(150f);
                         resultId = "Event_TreasureChest_Good_1";
@@ -775,7 +776,7 @@ public class DialogRegistrations {
                         restoreMp.accept(200f);
                         int goldEarned = 0;
                         if (characters.SpecialTalents.inventory != null) {
-                            goldEarned = 100 + finalRandom.nextInt(100);
+                            goldEarned =(int) (100 + finalRandom.nextInt(100)*(1+testing.getCurrentFloor()*0.5));
                             characters.SpecialTalents.inventory.addGold(goldEarned);
                         }
                         resultId = "Event_TreasureChest_Great_1";
@@ -812,7 +813,7 @@ public class DialogRegistrations {
                 .withRunnable(() -> {
                     int outcome = finalRandom.nextInt(10);
                     String resultId;
-                    if (outcome <= 3) {
+                    if (outcome < 3) {
                         // 30% chance: Bad - heavy damage
                         float damage = 150 + finalRandom.nextInt(200); // 150-350 damage
                         damageCharacter.accept(damage);
@@ -821,7 +822,7 @@ public class DialogRegistrations {
                         if (result != null) {
                             setDialogText(result, "You couldn't dodge in time! All heroes lost " + (int)damage + " HP!");
                         }
-                    } else if (outcome <= 6) {
+                    } else if (outcome < 6) {
                         // 30% chance: Neutral - minor damage
                         float damage = 50 + finalRandom.nextInt(100); // 50-150 damage
                         damageCharacter.accept(damage);
@@ -871,7 +872,7 @@ public class DialogRegistrations {
                 .withRunnable(() -> {
                     int outcome = finalRandom.nextInt(10);
                     String resultId;
-                    if (outcome <= 2) {
+                    if (outcome < 2) {
                         // 20% chance: Monster attack
                         damageCharacter.accept(200f);
                         resultId = "Event_MysteriousCave_Monster_1";
@@ -879,7 +880,7 @@ public class DialogRegistrations {
                         if (result != null) {
                             setDialogText(result, "A cave monster attacks! All heroes lost 200 HP!");
                         }
-                    } else if (outcome <= 4) {
+                    } else if (outcome < 4) {
                         // 20% chance: Cursed
                         if (finalHero1 != null) finalHero1.setCurrentMp(Math.max(0, finalHero1.getCurrentMp() - 150));
                         if (finalHero2 != null) finalHero2.setCurrentMp(Math.max(0, finalHero2.getCurrentMp() - 150));
@@ -889,7 +890,7 @@ public class DialogRegistrations {
                         if (result != null) {
                             setDialogText(result, "The cave is cursed! All heroes lost 150 MP!");
                         }
-                    } else if (outcome <= 7) {
+                    } else if (outcome < 7) {
                         // 30% chance: Good - crystals
                         healCharacter.accept(400f);
                         restoreMp.accept(300f);
@@ -1118,7 +1119,7 @@ public class DialogRegistrations {
                         // 40% chance: Earn gold
                         int goldEarned = 0;
                         if (characters.SpecialTalents.inventory != null) {
-                            goldEarned = 100 + finalRandom.nextInt(100); // 100-200 gold
+                            goldEarned =(int) (100 + finalRandom.nextInt(100)*(1+testing.getCurrentFloor()*0.5)); // 100-200 gold
                             characters.SpecialTalents.inventory.addGold(goldEarned);
                         }
                         resultId = "Event_HelpfulVillager_HelpGold_1";
@@ -1130,7 +1131,7 @@ public class DialogRegistrations {
                         // 40% chance: Earn gold + healing
                         int goldEarned = 0;
                         if (characters.SpecialTalents.inventory != null) {
-                            goldEarned = 150 + finalRandom.nextInt(100); // 150-250 gold
+                            goldEarned =(int) (150 + finalRandom.nextInt(100)*(1+testing.getCurrentFloor()*0.5)); // 150-250 gold
                             characters.SpecialTalents.inventory.addGold(goldEarned);
                         }
                         healCharacter.accept(200f);
@@ -1253,7 +1254,7 @@ public class DialogRegistrations {
                 "Pieberry:Yea~ As I said, I come from Vavelia.;" +
                 "Leuna:No...I mean not in 'this universe';" +
                 "Pieberry:OwO?;" +
-                "Leuna:Which mean you have some sort of protection even from the 'creator' himself." +
+                "Leuna:Which mean you have some sort of protection even from the 'creator' himself.;" +
                 "Pieberry:What are you talking about @@?;" +
                 "Leuna:Don't worry, you don't have to understand.(I didn't said this for you to hear though);");
 
@@ -1474,7 +1475,6 @@ public class DialogRegistrations {
             showDialogByTitle("LitaruEndDialog2","");
             DialogSystem system = DialogSystem.getInstance();
             system.setOnDialogEnd(() -> {
-                AudioManager.getInstance().setMusicVolume(0.1);
                 showDialogByTitle("LitaruEndDialog3","litaru_last_battle");
                 AudioManager.getInstance().playMusic("litaru.mp3",true);
             });
@@ -1532,6 +1532,26 @@ public class DialogRegistrations {
                     if(hero!=null) {
                         linkChainToTheEndOf("floor2Unlock", "floor2Unlock" + hero.getCharacter().getName()+"_1");
                         showDialogByTitle("floor2Unlock", "");
+                    }
+                }
+            }else if(testing.getCurrentFloor()==3) {
+                dialogMakerHelper("floor3Unlock;" +
+                        "Azar:The dungeon grows more dangerous. We can now access floor 3.");
+                dialogMakerHelper("floor3UnlockHero;" +
+                        "Hero:And when can I get a name?;" +
+                        "dev:No...Not now v:;");
+                dialogMakerHelper("floor3UnlockFlamita;" +
+                        "Flamita:This is the final floor, let's finish this!;" +
+                        "dev:No...Not now v:;");
+                dialogMakerHelper("floor3UnlockLeuna;" +
+                        "Leuna:Floor 3? Are we going deeper underground?;" +
+                        "Azar:Floor 3 is the deepest part of this dungeon, enemies here are much stronger.;");
+                dialogMakerHelper("floor3UnlockChigon;" +
+                        "Chigon:I hope you bring some food UwU.;");
+                for (Observer.characterSlot hero : battleSystem.getAllHeroes()) {
+                    if(hero!=null) {
+                        linkChainToTheEndOf("floor3Unlock", "floor3Unlock" + hero.getCharacter().getName()+"_1");
+                        showDialogByTitle("floor3Unlock", "");
                     }
                 }
             }else{
@@ -2006,6 +2026,7 @@ public class DialogRegistrations {
             } else {
                 previousUIState = "battle";
                 previousUnderlyingUIState = null; // Battle is a main UI, not an overlay
+                battleSystem.setMoving(false);
             }
         }
         
@@ -2074,6 +2095,7 @@ public class DialogRegistrations {
                 } else if ("battle".equals(previousUIState)) {
                     // Restore battle UI - battle should already be active, just ensure it's visible
                     // Battle UI is typically shown automatically when in battle mode
+                    battleSystem.setMoving(true);
                     testing.inMapMode = false;
                 }
                 // Clear the previous state after restoring
@@ -2108,6 +2130,7 @@ public class DialogRegistrations {
                         if (flamitaBossNode != null) {
                             // Set heroes to only Lucia
                             String[] luciaOnly = {"Lucia"};
+                            battleSystem.removeAllHeroes();
                             battleSystem.configureBattle(false, luciaOnly);
 
                             // Set up battle with map enemies
@@ -2136,7 +2159,6 @@ public class DialogRegistrations {
         }
         else if("litaru_last_battle".equals(returnPlace)) {
             system.setOnDialogEnd(() -> {
-                //Go battle with flamita
                 if (mapUI != null && battleSystem != null) {
                     // Get gameMap from mapUI
                     map.GameMap gameMap = mapUI.getGameMap();
@@ -2147,6 +2169,7 @@ public class DialogRegistrations {
                         if (flamitaBossNode != null) {
                             // Set heroes to only Lucia
                             String[] litaruOnly = {"Litaru "};
+                            battleSystem.removeAllHeroes();
                             battleSystem.configureBattle(false, litaruOnly);
                             battleSystem.getHeroSlot().addBuffDebuff(BuffDebuff.getByName("Invulnerable").copy().withDuration(9999));
                             battleSystem.getHeroSlot().addBuffDebuff(BuffDebuff.getByName("Necro Sword").copy().withDuration(9999));

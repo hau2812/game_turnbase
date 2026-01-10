@@ -126,7 +126,7 @@ public class MenuUI {
     
     // Save/Load UI dimensions
     private static final double SAVE_LOAD_BACKGROUND_WIDTH = 500;
-    private static final double SAVE_LOAD_BACKGROUND_HEIGHT = 400;
+    private static final double SAVE_LOAD_BACKGROUND_HEIGHT = 400; // Increased to accommodate 2 rows of slots
     private static final double SAVE_LOAD_BACKGROUND_X = 150;
     private static final double SAVE_LOAD_BACKGROUND_Y = 100;
     private static final double SAVE_SLOT_WIDTH = 120;
@@ -1015,14 +1015,17 @@ public class MenuUI {
         modeTitleText.setTranslateY(SAVE_LOAD_BACKGROUND_Y + 50);
         modeTitleText.setMouseTransparent(true); // Make text non-interactive
         
-        // Initialize save slots
-        saveSlots = new Rectangle[3];
-        saveSlotTexts = new Text[3];
+        // Initialize save slots (6 slots: 1-5 manual, 6 auto-save)
+        saveSlots = new Rectangle[6];
+        saveSlotTexts = new Text[6];
         
-        for (int i = 0; i < 3; i++) {
-            final int slotIndex = i + 1; // save1, save2, save3
-            double slotX = SAVE_SLOT_START_X + i * (SAVE_SLOT_WIDTH + SAVE_SLOT_SPACING);
-            double slotY = SAVE_SLOT_START_Y;
+        for (int i = 0; i < 6; i++) {
+            final int slotIndex = i + 1; // save1, save2, ..., save6
+            // Layout: 2 rows of 3 slots each
+            int row = i / 3; // 0 for first row (slots 0-2), 1 for second row (slots 3-5)
+            int col = i % 3; // Column within row (0, 1, or 2)
+            double slotX = SAVE_SLOT_START_X + col * (SAVE_SLOT_WIDTH + SAVE_SLOT_SPACING);
+            double slotY = SAVE_SLOT_START_Y + row * (SAVE_SLOT_HEIGHT + SAVE_SLOT_SPACING);
             
             // Slot button
             Rectangle slot = new Rectangle(SAVE_SLOT_WIDTH, SAVE_SLOT_HEIGHT, Color.rgb(100, 150, 200));
@@ -1037,28 +1040,46 @@ public class MenuUI {
                 slot.setFill(Color.rgb(100, 200, 100)); // Green if save exists
             }
             
-            // Slot text
-            Text slotText = new Text("Save " + slotIndex);
+            // Slot text - special label for slot 6 (Auto Save)
+            String slotLabel = (slotIndex == 6) ? "Auto Save" : "Save " + slotIndex;
+            Text slotText = new Text(slotLabel);
             slotText.setFont(new Font(16));
             slotText.setFill(Color.WHITE);
-            slotText.setTranslateX(slotX + SAVE_SLOT_WIDTH / 2 - 40);
+            slotText.setTranslateX(slotX + SAVE_SLOT_WIDTH / 2 - 50);
             slotText.setTranslateY(slotY + SAVE_SLOT_HEIGHT / 2 + 5);
             slotText.setMouseTransparent(true); // Make text non-interactive
             
-            // Click handler
+            // Click handler - slot 6 is not clickable in save mode (auto-save only)
+            final boolean isAutoSaveSlot = (slotIndex == 6);
             slot.setOnMouseClicked(e -> {
                 if (e.getButton() == MouseButton.PRIMARY) {
-                    if (isSaveMode) {
+                    if (isSaveMode && !isAutoSaveSlot) {
+                        // Manual save mode: slots 1-5 only
                         saveToSlot(slotIndex);
                     } else if (isLoadMode) {
+                        // Load mode: all slots (1-6) can be loaded
                         loadFromSlot(slotIndex);
                     }
                 }
             });
             
-            // Hover effect
-            slot.setOnMouseEntered(e -> slot.setFill(Color.rgb(120, saveExists ? 220 : 170, saveExists ? 120 : 220)));
-            slot.setOnMouseExited(e -> slot.setFill(saveExists ? Color.rgb(100, 200, 100) : Color.rgb(100, 150, 200)));
+            // Hover effect - disable hover for auto-save in save mode
+            final Rectangle finalSlot = slot;
+            slot.setOnMouseEntered(e -> {
+                if (!(isSaveMode && isAutoSaveSlot)) {
+                    boolean currentSaveExists = SaveManager.saveExists("save" + slotIndex);
+                    finalSlot.setFill(Color.rgb(120, currentSaveExists ? 220 : 170, currentSaveExists ? 120 : 220));
+                }
+            });
+            slot.setOnMouseExited(e -> {
+                if (!(isSaveMode && isAutoSaveSlot)) {
+                    boolean currentSaveExists = SaveManager.saveExists("save" + slotIndex);
+                    finalSlot.setFill(currentSaveExists ? Color.rgb(100, 200, 100) : Color.rgb(100, 150, 200));
+                } else {
+                    // Auto-save slot in save mode: grayed out
+                    finalSlot.setFill(Color.rgb(150, 150, 150));
+                }
+            });
             
             saveSlots[i] = slot;
             saveSlotTexts[i] = slotText;
@@ -1071,7 +1092,7 @@ public class MenuUI {
             modeTitleText
         );
         
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 6; i++) {
             saveLoadContainer.getChildren().addAll(saveSlots[i], saveSlotTexts[i]);
         }
         
@@ -1141,11 +1162,12 @@ public class MenuUI {
             mapUI.getGameMap().initializeMap();
             mapUI.showSelectedPath();
             testing.selectedHeroes=new String[]{"Azar","Litaru"};
+            battleSystem.removeAllHeroes();
             battleSystem.configureBattle(false,testing.selectedHeroes);
         }
         else if (mapUI != null) {
             mapUI.getGameMap().initializeMap();
-            mapUI.showPathSelection();
+            mapUI.showSelectedPath();
         }
     }
     
@@ -1208,9 +1230,16 @@ public class MenuUI {
         
         // Save to file
         if (SaveManager.saveGame(saveName, saveData)) {
-            System.out.println("Game saved successfully to " + saveName + "!");
-            updateSaveSlotColors(); // Update colors to show save exists
-            cancelSaveLoad(); // Exit save mode after saving
+            String saveType = (slotNumber == 6) ? "Auto-saved" : "Game saved";
+            System.out.println(saveType + " successfully to " + saveName + "!");
+            // Update colors to show save exists (only if UI is visible)
+            if (saveLoadContainer != null && saveLoadContainer.isVisible()) {
+                updateSaveSlotColors();
+            }
+            // Only cancel save/load UI if in save mode and not auto-save
+            if (isSaveMode && slotNumber != 6) {
+                cancelSaveLoad(); // Exit save mode after manual saving
+            }
         } else {
             System.out.println("Failed to save game to " + saveName + "!");
         }
@@ -1405,15 +1434,27 @@ public class MenuUI {
      * Update save slot colors based on whether saves exist
      */
     private void updateSaveSlotColors() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 6; i++) {
             int slotNumber = i + 1;
             boolean saveExists = SaveManager.saveExists("save" + slotNumber);
-            if (saveExists) {
+            boolean isAutoSaveSlot = (slotNumber == 6);
+            
+            if (isAutoSaveSlot && isSaveMode) {
+                // Auto-save slot in save mode: grayed out (not clickable)
+                saveSlots[i].setFill(Color.rgb(150, 150, 150));
+            } else if (saveExists) {
                 saveSlots[i].setFill(Color.rgb(100, 200, 100)); // Green if save exists
             } else {
                 saveSlots[i].setFill(Color.rgb(100, 150, 200)); // Blue if no save
             }
         }
+    }
+    
+    /**
+     * Auto-save to slot 6 (called from resetBackToMenu)
+     */
+    public void autoSave() {
+        saveToSlot(6);
     }
 }
 
