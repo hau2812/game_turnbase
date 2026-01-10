@@ -6,6 +6,7 @@ import characters.BuffDebuff;
 import characters.Characters;
 import characters.Observer;
 import characters.SpecialTalents;
+import dialog.DialogRegistrations;
 import items.EquipmentItem;
 import javafx.scene.shape.Line;
 import ui.SimpleLine;
@@ -108,6 +109,17 @@ public class BattleSystem {
     private ScheduledExecutorService battleLoopExecutor;
     private static final long BATTLE_LOOP_INTERVAL_MS = 5; // 5ms = 200 updates per second
     
+    // Track used skills per enemy for weighted skill selection
+    // Map<enemyName, Map<skillId, usageCount>>
+    private Map<String, Map<Integer, Integer>> enemySkillUsageCount = new HashMap<>();
+    // Map<enemyName, Set<skillId>> - skills that have been used enough to affect selection
+    private Map<String, Set<Integer>> enemyUsedSkillList = new HashMap<>();
+    
+    // Track total damage dealt to enemies for subBar movement (reset when CBUlt is cast)
+    private double totalDamageToEnemies = 0.0;
+    // Track how much damage has been "consumed" for subBar movement (to move only once per 100 damage)
+    private double consumedDamageForSubBar = 0.0;
+    
     public BattleSystem() {
         this.audioManager = AudioManager.getInstance();
         // Set the BattleSystem reference in Observer for party MP management
@@ -155,6 +167,8 @@ public class BattleSystem {
     public void resetHeroes() {
         removeAllBuffsDebuffsFromHeroes();
         healToFullAllHeroes();
+        timeStop = 0;
+        timeStopSlot = null;
     }
     
     /**
@@ -279,6 +293,18 @@ public class BattleSystem {
         if (slot == enemySlot3) return battleUI.getOrangeLine();
         return null;
     }
+
+    private double getNextLineAct(Line currentLine) {
+        double nextX = battleUI.getBarX()+battleUI.getBarWidth();
+        for(Line line:battleUI.getAllLines()){
+            if(line!=null&&line!=currentLine){
+                if(line.getStartX()<nextX){
+                    nextX = line.getStartX();
+                }
+            }
+        }
+        return nextX;
+    }
     
     /**
      * Get the corresponding speed for a character slot
@@ -343,6 +369,18 @@ public class BattleSystem {
         double barX = battleUI.getBarX();
         slot.getLine().setStartX(barX);
         slot.getLine().setEndX(barX);
+    }
+
+    public void pushAllLineToStart(){
+        for (Observer.characterSlot slot : getAllCharacters()) {
+            if(slot!=null){
+                if(slot.getLine()!=null){
+                    double barX = battleUI.getBarX();
+                    slot.getLine().setStartX(barX+slot.getCharacter().getAV());
+                    slot.getLine().setEndX(barX+slot.getCharacter().getAV());
+                }
+            }
+        }
     }
     
 
@@ -534,7 +572,8 @@ public class BattleSystem {
     private static final Map<String, Runnable> SPECIAL_MUSIC = Map.of(
             "Flamita ?", () -> audioManager.playFlamitaMusic(),
             "Flamita The Immortal Phoenix", () -> audioManager.playFlamitaMusic(),
-            "Mabel", () -> audioManager.playMabelMusic()
+            "Mabel", () -> audioManager.playMabelMusic(),
+            "Chigon The All Mighty Dragon",()-> audioManager.playMusic("Dragon Slayer.mp3",true)
             //"Electra", () -> audioManager.playElectraMusic()
     );
     public void playBattleMusic() {
@@ -589,9 +628,10 @@ public class BattleSystem {
         if(hasHeroName("Ina")){
             getSlotByName("Ina").setCurrentMp(5);
         }
-        // Enemy slots
-        //if(enemySlot == null) {enemySlot = Observer.CharacterSlotRegistry.getByName("Enemy");}
-        //if(enemySlot2 == null) {enemySlot2 = Observer.CharacterSlotRegistry.getByName("Enemy2");}
+        //Wait there are more ?
+        if(enemySlot!=null&&enemySlot.getCharacter().getName().equals("Chigon The All Mighty Dragon")){
+            enemySlot.setCurrentMp(40);
+        }
         selectedTarget = enemySlot; // default target
         selectedAllyTarget = heroSlot; // ally selected initially
         selectedEnemyTarget = enemySlot; // default enemy target
@@ -604,7 +644,7 @@ public class BattleSystem {
                 SpecialTalents.applyStatModifications(hero,null);
             }
         }
-
+        pushAllLineToStart();
     }
     
     public void startBattleLoop() {
@@ -660,6 +700,20 @@ public class BattleSystem {
     }
 
     public void useSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
+        //Push & reduce mp
+        if (isEnemy(attacker)) {
+            if(!attacker.containsEffectBuffDebuff("NoMp")) {
+                if (attacker.getCharacter().getName().equals("Chigon The All Mighty Dragon")) {
+                    if(!attacker.containsBuffDebuff("Taunt")){
+                        attacker.setCurrentMp(Math.min(attacker.getCharacter().getMp(), attacker.getCurrentMp() - skill.getMpCost()));
+                    }
+                } else {
+                    attacker.setCurrentMp(Math.min(attacker.getCharacter().getMp(), attacker.getCurrentMp() - skill.getMpCost()));
+                }
+            }
+            double push = attacker.getCharacter().getAV() * skill.getAVScale();
+            pushCharacterLine(attacker, push);
+        }
 
         Line attackerLine = attacker.getLine();
         if(attackerLine == null || turnOf == null || 
@@ -710,7 +764,7 @@ public class BattleSystem {
         }
 
         double talentBonus = calculateDamageWithTalentBonus(skill, attacker);
-        double specialDmgBonus = calculateSpecialDmgBonus(attacker, skill);
+        double specialDmgBonus = calculateSpecialDmgBonus(attacker,target, skill);
         double equipmentDmgBonus = handleSpecialEquipmentDamage(attacker,target,skill,baseDamage);
         double finalDmg = baseDamage+burnBonus+talentBonus+specialDmgBonus+equipmentDmgBonus;
         //Calculate damage after def/res reduction
@@ -745,11 +799,6 @@ public class BattleSystem {
         }
 
 
-        if (isEnemy(attacker)) {
-            attacker.setCurrentMp(Math.min(attacker.getCharacter().getMp(),attacker.getCurrentMp()-skill.getMpCost()));
-            double push = attacker.getCharacter().getAV() * skill.getAVScale();
-            pushCharacterLine(attacker, push);
-        }
         // Reduce duration of buff/debuff effects at the end of turn
         characters.SpecialTalents.onTurnEnd(attacker);
         //Visual fix
@@ -872,7 +921,7 @@ public class BattleSystem {
                 // Check if skill is not null
                 if (skill == null) continue;
                 
-                // Special condition for Eternal darkness skill
+                // Special condition for skills
                 if (skill.getName().equals("Eternal darkness")) {
                     if (hasHeroWithVoidBurn(10)) {
                         availableSkills.add(skill);
@@ -882,11 +931,31 @@ public class BattleSystem {
                         availableSkills.add(skill);
                     }
 
-                }else if(skill.getName().equals("Daddy fury")){
-                    if((int)actingEnemy.getFloatBuffDebuffByName("Oufuu atk up")>=BuffDebuff.getByName("Oufuu atk up").getMaxStack()){
+                }else if(skill.getName().equals("Daddy fury")) {
+                    if ((int) actingEnemy.getFloatBuffDebuffByName("Oufuu atk up") >= BuffDebuff.getByName("Oufuu atk up").getMaxStack()) {
                         availableSkills.add(skill);
                     }
-                }else {
+                }else if(skill.getName().equals("CBMark")) {
+                    if (!actingEnemy.containsBuffDebuff("Taunt")&&actingEnemy.getCurrentMp()>=skill.getMpCost()) {
+                        availableSkills.add(skill);
+                    }
+                }
+                else if(skill.getName().equals("CBS2")){
+                    if(!actingEnemy.containsBuffDebuff("Taunt")){
+                        availableSkills.add(skill);
+                    }
+                }
+                else if(skill.getName().equals("CBMark2")){
+                    if(!actingEnemy.containsBuffDebuff("Taunt")&&!actingEnemy.containsBuffDebuff("Challenge2")&&actingEnemy.getCurrentMp()>=skill.getMpCost()&&!(actingEnemy.getCharacter().getUniqueValueAsFloat("Phase 1")>0)) {
+                        availableSkills.add(skill);
+                    }
+                }
+                else if(skill.getName().equals("CBUlt")){
+                    if(!actingEnemy.containsBuffDebuff("Dragon breath!")&&!actingEnemy.containsBuffDebuff("Taunt")&&!actingEnemy.containsBuffDebuff("Challenge2")&&actingEnemy.getCurrentMp()>=skill.getMpCost()&&(actingEnemy.getCharacter().getUniqueValueAsFloat("Phase 3")>0)){
+                        availableSkills.add(skill);
+                    }
+                }
+                else {
                     // Normal MP cost check for other skills
                     float mpCost = skill.getMpCost();
                     if (mpCost <= 0 || actingEnemy.getCurrentMp() >= mpCost) {
@@ -912,11 +981,11 @@ public class BattleSystem {
         Ability.skill chosenSkill;
         if(actingEnemy.getCharacter().getName().equals("Flamita The Immortal Phoenix")){
             ArrayList<Ability.skill>availableSkills2=getFlamitaBossSkill(actingEnemy,availableSkills);
-            chosenSkill = availableSkills.get(random.nextInt(availableSkills2.size()));
+            chosenSkill = selectWeightedSkill(actingEnemy, availableSkills2, random);
             System.out.println(availableSkills);
         }else {
-            // Choose random skill from available skills
-            chosenSkill = availableSkills.get(random.nextInt(availableSkills.size()));
+            // Choose random skill from available skills (weighted only for bosses)
+            chosenSkill = selectWeightedSkill(actingEnemy, availableSkills, random);
         }
         // Check if chosen skill is valid
         if (chosenSkill == null) {
@@ -937,7 +1006,12 @@ public class BattleSystem {
             Observer.characterSlot targetHero = getRandomAliveHero();
 
             if(actingEnemy.containsBuffDebuff("Taunt")){
-                targetHero = getHeroByName(actingEnemy.getBuffDebuffByName("Taunt").getSource());
+                Observer.characterSlot taunted = getHeroByName(actingEnemy.getBuffDebuffByName("Taunt").getSource());
+                if(taunted.getCurrentHp()>0){
+                    targetHero = taunted;
+                }else{
+                    actingEnemy.removeBuffDebuffByName("Taunt");
+                }
             }
             if (targetHero == null) {
                 // No heroes alive, shouldn't happen but handle gracefully
@@ -953,7 +1027,191 @@ public class BattleSystem {
                 spawnFireOrb();
             }
         }
-        moving = true;
+        
+        // Track skill usage for weighted selection
+        trackEnemySkillUsage(actingEnemy, chosenSkill);
+
+        //Continue the AV bar
+        if(!chosenSkill.getName().equals("CBMark2")) {
+            moving = true;
+        }
+    }
+    
+    /**
+     * Check if an enemy is a boss (name contains "the")
+     */
+    private boolean isBossEnemy(Observer.characterSlot enemy) {
+        if (enemy == null || enemy.getCharacter() == null) return false;
+        String enemyName = enemy.getCharacter().getName();
+        return enemyName != null && enemyName.toLowerCase().contains("the");
+    }
+    
+    /**
+     * Track enemy skill usage for weighted selection (only for bosses)
+     * Basic skills (-20 < mp < 20) need to be used 5 times before affecting selection
+     */
+    private void trackEnemySkillUsage(Observer.characterSlot enemy, Ability.skill skill) {
+        if (enemy == null || skill == null) return;
+        
+        // Only track for boss enemies (names containing "the")
+        // Exclude Flamita boss from tracking
+        if (!isBossEnemy(enemy)) return;
+        
+        String enemyName = enemy.getCharacter().getName();
+        if (enemyName.equals("Flamita The Immortal Phoenix")) return;
+        int skillId = skill.getId();
+        float mpCost = skill.getMpCost();
+        
+        // Initialize maps if needed
+        enemySkillUsageCount.putIfAbsent(enemyName, new HashMap<>());
+        enemyUsedSkillList.putIfAbsent(enemyName, new HashSet<>());
+        
+        Map<Integer, Integer> usageCount = enemySkillUsageCount.get(enemyName);
+        Set<Integer> usedSkills = enemyUsedSkillList.get(enemyName);
+        
+        // Check if it's a basic skill (-20 < mp < 20)
+        boolean isBasicSkill = mpCost > -20 && mpCost < 20;
+        
+        // Always increment usage count for tracking
+        int currentCount = usageCount.getOrDefault(skillId, 0);
+        currentCount++;
+        usageCount.put(skillId, currentCount);
+        
+        if (isBasicSkill) {
+            // Only add to used list after 5 uses
+            if (currentCount >= 5) {
+                usedSkills.add(skillId);
+            }
+        } else {
+            // For non-basic skills, add to used list immediately
+            if (!usedSkills.contains(skillId)) {
+                usedSkills.add(skillId);
+            }
+        }
+    }
+    
+    /**
+     * Select a skill using weighted random selection (only for bosses)
+     * For each skill in usedSkillList, add all other skills once to the pool
+     * For non-boss enemies, returns a simple random selection
+     */
+    private Ability.skill selectWeightedSkill(Observer.characterSlot enemy, ArrayList<Ability.skill> availableSkills, Random random) {
+        if (availableSkills.isEmpty()) {
+            return null;
+        }
+        
+        // Only use weighted selection for boss enemies (names containing "the")
+        // Exclude Flamita boss from weighted selection
+        String enemyName = enemy.getCharacter().getName();
+        if (!isBossEnemy(enemy) || enemyName.equals("Flamita The Immortal Phoenix")) {
+            // Simple random selection for non-boss enemies and Flamita
+            return availableSkills.get(random.nextInt(availableSkills.size()));
+        }
+        Set<Integer> usedSkills = enemyUsedSkillList.getOrDefault(enemyName, new HashSet<>());
+        Map<Integer, Integer> usageCount = enemySkillUsageCount.getOrDefault(enemyName, new HashMap<>());
+        
+        // Build weighted pool
+        ArrayList<Ability.skill> weightedPool = new ArrayList<>();
+        
+        // Add all available skills at least once
+        weightedPool.addAll(availableSkills);
+        
+        // For each used skill, add all other skills multiple times based on usage count
+        for (Integer usedSkillId : usedSkills) {
+            // Get the effective usage count for this skill
+            int skillUsageCount = usageCount.getOrDefault(usedSkillId, 0);
+            
+            // Find the skill object to check if it's basic
+            // First try availableSkills, then try enemy's full skill list, then SkillRegistry
+            Ability.skill usedSkillObj = null;
+            for (Ability.skill s : availableSkills) {
+                if (s.getId() == usedSkillId) {
+                    usedSkillObj = s;
+                    break;
+                }
+            }
+            
+            // If not found in available skills, check enemy's full skill list
+            if (usedSkillObj == null && enemy.getSkills() != null) {
+                for (Ability.skill s : enemy.getSkills()) {
+                    if (s != null && s.getId() == usedSkillId) {
+                        usedSkillObj = s;
+                        break;
+                    }
+                }
+            }
+            
+            // If still not found, try SkillRegistry
+            if (usedSkillObj == null) {
+                usedSkillObj = Ability.SkillRegistry.getById(usedSkillId);
+            }
+            
+            int effectiveUses = skillUsageCount;
+            if (usedSkillObj != null) {
+                float mpCost = usedSkillObj.getMpCost();
+                boolean isBasicSkill = mpCost > -20 && mpCost < 20;
+                if (isBasicSkill) {
+                    // For basic skills, effective uses = floor(usageCount / 5)
+                    effectiveUses = skillUsageCount / 5;
+                }
+            }
+            
+            // Add all other skills to the pool 'effectiveUses' times
+            for (int i = 0; i < effectiveUses; i++) {
+                for (Ability.skill skill : availableSkills) {
+                    if (skill.getId() != usedSkillId) {
+                        weightedPool.add(skill);
+                    }
+                }
+            }
+        }
+        
+        // Log weighted pool for debugging
+        System.out.println("=== Weighted Pool for " + enemyName + " ===");
+        
+        // Print available skills
+        StringBuilder availableSkillsStr = new StringBuilder("[");
+        for (int i = 0; i < availableSkills.size(); i++) {
+            Ability.skill s = availableSkills.get(i);
+            availableSkillsStr.append(s.getName()).append("(ID:").append(s.getId()).append(")");
+            if (i < availableSkills.size() - 1) availableSkillsStr.append(", ");
+        }
+        availableSkillsStr.append("]");
+        System.out.println("Available skills: " + availableSkillsStr.toString());
+        
+        // Print used skills with their usage counts
+        StringBuilder usedSkillsStr = new StringBuilder("[");
+        boolean first = true;
+        for (Integer skillId : usedSkills) {
+            if (!first) usedSkillsStr.append(", ");
+            int count = usageCount.getOrDefault(skillId, 0);
+            usedSkillsStr.append("ID:").append(skillId).append("(count:").append(count).append(")");
+            first = false;
+        }
+        usedSkillsStr.append("]");
+        System.out.println("Used skills (affecting weights): " + usedSkillsStr.toString());
+        
+        // Count occurrences of each skill in the weighted pool
+        Map<String, Integer> skillWeights = new HashMap<>();
+        for (Ability.skill skill : weightedPool) {
+            String skillKey = skill.getName() + "(ID:" + skill.getId() + ")";
+            skillWeights.put(skillKey, skillWeights.getOrDefault(skillKey, 0) + 1);
+        }
+        System.out.println("Weighted pool composition:");
+        for (Map.Entry<String, Integer> entry : skillWeights.entrySet()) {
+            System.out.println("  " + entry.getKey() + " -> weight: " + entry.getValue());
+        }
+        System.out.println("Total pool size: " + weightedPool.size());
+        System.out.println("================================");
+        
+        // Randomly select from weighted pool
+        if (weightedPool.isEmpty()) {
+            return availableSkills.get(random.nextInt(availableSkills.size()));
+        }
+        
+        Ability.skill selectedSkill = weightedPool.get(random.nextInt(weightedPool.size()));
+        System.out.println("Selected skill: " + selectedSkill.getName() + "(ID:" + selectedSkill.getId() + ")");
+        return selectedSkill;
     }
     private ArrayList<Ability.skill> getFlamitaBossSkill(Observer.characterSlot actingEnemy,ArrayList<Ability.skill> availableSkills){
         if(actingEnemy.getCharacter().getUniqueValueAsFloat("Phase 3")>0){
@@ -1017,6 +1275,8 @@ public class BattleSystem {
         if(defeatEnemies.contains("Oufuu daddy")) {
             checkVictoryCondition();
         }
+        //Handle confront
+
         // Handle Rage empowerment mechanics
         if(hasHeroName("Flatina")) {
             Observer.characterSlot Flatina = hasRageEmpowermentHost();
@@ -1122,7 +1382,6 @@ public class BattleSystem {
                     setPartyMp(Math.max(0,getPartyMp()-0.5f));
                     SpecialTalents.applyStatModifications(Chigon, null);
                     for (Observer.characterSlot enemy : getAllAliveEnemies()) {
-
                         if(enemy!=prey) {
                             applyDamage(enemy, Chigon.getCharacter().getAtk() * 0.01);
                         }else{
@@ -1139,6 +1398,21 @@ public class BattleSystem {
             battleUI.updateHealthUI(heroSlot);
             if(heroSlot.getCurrentHp()<=0){
                 onBattleWon.run();
+            }
+        }
+        //Chigon boss------------------------------------------------------------------------------------
+        if(enemySlot!=null&&enemySlot.getCharacter().getName().equals("Chigon The All Mighty Dragon")){
+            if(enemySlot.getBuffDebuffByName("Dragon breath!")!=null){
+                for(Observer.characterSlot hero : getAllHeroes()){
+                    if(hero.getCurrentHp()>0){
+                        double dmg = SpecialTalents.calculateDefResReduction(Ability.SkillRegistry.getById(59),enemySlot,hero,enemySlot.getCharacter().getAtk()*0.002);
+                        applyDamage(hero,dmg);
+                    }
+                }
+                if(enemySlot.getLine().getStartX()<battleUI.getBarX()+2){
+                    pushCharacterLine(enemySlot,198);
+                    SpecialTalents.applyBuffDebuff(enemySlot,BuffDebuff.getByName("Flame increment").copy());
+                }
             }
         }
 
@@ -1181,11 +1455,25 @@ public class BattleSystem {
                         if (isEnemy(character) && character.getCurrentHp() <= 0) {
                             continue;
                         }
+                        // For heroes with Banish, don't move their line (stuck at end of barX)
+                        if (isHero(character) && character.getBuffDebuffByName("Banish") != null) {
+                            // Keep line stuck at end of barX
+                            double barX = battleUI.getBarX();
+                            double barWidth = battleUI.getBarWidth();
+                            characterLine.setStartX(barX + barWidth);
+                            characterLine.setEndX(barX + barWidth);
+                            continue;
+                        }
                         double speed = getSpeedForCharacter(character);
                         moveLine(characterLine, speed);
                     }
                 }
             }
+        }
+        
+        // Update subBars for CBUlt mechanic
+        if (battleUI != null) {
+            battleUI.updateSubBars();
         }
     }
     
@@ -1245,8 +1533,9 @@ public class BattleSystem {
             }
             if(timeStopSlot != null) {
                 double push = timeStopSlot.getCharacter().getAV() * timeStopSlot.getSkills().get(0).getAVScale();
-                if(timeStopSlot.getCharacter().getName().equals("Ina")&&timeStop>push){
+                if(timeStopSlot.getCharacter().getName().equals("Ina")&&timeStop>push+1){
                     useSkill(timeStopSlot,getRandomAliveEnemy(),timeStopSlot.getSkills().get(0));
+                    timeStopSlot.getCharacter().setMp(0);
                     pushCharacterLine(timeStopSlot, push);
                     moving = true;
                 }
@@ -1280,8 +1569,14 @@ public class BattleSystem {
         // Handle special talents after damage is applied
         if (amount > 0) { // Damage taken
             characters.SpecialTalents.onDamageTaken(slot, actualAmount);
+            
+            // Track damage dealt to enemies for subBar movement
+            if (isEnemy(slot) && actualAmount > 0) {
+                totalDamageToEnemies += actualAmount;
+            }
+            
             //Chigon party mp
-            if(hasHeroName("Chigon")&&isEnemy(slot)){
+            if(hasHeroName("Chigon")&&isEnemy(slot)&&!getHeroByName("Chigon").containsBuffDebuff("Dragon breath")){
                 setPartyMp(getPartyMp()+(int)amount*0.1f);
             }
             if(hasHeroName("Lucia")&&isEnemy(slot)){
@@ -1303,6 +1598,18 @@ public class BattleSystem {
             if (slot.getCurrentHp() <= 0) {
                 removeCharacterLine(slot);
                 
+                // If a hero with a trial debuff dies, complete the trial
+                if (isHero(slot)) {
+                    BuffDebuff comboTrial = slot.getBuffDebuffByName("Combo Trial");
+                    BuffDebuff powerTrial = slot.getBuffDebuffByName("Power Trial");
+                    BuffDebuff recoveryTrial = slot.getBuffDebuffByName("Recovery Trial");
+                    
+                    if (comboTrial != null || powerTrial != null || recoveryTrial != null) {
+                        // Complete trial cleanup (removes trial debuff, applies Stunned, removes Banish, etc.)
+                        completeTrialCleanup();
+                    }
+                }
+                
                 // Handle dead enemy cleanup (switch target, remove health bar, clear enemySlot)
                 handleDeadEnemyCleanup(slot);
                 
@@ -1315,6 +1622,50 @@ public class BattleSystem {
         }
     }
     
+    /**
+     * Complete trial cleanup - applies Stunned, removes Taunt, Challenge2, and Banish, restores health bars
+     */
+    public void completeTrialCleanup() {
+        Observer.characterSlot enemySlot = getEnemySlot();
+        if (enemySlot != null) {
+            // Apply Stunned debuff to enemySlot
+            characters.SpecialTalents.applyBuffDebuff(enemySlot, 
+                characters.BuffDebuff.getByName("Stunned").copy().withDuration(3));
+            
+            // Remove Taunt, Challenge2, and Invulnerable from enemySlot
+            enemySlot.removeBuffDebuffByName("Taunt");
+            enemySlot.removeBuffDebuffByName("Challenge2");
+            enemySlot.removeBuffDebuffByName("Invulnerable");
+            if (battleUI != null) {
+                battleUI.updateBarrierBar(enemySlot);
+            }
+        }
+        
+        // Remove trial debuff and Banish from all heroes, restore health bar colors
+        Observer.characterSlot[] allHeroes = getAllHeroes();
+        for (Observer.characterSlot hero : allHeroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                // Remove trial debuff from hero
+                BuffDebuff comboTrial = hero.getBuffDebuffByName("Combo Trial");
+                BuffDebuff powerTrial = hero.getBuffDebuffByName("Power Trial");
+                BuffDebuff recoveryTrial = hero.getBuffDebuffByName("Recovery Trial");
+                if (comboTrial != null) hero.removeBuffDebuffByName("Combo Trial");
+                if (powerTrial != null) hero.removeBuffDebuffByName("Power Trial");
+                if (recoveryTrial != null) hero.removeBuffDebuffByName("Recovery Trial");
+                
+                // Remove Banish from hero
+                BuffDebuff banish = hero.getBuffDebuffByName("Banish");
+                if (banish != null) {
+                    hero.removeBuffDebuffByName("Banish");
+                    // Restore health bar color
+                    if (battleUI != null) {
+                        battleUI.updateHealthUI(hero);
+                    }
+                }
+            }
+        }
+    }
+    
     // Getters for external access
     public Observer.characterSlot getHeroSlot() { return heroSlot; }
     public Observer.characterSlot getHeroSlot2() { return heroSlot2; }
@@ -1323,6 +1674,103 @@ public class BattleSystem {
     public Observer.characterSlot getEnemySlot2() { return enemySlot2; }
     public Observer.characterSlot getEnemySlot3() { return enemySlot3; }
     public Observer.characterSlot getSelectedTarget() { return selectedTarget; }
+    
+    /**
+     * Get total damage dealt to enemies since CBUlt was cast (for subBar movement)
+     */
+    public double getTotalDamageToEnemies() { return totalDamageToEnemies; }
+    
+    /**
+     * Get and consume damage for subBar movement (returns pixels to move, only moves once per 100 damage)
+     * @return Number of pixels to move right (1px per 100 damage threshold crossed)
+     */
+    public double consumeDamageForSubBar() {
+        // Calculate how many 100-damage thresholds have been crossed
+        double thresholdsCrossed = Math.floor((totalDamageToEnemies - consumedDamageForSubBar) / 100.0);
+        
+        // Update consumed damage to the next threshold
+        if (thresholdsCrossed > 0) {
+            consumedDamageForSubBar += thresholdsCrossed * 100.0;
+            return thresholdsCrossed; // Return pixels to move (1px per 100 damage)
+        }
+        
+        return 0.0;
+    }
+    
+    /**
+     * Reset damage tracking (called when subBars are cleared)
+     */
+    public void resetDamageTracking() {
+        totalDamageToEnemies = 0.0;
+        consumedDamageForSubBar = 0.0;
+    }
+    
+    /**
+     * Handle subBar reaching left edge (losing condition)
+     */
+    public void handleSubBarLeftEdge() {
+        Observer.characterSlot enemySlot = getEnemySlot();
+        if (enemySlot != null) {
+            // Apply Mercy (3 turns) buff to enemySlot
+            characters.SpecialTalents.applyBuffDebuff(enemySlot, 
+                characters.BuffDebuff.getByName("Mercy").copy().withDuration(3));
+            SpecialTalents.applyBuffDebuff(enemySlot,BuffDebuff.getByName("Invulnerable").copy().withDuration(3));
+            enemySlot.removeBuffDebuffByName("Dragon breath!");
+            enemySlot.removeBuffDebuffByName("Flame increment");
+            // Update barrier bar to show Mercy buff
+            if (battleUI != null) {
+                battleUI.updateBarrierBar(enemySlot);
+            }
+        }
+        
+        // Set all heroes health to 1
+        Observer.characterSlot[] heroes = getAllHeroes();
+        float totalHeroMaxHp = 0.0f;
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                totalHeroMaxHp += hero.getCharacter().getHp();
+                hero.setCurrentHp(1.0f);
+                if (battleUI != null) {
+                    battleUI.updateHealthUI(hero);
+                }
+            }
+        }
+        
+        // Heal enemySlot by 25% of total of all heroes' max health
+        if (enemySlot != null && totalHeroMaxHp > 0) {
+            float healAmount = totalHeroMaxHp * 0.25f;
+            float currentHp = enemySlot.getCurrentHp();
+            float maxHp = enemySlot.getCharacter().getHp();
+            float newHp = Math.min(maxHp, currentHp + healAmount);
+            enemySlot.setCurrentHp(newHp);
+            if (battleUI != null) {
+                battleUI.updateHealthUI(enemySlot);
+            }
+        }
+        DialogRegistrations.showDialogByTitle("ChigonMockingDialog","current");
+
+    }
+    
+    /**
+     * Handle subBar reaching right edge (winning condition)
+     */
+    public void handleSubBarRightEdge() {
+        Observer.characterSlot enemySlot = getEnemySlot();
+        if (enemySlot != null) {
+            // Apply Stunned (3 turns) and Vulnerable (3 turns) to enemySlot
+            characters.SpecialTalents.applyBuffDebuff(enemySlot, 
+                characters.BuffDebuff.getByName("Stunned").copy().withDuration(3));
+            characters.SpecialTalents.applyBuffDebuff(enemySlot, 
+                characters.BuffDebuff.getByName("Vulnerable").copy().withDuration(3));
+            enemySlot.removeBuffDebuffByName("Dragon breath!");
+            enemySlot.removeBuffDebuffByName("Flame increment");
+            // Update barrier bar to show buffs
+            if (battleUI != null) {
+                battleUI.updateBarrierBar(enemySlot);
+            }
+        }
+    }
+    
     public Observer.characterSlot getSelectedAllyTarget() { return selectedAllyTarget; }
     public Observer.characterSlot getSelectedEnemyTarget() { return selectedEnemyTarget; }
     public Observer.characterSlot getCurrentActingHero() { return currentActingHero; }
@@ -1383,13 +1831,16 @@ public class BattleSystem {
         if (allEnemiesDefeated) {
             System.out.println("Victory! All enemies defeated!");
             // Play victory music
-            audioManager.playVictoryMusic();
+            if(heroSlot != null&&!heroSlot.getCharacter().getName().equals("Litaru ")) {
+                audioManager.playVictoryMusic();
+            }
             if (onBattleWon != null) {
                 onBattleWon.run();
             }
         }
         if(defeatEnemies.contains("Oufuu daddy")){
             if (onBattleWon != null) {
+                audioManager.playVictoryMusic();
                 onBattleWon.run();
             }
         }
@@ -1407,7 +1858,7 @@ public class BattleSystem {
             }
         }
         
-        if (allHeroesDefeated) {
+        if (allHeroesDefeated&&heroSlot != null&&!heroSlot.getCharacter().getName().equals("Litaru ")) {
             System.out.println("Defeat! All heroes are defeated!");
             // Play defeat music (if available) or stop battle music
             // audioManager.playDefeatMusic(); // Uncomment if you add defeat music
@@ -1511,7 +1962,7 @@ public class BattleSystem {
      * @param skill The skill being used
      * @return Special damage bonus amount
      */
-    private float calculateSpecialDmgBonus(Observer.characterSlot attacker, Ability.skill skill) {
+    private float calculateSpecialDmgBonus(Observer.characterSlot attacker,Observer.characterSlot target, Ability.skill skill) {
         float specialDmgBonus = 0;
         
         // Check if this is a special skill
@@ -1580,11 +2031,10 @@ public class BattleSystem {
         }else if (attacker.getBuffDebuffByName("Sunset")!=null){
             specialDmgBonus = attacker.getCharacter().getHp() - attacker.getCurrentHp();
         }
-        
-        // Add more special skills here in the future
-        // else if (skill.getName().equals("Another Special Skill")) {
-        //     // Handle other special skills
-        // }
+        //Check buff
+        if(isEnemy(attacker)&&target.containsBuffDebuff("Prey")){
+            specialDmgBonus = attacker.getCharacter().getAtk();
+        }
         
         return specialDmgBonus;
     }
@@ -1598,7 +2048,25 @@ public class BattleSystem {
      * @return true if skill processing should end early, false to continue with normal processing
      */
     private boolean handleSpecialSkill(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill) {
-        // Handle "Let me absorb you" skill
+        // Check Recovery Trial completion
+        if (isHero(attacker) && attacker.getBuffDebuffByName("Recovery Trial") != null) {
+            Observer.characterSlot[] allHeroes = getAllHeroes();
+            boolean allOtherHeroesAtMax = true;
+            for (Observer.characterSlot otherHero : allHeroes) {
+                if (otherHero != null && otherHero != attacker && otherHero.getCurrentHp() > 0) {
+                    if (otherHero.getCurrentHp() < otherHero.getCharacter().getHp()) {
+                        allOtherHeroesAtMax = false;
+                        break;
+                    }
+                }
+            }
+            // If all other heroes are at max HP, complete the trial
+            if (allOtherHeroesAtMax) {
+                // Complete trial cleanup (removes trial debuff, applies Stunned, removes Banish, etc.)
+                completeTrialCleanup();
+            }
+        }
+        
         if(skill.getName().equals("Let me absorb you")){
             if(timeStopSlot != null){
                 if(timeStopSlot.getCharacter().getName().equals("Ina")) {
@@ -1608,6 +2076,7 @@ public class BattleSystem {
                     } else {
                         target.heal(-target.getCharacter().getHp() * (float)0.4);
                         battleUI.updateHealthUI(target);
+                        battleUI.updateBurningRageBar(target);
                         timeStop = Math.min(200, timeStop + 100);
                         resetLine(attacker);
                     }
@@ -1621,8 +2090,6 @@ public class BattleSystem {
             battleUI.updateBurningRageBar(target);
             return true; // End skill processing early
         }
-
-        // Handle "Absolute teleportation" skill
         else if(skill.getName().equals("Absolute teleportation")){
             //Buff
             BuffDebuff teleBuff = BuffDebuff.getByName("Conserve").copy();
@@ -1688,6 +2155,48 @@ public class BattleSystem {
         else if(skill.getName().equals("Channeling flame")){
             spawnFireOrb();
         }
+        else if(skill.getName().equals("Steady")){
+            attacker.getLine().setStartX(getNextLineAct(attacker.getLine())+1);
+        }
+        else if(skill.getName().equals("CBMark2")){
+            setMoving(false);
+            if (battleUI != null) {
+                battleUI.showHeroSelectionForCBMark2();
+            }
+        }
+        else if(skill.getName().equals("CBUlt")){
+            // Reset damage tracking when CBUlt is cast
+            totalDamageToEnemies = 0.0;
+            consumedDamageForSubBar = 0.0;
+            
+            for(Observer.characterSlot slot : getAllHeroes()){
+                if(slot!=null){
+                    slot.setCurrentHp(slot.getCharacter().getHp()*0.6f);
+                    if (battleUI != null) {
+                        battleUI.updateHealthUI(slot);
+                    }
+                }
+            }
+            // Show subBars for CBUlt mechanic
+            if (battleUI != null) {
+                battleUI.showSubBarsForCBUlt();
+            }
+        }
+        //Check buff
+        if(target.getBuffDebuffByName("Challenge")!=null){
+            target.removeBuffDebuffByName("Challenge");
+            BuffDebuff taunt = BuffDebuff.getByName("Taunt").copy().withDuration(5);
+            taunt.setSource(attacker.getCharacter().getName());
+            SpecialTalents.applyBuffDebuff(target,taunt);
+            SpecialTalents.applyBuffDebuff(target,BuffDebuff.getByName("Excite").copy().withDuration(5));
+            SpecialTalents.applyBuffDebuff(attacker,BuffDebuff.getByName("Prey").copy().withDuration(999));
+        }
+        if(attacker.getBuffDebuffByName("Taunt")!=null&&target.getBuffDebuffByName("Prey")!=null){
+            if(attacker.getBuffDebuffByName("Taunt").getDuration()<=1){
+                target.removeBuffDebuffByName("Prey");
+            }
+        }
+
         handleSpecialEquipmentEffect(attacker,target,skill);
         // No special skill handled, continue with normal processing
         return false;
@@ -1695,8 +2204,16 @@ public class BattleSystem {
     private void handleSpecialEquipmentEffect(Observer.characterSlot attacker, Observer.characterSlot target, Ability.skill skill){
         // Check if flame_blade is equipped
         if (SpecialTalents.inventory.containsEquipment(attacker, "flame_blade")) {
-            SpecialTalents.applyBuffDebuff(target,BuffDebuff.getByName("Burn").copy());
-        }else if (SpecialTalents.inventory.containsEquipment(attacker, "blue_flower_staff")) {
+            if(isEnemy(target)) {
+                SpecialTalents.applyBuffDebuff(target, BuffDebuff.getByName("Burn").copy());
+            }
+        }
+        if (SpecialTalents.inventory.containsEquipment(attacker, "fire_ring")) {
+            if (isEnemy(target)) {
+                SpecialTalents.applyBuffDebuff(target, BuffDebuff.getByName("Ignite").copy());
+            }
+        }
+        if (SpecialTalents.inventory.containsEquipment(attacker, "blue_flower_staff")) {
             applyDamage(attacker,-attacker.getCharacter().getHp()*0.1);
             attacker.regenerateMp(attacker.getCharacter().getMp()*0.1f);
         }
@@ -1708,10 +2225,6 @@ public class BattleSystem {
         }
         return equipmentDamageBonus;
     }
-
-
-
-
 
 
     public void spawnFireOrb(){

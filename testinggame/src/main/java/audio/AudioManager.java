@@ -3,7 +3,9 @@ package audio;
 import com.almasb.fxgl.audio.Music;
 import com.almasb.fxgl.audio.Sound;
 import com.almasb.fxgl.dsl.FXGL;
+import javafx.scene.media.MediaPlayer;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -69,6 +71,7 @@ public class AudioManager {
             loadMusic(Mabel_BOSS_MUSIC);
             loadMusic(Litaru_MUSIC);
             loadMusic("camp0.mp3");
+            loadMusic("Dragon Slayer.mp3");
             // Load sound effects
             loadSound(SWORD_SLASH);
             loadSound(MAGIC_CAST);
@@ -122,10 +125,69 @@ public class AudioManager {
             FXGL.getAudioPlayer().stopMusic(currentMusic);
         }
         
-        // Use FXGL's built-in method to play music
+        // Set looping by accessing the MediaPlayer through reflection
+        // We need to do this after playMusic is called because MediaPlayer might be initialized then
+        // Use FXGL's built-in method to play music first
         FXGL.getAudioPlayer().playMusic(music);
-        //Change Volume
-        music.getAudio().setVolume(FXGL.getSettings().getGlobalMusicVolume());
+        
+        // Now set the cycle count using reflection
+        try {
+            Object audioObj = music.getAudio();
+            MediaPlayer mediaPlayer = null;
+            
+            // Try to find MediaPlayer field with common field names
+            String[] possibleFieldNames = {"player", "mediaPlayer", "mp", "media"};
+            for (String fieldName : possibleFieldNames) {
+                try {
+                    Field field = audioObj.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    Object obj = field.get(audioObj);
+                    if (obj instanceof MediaPlayer) {
+                        mediaPlayer = (MediaPlayer) obj;
+                        break;
+                    }
+                } catch (NoSuchFieldException ignored) {
+                    // Try next field name
+                }
+            }
+            
+            // If not found in fields, try accessing through methods
+            if (mediaPlayer == null) {
+                try {
+                    java.lang.reflect.Method getPlayerMethod = audioObj.getClass().getMethod("getPlayer");
+                    Object obj = getPlayerMethod.invoke(audioObj);
+                    if (obj instanceof MediaPlayer) {
+                        mediaPlayer = (MediaPlayer) obj;
+                    }
+                } catch (Exception ignored) {
+                    // Method doesn't exist
+                }
+            }
+            
+            // Set cycle count if MediaPlayer was found
+            if (mediaPlayer != null) {
+                if (loop) {
+                    // Set infinite loop
+                    mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                } else {
+                    // Play once
+                    mediaPlayer.setCycleCount(1);
+                }
+                // Change Volume
+                mediaPlayer.setVolume(FXGL.getSettings().getGlobalMusicVolume());
+            } else {
+                System.err.println("Could not access MediaPlayer from Music object");
+            }
+        } catch (Exception e) {
+            System.err.println("Error setting music loop: " + e.getMessage());
+            // Set volume as fallback
+            try {
+                music.getAudio().setVolume(FXGL.getSettings().getGlobalMusicVolume());
+            } catch (Exception e2) {
+                // Ignore
+            }
+        }
+        
         currentMusic = music;
     }
     

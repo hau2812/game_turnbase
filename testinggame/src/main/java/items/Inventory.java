@@ -161,7 +161,13 @@ public class Inventory {
         
         // Remove from character equipment
         characterEquipment.get(characterName).remove(slot);
-        
+        //reset Hp/Mp
+        if(character.getCurrentHp()>character.getCharacter().getHp()){
+            character.setCurrentHp(character.getCharacter().getHp());
+        }
+        if(character.getCurrentMp()>character.getCharacter().getMp()){
+            character.setCurrentMp(character.getCharacter().getMp());
+        }
         return true;
     }
     
@@ -345,6 +351,18 @@ public class Inventory {
         addGold(sellValue * quantity);
         
         return true;
+    }
+    
+    /**
+     * Give all items from ItemRegistry, each 3 times
+     */
+    public void giveAllItems() {
+        Collection<Item> allItems = ItemRegistry.getAllItems();
+        for (Item item : allItems) {
+            if (item != null) {
+                addItem(item, 3);
+            }
+        }
     }
     
     /**

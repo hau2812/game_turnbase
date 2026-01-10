@@ -1,0 +1,485 @@
+18:11:50.311 [main                     ] DEBUG Logger               - Configured Logger
+18:11:50.317 [main                     ] DEBUG GameApplication      - Logging settings
+Title: Lost Dungeon
+Version: 0.0
+Width: 800
+Height: 600
+Fullscreen: false
+Intro: false
+Profiling: false
+Single step:false
+App Mode: DEVELOPER
+Menu Key: ESCAPE
+Stage Style: DECORATED
+Scene Factory: class com.almasb.fxgl.app.scene.SceneFactory
+
+18:11:50.744 [JavaFX Application Thread] DEBUG FXGLApplication      - Initializing FXGL
+18:11:50.747 [JavaFX Application Thread] INFO  Engine               - FXGL-21.1 (27.03.2024 07.52) on WINDOWS (J:25.0.1 FX:21.0.1)
+18:11:50.747 [JavaFX Application Thread] DEBUG Engine               - JRE Vendor Name: Oracle Corporation
+18:11:50.747 [JavaFX Application Thread] DEBUG Engine               - Running on OS: Windows 11 version 10.0
+18:11:50.747 [JavaFX Application Thread] DEBUG Engine               - Architecture: amd64
+18:11:50.747 [JavaFX Application Thread] INFO  Engine               - Source code and latest versions at: https://github.com/AlmasB/FXGL
+18:11:50.747 [JavaFX Application Thread] INFO  Engine               -       Ask questions and discuss at: https://github.com/AlmasB/FXGL/discussions
+18:11:50.747 [JavaFX Application Thread] INFO  Engine               -              Join the FXGL chat at: https://gitter.im/AlmasB/FXGL
+18:11:50.831 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Creating a JavaFX scene
+18:11:50.872 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Target settings size: 800.0 x 600.0
+18:11:50.873 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Scaled scene size:    800.0 x 600.0
+18:11:50.873 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Scaled ratio: (1.0, 1.0)
+18:11:50.874 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Set initial scene to FXGLStartupScene
+18:11:50.876 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Opening main window
+18:11:50.957 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Window border size: (14.4000244140625, 37.5999755859375)
+18:11:50.957 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Scaled size: 800.0 x 600.0
+18:11:50.957 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Scaled ratio: (1.0, 1.0)
+18:11:50.958 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Scene size: 800.0 x 600.0
+18:11:50.958 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Stage size: 814.4000244140625 x 637.5999755859375
+18:11:50.966 [FXGL Background Thread 1 ] DEBUG Engine               - Initializing environment variables
+18:11:51.014 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - User app class for loading assets: class org.example.testing
+18:11:51.014 [FXGL Background Thread 1 ] DEBUG GameApplicationServi - Applying CSS: fxgl_dark.css
+18:11:51.015 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/ui/css/fxgl_dark.css
+18:11:51.047 [FXGL Background Thread 1 ] DEBUG GameApplicationServi - Initializing application scenes
+18:11:51.085 [FXGL Background Thread 1 ] DEBUG GameWorld            - Game world initialized
+18:11:51.123 [FXGL Background Thread 1 ] DEBUG PhysicsWorld         - Physics world initialized: appHeight=600, physics.ppm=50.0
+18:11:51.123 [FXGL Background Thread 1 ] DEBUG PhysicsWorld         - Using strategy: BRUTE_FORCE
+18:11:51.126 [FXGL Background Thread 1 ] DEBUG GameScene            - Game scene initialized: 800x600
+18:11:51.135 [FXGL Background Thread 1 ] DEBUG FXGL.DefaultMenu     - createMenuBodyGameMenu()
+18:11:51.148 [FXGL Background Thread 1 ] DEBUG FXGL.DefaultMenu     - createOptionsMenu()
+18:11:51.157 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/textures/particles/smoke.png
+18:11:51.232 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/textures/particles/trace_horizontal.png
+18:11:51.257 [FXGL Background Thread 1 ] DEBUG GameApplicationServi - Application scenes initialized
+18:11:51.270 [FXGL Background Thread 1 ] DEBUG SystemBundleService  - Loading FXGL system data
+18:11:51.273 [FXGL Background Thread 1 ] DEBUG FileSystemAccess     - Reading from: C:\turnbaseProject\merge\22-11\testinggame\system\fxgl.bundle
+18:11:51.279 [FXGL Background Thread 1 ] DEBUG SystemBundleService  - Bundle FXGL: {}
+18:11:51.279 [FXGL Background Thread 1 ] DEBUG UpdaterService       - Checking for updates
+18:11:51.282 [FXGL Background Thread 4 ] DEBUG FXGLApplication      - Loading fonts
+18:11:51.283 [FXGL Background Thread 4 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/ui/fonts/VarelaRound-Regular.ttf
+18:11:51.283 [FXGL Background Thread 1 ] DEBUG FXGLApplication      - Loading default localization
+18:11:51.284 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/languages/english.lang
+18:11:51.299 [FXGL Background Thread 1 ] INFO  FXGLApplication      - FXGL initialization took: 0.334 sec
+18:11:51.309 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action0 - N
+18:11:51.310 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action1 - B
+18:11:51.310 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action2 - M
+18:11:51.311 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action3 - W
+18:11:51.311 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action4 - I
+18:11:51.312 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action5 - S
+18:11:51.312 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action6 - T
+18:11:51.313 [JavaFX Application Thread] DEBUG Input                - Registered new binding: action7 - D
+18:11:51.313 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/textures/fxgl_icon.png
+18:11:51.329 [FXGL Background Thread 4 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/ui/fonts/Abel-Regular.ttf
+18:11:51.332 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/textures/fxgl_default_cursor.png
+18:11:51.335 [JavaFX Application Thread] DEBUG Input                - Registered new binding: Screenshot - CTRL+8
+18:11:51.335 [JavaFX Application Thread] DEBUG Input                - Registered new binding: System info dump - CTRL+9
+18:11:51.336 [JavaFX Application Thread] DEBUG Input                - Registered new binding: Restart - CTRL+R
+18:11:51.336 [JavaFX Application Thread] DEBUG Input                - Registered new binding: Toggle Debug Camera - CTRL+7
+18:11:51.340 [JavaFX Application Thread] DEBUG LoopRunner           - Starting loop
+18:11:51.340 [JavaFX Application Thread] DEBUG LoopRunner           - Initializing JavaFX AnimationTimerLoop
+18:11:51.341 [JavaFX Application Thread] DEBUG GameApplicationServi - Starting new game
+18:11:51.342 [JavaFX Application Thread] DEBUG Input                - Clearing active input actions
+18:11:51.345 [FXGL Background Thread 4 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/ui/fonts/TerminalLandMono-Regular.otf
+18:11:51.356 [JavaFX Application Thread] DEBUG GameApplicationServi - Removing overlay from FXGLStartupScene and adding to FXGLLoadingScene
+18:11:51.356 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - FXGLStartupScene -> FXGLLoadingScene
+18:11:51.356 [JavaFX Application Thread] DEBUG GameApplicationServi - Clearing previous game
+18:11:51.357 [JavaFX Application Thread] DEBUG GameScene            - Clearing game scene
+18:11:51.357 [JavaFX Application Thread] DEBUG GameWorld            - Clearing game world
+18:11:51.357 [JavaFX Application Thread] DEBUG PhysicsWorld         - Clearing physics world
+18:11:51.358 [FXGL Background Thread 1 ] DEBUG FXGLApplication      - Initializing game
+18:11:51.359 [FXGL Background Thread 4 ] DEBUG FXGLAssetLoaderServi - Loading from file system: jar:file:/C:/Users/admin/.m2/repository/com/github/almasb/fxgl/21.1/fxgl-21.1.jar!/fxglassets/ui/fonts/Courier-Prime.ttf
+18:11:51.360 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/music/battle_theme.mp3
+18:11:51.408 [JavaFX Application Thread] DEBUG FXGLApplication      - Registering font factories with UI factory
+18:11:51.471 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/music/map_exploration.mp3" was not found!
+18:11:51.472 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load MUSIC
+18:11:51.473 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/music/victory_theme.mp3" was not found!
+18:11:51.473 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load MUSIC
+18:11:51.474 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/music/menu_theme.mp3" was not found!
+18:11:51.474 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load MUSIC
+18:11:51.474 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/music/flamita_boss_theme.mp3
+18:11:51.645 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/music/mabel_boss_theme.mp3
+18:11:51.655 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/music/litaru.mp3
+18:11:51.665 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/music/camp0.mp3
+18:11:51.676 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/music/Dragon%20Slayer.mp3
+18:11:51.681 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/sounds/sword_slash.wav
+18:11:51.698 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/sounds/magic_cast.wav
+18:11:51.701 [FXGL Background Thread 1 ] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/sounds/heal_cast.wav
+18:11:51.704 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/sounds/button_click.wav" was not found!
+18:11:51.705 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load SOUND
+18:11:51.705 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/sounds/damage_taken.wav" was not found!
+18:11:51.705 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load SOUND
+18:11:51.705 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/sounds/level_up.wav" was not found!
+18:11:51.706 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load SOUND
+18:11:51.706 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Asset "/assets/sounds/item_pickup.wav" was not found!
+18:11:51.706 [FXGL Background Thread 1 ] WARN  FXGLAssetLoaderServi - Failed to load SOUND
+18:11:51.761 [FXGL Background Thread 1 ] DEBUG AudioPlayer          - Playing music com.almasb.fxgl.audio.Music@4d75de67
+18:11:51.761 [FXGL Background Thread 1 ] INFO  FXGLApplication      - Game initialization took: 0.403 sec
+18:11:51.762 [JavaFX Application Thread] DEBUG Input                - Clearing active input actions
+18:11:51.773 [JavaFX Application Thread] DEBUG GameApplicationServi - Removing overlay from FXGLLoadingScene and adding to GameScene
+18:11:51.774 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - FXGLLoadingScene -> GameScene
+18:11:52.243 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.243 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.839 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.839 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.839 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.839 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.840 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.840 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.840 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.840 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.840 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.841 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.841 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.841 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.841 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.841 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.842 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.843 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.843 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.843 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.843 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.843 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.843 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.844 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.845 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.846 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.847 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.847 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.847 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.847 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:52.847 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/intro_background.png" was not found!
+18:11:52.847 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:54.282 [FXGL Background Thread 3 ] DEBUG Engine               - Logging environment variables
+18:11:54.283 [FXGL Background Thread 3 ] DEBUG Engine               - achievements: []
+18:11:54.283 [FXGL Background Thread 3 ] DEBUG Engine               - actualHeight: 600.0
+18:11:54.284 [FXGL Background Thread 3 ] DEBUG Engine               - actualHeightProperty: ReadOnlyDoubleProperty [value: 600.0]
+18:11:54.284 [FXGL Background Thread 3 ] DEBUG Engine               - actualWidth: 800.0
+18:11:54.284 [FXGL Background Thread 3 ] DEBUG Engine               - actualWidthProperty: ReadOnlyDoubleProperty [value: 800.0]
+18:11:54.284 [FXGL Background Thread 3 ] DEBUG Engine               - appIcon: fxgl_icon.png
+18:11:54.284 [FXGL Background Thread 3 ] DEBUG Engine               - applicationMode: DEVELOPER
+18:11:54.285 [FXGL Background Thread 3 ] DEBUG Engine               - cSSList: [fxgl_dark.css]
+18:11:54.285 [FXGL Background Thread 3 ] DEBUG Engine               - collisionDetectionStrategy: BRUTE_FORCE
+18:11:54.285 [FXGL Background Thread 3 ] DEBUG Engine               - configClass: Optional.empty
+18:11:54.285 [FXGL Background Thread 3 ] DEBUG Engine               - credits: []
+18:11:54.285 [FXGL Background Thread 3 ] DEBUG Engine               - defaultCursor: CursorInfo(imageName=fxgl_default_cursor.png, hotspotX=7.0, hotspotY=6.0)
+18:11:54.286 [FXGL Background Thread 3 ] DEBUG Engine               - devBBoxColorProperty: ObjectProperty [value: 0xff0000ff]
+18:11:54.286 [FXGL Background Thread 3 ] DEBUG Engine               - devEnableDebugCameraProperty: BooleanProperty [value: false]
+18:11:54.286 [FXGL Background Thread 3 ] DEBUG Engine               - devSensorColorProperty: ObjectProperty [value: 0xffff00ff]
+18:11:54.286 [FXGL Background Thread 3 ] DEBUG Engine               - devShowBBoxProperty: BooleanProperty [value: false]
+18:11:54.286 [FXGL Background Thread 3 ] DEBUG Engine               - devShowPositionProperty: BooleanProperty [value: false]
+18:11:54.286 [FXGL Background Thread 3 ] DEBUG Engine               - enabledMenuItems: []
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - engineServices: [class com.almasb.fxgl.app.services.FXGLAssetLoaderService, class com.almasb.fxgl.app.FXGLApplication$GameApplicationService, class com.almasb.fxgl.app.services.FXGLDialogService, class com.almasb.fxgl.app.services.IOTaskExecutorService, class com.almasb.fxgl.io.FileSystemService, class com.almasb.fxgl.localization.LocalizationService, class com.almasb.fxgl.app.services.SystemBundleService, class com.almasb.fxgl.profile.SaveLoadService, class com.almasb.fxgl.ui.FXGLUIFactoryServiceProvider, class com.almasb.fxgl.ui.FXGLDialogFactoryServiceProvider, class com.almasb.fxgl.audio.AudioPlayer, class com.almasb.fxgl.notification.impl.NotificationServiceProvider, class com.almasb.fxgl.achievement.AchievementService, class com.almasb.fxgl.cutscene.CutsceneService, class com.almasb.fxgl.minigames.MiniGameService, class com.almasb.fxgl.net.NetService, class com.almasb.fxgl.app.services.UpdaterService, class com.almasb.fxgl.dev.DevService]
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - fontGame: Abel-Regular.ttf
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - fontMono: TerminalLandMono-Regular.otf
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - fontSizeScaleUI: 1.0
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - fontText: Courier-Prime.ttf
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - fontUI: VarelaRound-Regular.ttf
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - fullScreen: BooleanProperty [value: false]
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - gameDifficulty: MEDIUM
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - gameDifficultyProperty: ObjectProperty [value: MEDIUM]
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - globalMusicVolume: 0.5
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - globalMusicVolumeProperty: DoubleProperty [value: 0.1]
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - globalSoundVolume: 0.5
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - globalSoundVolumeProperty: DoubleProperty [value: 0.05]
+18:11:54.287 [FXGL Background Thread 3 ] DEBUG Engine               - height: 600
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - is3D: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isAndroid: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isBrowser: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isClickFeedbackEnabled: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isCloseConfirmation: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isDesktop: true
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isDeveloperMenuEnabled: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isEmbedded: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isEntityPreloadEnabled: true
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isExperimentalTiledLargeMap: false
+18:11:54.288 [FXGL Background Thread 3 ] DEBUG Engine               - isFileSystemWriteAllowed: true
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isFullScreenAllowed: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isFullScreenFromStart: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isGameMenuEnabled: true
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isIOS: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isIntroEnabled: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isLinux: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isMac: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isMainMenuEnabled: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isManualResizeEnabled: false
+18:11:54.289 [FXGL Background Thread 3 ] DEBUG Engine               - isMobile: false
+18:11:54.290 [FXGL Background Thread 3 ] DEBUG Engine               - isNative: false
+18:11:54.290 [FXGL Background Thread 3 ] DEBUG Engine               - isPauseMusicWhenMinimized: true
+18:11:54.290 [FXGL Background Thread 3 ] DEBUG Engine               - isPreserveResizeRatio: false
+18:11:54.291 [FXGL Background Thread 3 ] DEBUG Engine               - isProfilingEnabled: false
+18:11:54.291 [FXGL Background Thread 3 ] DEBUG Engine               - isScaleAffectedOnResize: true
+18:11:54.291 [FXGL Background Thread 3 ] DEBUG Engine               - isSingleStep: false
+18:11:54.291 [FXGL Background Thread 3 ] DEBUG Engine               - isUserProfileEnabled: false
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - isWindows: true
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - language: ObjectProperty [value: ENGLISH]
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - menuKey: ESCAPE
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - mouseSensitivity: 0.2
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - notificationViewClass: class com.almasb.fxgl.notification.view.XboxNotificationView
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - pixelsPerMeter: 50.0
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - platform: WINDOWS
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - prefHeightProperty: ReadOnlyDoubleProperty [value: 600.0]
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - prefWidthProperty: ReadOnlyDoubleProperty [value: 800.0]
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - profileDir: profiles/
+18:11:54.292 [FXGL Background Thread 3 ] DEBUG Engine               - profileName: StringProperty [value: DEFAULT]
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - randomSeed: -1
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - runtimeInfo: RuntimeInfo(platform=WINDOWS, version=21.1, build=27.03.2024 07.52)
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - saveFileExt: sav
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - scaledHeightProp$fxgl: DoubleProperty [bound, value: 600.0]
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - scaledWidthProp$fxgl: DoubleProperty [bound, value: 800.0]
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - sceneFactory: com.almasb.fxgl.app.scene.SceneFactory@3f82ee6d
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - secondsIn24h: 60
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - soundMenuBack: menu/back.wav
+18:11:54.293 [FXGL Background Thread 3 ] DEBUG Engine               - soundMenuPress: menu/press.wav
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - soundMenuSelect: menu/select.wav
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - soundNotification: core/notification.wav
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - stageStyle: DECORATED
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - supportedLanguages: [ENGLISH, FRENCH, GERMAN, HUNGARIAN, RUSSIAN]
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - ticksPerSecond: -1
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - title: Lost Dungeon
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - urlGithub: https://github.com/AlmasB/FXGL
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - urlLeaderboard: http://fxgl-top.herokuapp.com/
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - urlPOM: https://raw.githubusercontent.com/AlmasB/FXGL/release/README.md
+18:11:54.294 [FXGL Background Thread 3 ] DEBUG Engine               - userAppClass: class org.example.testing
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - version: 0.0
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - versionCheckDays: 7
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - width: 800
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - Logging services
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.app.services.FXGLAssetLoaderService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.app.FXGLApplication$GameApplicationService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.app.services.FXGLDialogService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.app.services.IOTaskExecutorService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.io.FileSystemService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.localization.LocalizationService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.app.services.SystemBundleService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.profile.SaveLoadService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.ui.FXGLUIFactoryServiceProvider
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.ui.FXGLDialogFactoryServiceProvider
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.audio.AudioPlayer
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.notification.impl.NotificationServiceProvider
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.achievement.AchievementService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.cutscene.CutsceneService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.minigames.MiniGameService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.net.NetService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.app.services.UpdaterService
+18:11:54.295 [FXGL Background Thread 3 ] DEBUG Engine               - class com.almasb.fxgl.dev.DevService
+18:11:58.520 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_HelpfulVillager_background.png" was not found!
+18:11:58.520 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:11:59.344 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_HelpfulVillager_HelpBad_background.png" was not found!
+18:11:59.344 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:04.081 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_MountainSummit_background.png" was not found!
+18:12:04.081 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:04.824 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_MountainSummit_Pray_background.png" was not found!
+18:12:04.824 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:07.408 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialog2_background.png" was not found!
+18:12:07.408 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:07.967 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialog0_background.png" was not found!
+18:12:07.967 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:08.390 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamita_background.png" was not found!
+18:12:08.390 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:08.686 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamita_background.png" was not found!
+18:12:08.687 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.590 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamita_background.png" was not found!
+18:12:09.590 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.590 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamita_background.png" was not found!
+18:12:09.590 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.590 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamita_background.png" was not found!
+18:12:09.590 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.591 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamita_background.png" was not found!
+18:12:09.591 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.591 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamitaHaveMet_background.png" was not found!
+18:12:09.591 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.591 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamitaHaveMet_background.png" was not found!
+18:12:09.591 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.592 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamitaHaveMet_background.png" was not found!
+18:12:09.592 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:09.592 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/recruitDialogFlamitaHaveMet_background.png" was not found!
+18:12:09.592 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:11.719 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:11.719 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:11.719 [JavaFX Application Thread] DEBUG AudioPlayer          - Stopping music com.almasb.fxgl.audio.Music@4d75de67
+18:12:11.719 [JavaFX Application Thread] DEBUG AudioPlayer          - Playing music com.almasb.fxgl.audio.Music@13f31a5
+18:12:14.486 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:14.486 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:15.518 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:15.518 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:16.790 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:16.790 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:19.510 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:19.510 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:21.519 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:21.519 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:22.694 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:22.694 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:24.037 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:24.037 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:26.053 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0_background.png" was not found!
+18:12:26.054 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:27.534 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0Flamita_background.png" was not found!
+18:12:27.534 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:29.462 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp0Pieberry_background.png" was not found!
+18:12:29.462 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:35.279 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_RestingInn_background.png" was not found!
+18:12:35.279 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:36.358 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_RestingInn_Brief_background.png" was not found!
+18:12:36.358 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:37.967 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/campBegin_background.png" was not found!
+18:12:37.967 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:39.086 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:39.086 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:40.198 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:40.198 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:40.958 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:40.958 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:41.118 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:41.119 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.271 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.271 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.271 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.271 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.271 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.271 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.272 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.273 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.274 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.274 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.274 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.274 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:42.274 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:42.274 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:43.039 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_VillageShop_background.png" was not found!
+18:12:43.039 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:44.134 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/Event_VillageShop_Leave_background.png" was not found!
+18:12:44.134 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.207 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/campBegin_background.png" was not found!
+18:12:45.207 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.871 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.871 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.872 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.873 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.874 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.875 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.876 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.876 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.876 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.876 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.876 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.876 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:45.877 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/camp1Flamita_background.png" was not found!
+18:12:45.877 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:47.767 [JavaFX Application Thread] DEBUG AudioPlayer          - Stopping music com.almasb.fxgl.audio.Music@13f31a5
+18:12:47.769 [JavaFX Application Thread] DEBUG AudioPlayer          - Playing music com.almasb.fxgl.audio.Music@7db189c2
+18:12:47.772 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/pieberry_idle.png
+18:12:47.777 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/flamita_idle.png
+18:12:47.784 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:12:47.784 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:50.118 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:12:50.118 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:50.326 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/flamita_skill_1.png
+18:12:50.734 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/slash.png
+18:12:50.783 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/5-Orb%20Flame.png
+18:12:51.180 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/ignite.png
+18:12:51.950 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:12:51.950 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:54.038 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:12:54.038 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:57.270 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:12:57.270 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:12:57.478 [JavaFX Application Thread] DEBUG FXGLAssetLoaderServi - Loading from file system: file:/C:/turnbaseProject/merge/22-11/testinggame/target/classes/assets/textures/sprites/flamita_skill_2.png
+18:12:59.893 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:12:59.893 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:13:02.533 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Asset "/assets/textures/sprites/forest_guardian_idle.png" was not found!
+18:13:02.533 [JavaFX Application Thread] WARN  FXGLAssetLoaderServi - Failed to load IMAGE
+18:13:05.982 [JavaFX Application Thread] DEBUG FXGLApplication      - Exiting FXGL
+18:13:05.982 [JavaFX Application Thread] DEBUG LoopRunner           - Stopping loop
+18:13:05.982 [JavaFX Application Thread] DEBUG SystemBundleService  - Saving FXGL system data
+18:13:05.984 [JavaFX Application Thread] DEBUG FileSystemAccess     - Writing to: C:\turnbaseProject\merge\22-11\testinggame\system\fxgl.bundle
+18:13:05.986 [JavaFX Application Thread] DEBUG Async                - Shutting down background threads
+18:13:05.986 [JavaFX Application Thread] DEBUG PrimaryStageWindow   - Closing main window
+18:13:06.016 [JavaFX Application Thread] DEBUG Logger               - Closing Logger

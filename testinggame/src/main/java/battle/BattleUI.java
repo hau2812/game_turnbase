@@ -74,6 +74,24 @@ public class  BattleUI {
         }
     }
     
+    private static class SubBarData {
+        public Observer.characterSlot characterSlot;
+        public Rectangle subBar;
+        public Line goldenLine;
+        public double baseX;
+        public double baseY;
+        public double linePosition; // Current position of golden line (0.0 to barWidth)
+        
+        public SubBarData(Observer.characterSlot slot, Rectangle bar, Line line, double x, double y) {
+            this.characterSlot = slot;
+            this.subBar = bar;
+            this.goldenLine = line;
+            this.baseX = x;
+            this.baseY = y;
+            this.linePosition = 0.0;
+        }
+    }
+    
     /**
      * Helper class to hold Health bar data
      */
@@ -153,6 +171,9 @@ public class  BattleUI {
     // Barrier bars (light blue bars that show barrier points)
     private List<BarrierBarData> barrierBars = new ArrayList<>();
     
+    // Sub bars (white bars with golden line for CBUlt mechanic)
+    private List<SubBarData> subBars = new ArrayList<>();
+    
     // TimeStop bar (white bar that shows time stop duration)
     private Rectangle timeStopBar;
     private double timeStopBarMaxWidth;
@@ -171,6 +192,9 @@ public class  BattleUI {
     private Rectangle skill2Box;
     private Rectangle skill3Box;
     private Rectangle skill4Box;
+    
+    // Store the selected trial name for CBMark2
+    private String selectedTrialName;
     // Store skill detail texts for easy access
     private Text skill1Detail;
     private Text skill2Detail;
@@ -653,6 +677,184 @@ public class  BattleUI {
     }
     
     /**
+     * Show a single subBar shared by all heroes when CBUlt is cast
+     */
+    public void showSubBarsForCBUlt() {
+        // Clear existing subBars
+        clearSubBars();
+        
+        // Check if there are any alive heroes
+        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+        boolean hasAliveHero = false;
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                hasAliveHero = true;
+                break;
+            }
+        }
+        
+        if (!hasAliveHero) return;
+        
+        // Create a single subBar (white bar, same size as blackBar, 5px gap above blackBar)
+        double subBarY = barY - barHeight - 5; // Position so there's a 5px gap
+        Rectangle subBar = new Rectangle(barWidth, barHeight, Color.WHITE);
+        subBar.setTranslateX(barX);
+        subBar.setTranslateY(subBarY);
+        subBar.setVisible(true);
+        subBar.setMouseTransparent(true);
+        
+        // Create a single golden line (initially at left edge)
+        Line goldenLine = new Line();
+        goldenLine.setStroke(Color.GOLD);
+        goldenLine.setStrokeWidth(3);
+        double initialX = barX+100;
+        goldenLine.setStartX(initialX);
+        goldenLine.setEndX(initialX);
+        goldenLine.setStartY(subBarY);
+        goldenLine.setEndY(subBarY + barHeight);
+        goldenLine.setVisible(true);
+        goldenLine.setMouseTransparent(true);
+        
+        // Use null for characterSlot since this is shared by all heroes
+        SubBarData subBarData = new SubBarData(null, subBar, goldenLine, barX, subBarY);
+        subBarData.linePosition = 100.0; // Start at middle
+        subBars.add(subBarData);
+        
+        // Add to scene
+        getGameScene().addUINode(subBar);
+        getGameScene().addUINode(goldenLine);
+    }
+    
+    /**
+     * Update the single shared subBar golden line position based on all heroes' HP
+     */
+    public void updateSubBars() {
+        if (subBars.isEmpty()) return;
+        
+        // There should only be one subBar shared by all heroes
+        SubBarData subBarData = subBars.get(0);
+        
+        // Check if all heroes are dead
+        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+        boolean allHeroesDead = true;
+        boolean anyHeroAt1HP = false;
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                allHeroesDead = false;
+                // Check if any hero HP = 1 (count as left edge/losing)
+                if ((int)hero.getCurrentHp() <= 1) {
+                    anyHeroAt1HP = true;
+                }
+            }
+        }
+        
+        if (allHeroesDead) {
+            removeSubBar(subBarData, true); // Left edge (losing)
+            return;
+        }
+        
+        // If any hero HP = 1, trigger left edge logic immediately
+        if (anyHeroAt1HP) {
+            removeSubBar(subBarData, true); // Left edge (losing)
+            return;
+        }
+        
+        // Calculate total left movement from all heroes (sum of HP lost from 50%)
+        double totalLeftMovement = 0.0;
+        int heroesAbove50Percent = 0;
+        
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                float maxHp = hero.getCharacter().getHp();
+                float currentHp = hero.getCurrentHp();
+                
+                // Count heroes above 50%
+                if (currentHp > maxHp * 0.5f) {
+                    heroesAbove50Percent++;
+                } else {
+                    // Calculate HP lost from 50%
+                    float hpLostFrom50Percent = (maxHp * 0.5f) - currentHp;
+                    if (hpLostFrom50Percent > 0) {
+                        // Normalize: if HP lost = maxHp * 0.5, contributes 0.1px left movement
+                        double heroLeftMovement = (hpLostFrom50Percent / (maxHp * 0.5f)) * 0.1;
+                        heroLeftMovement = Math.min(heroLeftMovement, 0.1); // Cap at 0.2px per hero
+                        totalLeftMovement += heroLeftMovement;
+                    }
+                }
+            }
+        }
+        
+        // Cap total left movement at 0.5px (as per requirement: 0px to 0.5px)
+        totalLeftMovement = Math.min(totalLeftMovement, 0.3);
+        
+        // Right movement: 0.01px for each hero with HP > 50%
+        double rightMovementFromHP = heroesAbove50Percent * 0.01;
+        
+        // Right movement from damage: move 1px only when crossing 100 damage thresholds
+        // This ensures we move once per 100 damage, not continuously
+        double rightMovementFromDamage =2*battleSystem.consumeDamageForSubBar(); // Returns pixels to move (2px per 100 damage threshold)
+        
+        // Combine right movements
+        double rightMovement = rightMovementFromHP + rightMovementFromDamage;
+        
+        // Update line position
+        subBarData.linePosition = subBarData.linePosition - totalLeftMovement + rightMovement;
+        subBarData.linePosition = Math.max(0.0, Math.min(barWidth, subBarData.linePosition)); // Clamp to bar width
+        
+        // Update golden line visual position
+        double newX = barX + subBarData.linePosition;
+        subBarData.goldenLine.setStartX(newX);
+        subBarData.goldenLine.setEndX(newX);
+        
+        // Remove subBar if golden line reaches edges
+        if (subBarData.linePosition <= 0.0) {
+            removeSubBar(subBarData, true); // Left edge (losing)
+        } else if (subBarData.linePosition >= barWidth) {
+            removeSubBar(subBarData, false); // Right edge (winning)
+        }
+    }
+    
+    /**
+     * Remove a subBar and clean up, handling edge effects
+     * @param subBarData The subBar to remove
+     * @param isLeftEdge True if reached left edge (losing), false if right edge (winning)
+     */
+    private void removeSubBar(SubBarData subBarData, boolean isLeftEdge) {
+        if (subBarData.subBar != null) {
+            getGameScene().removeUINode(subBarData.subBar);
+        }
+        if (subBarData.goldenLine != null) {
+            getGameScene().removeUINode(subBarData.goldenLine);
+        }
+        subBars.remove(subBarData);
+        
+        // Handle edge effects
+        if (battleSystem != null) {
+            if (isLeftEdge) {
+                battleSystem.handleSubBarLeftEdge();
+            } else {
+                battleSystem.handleSubBarRightEdge();
+            }
+        }
+    }
+    
+    /**
+     * Clear all subBars
+     */
+    private void clearSubBars() {
+        for (SubBarData subBarData : new ArrayList<>(subBars)) {
+            // Just remove visually without triggering edge effects
+            if (subBarData.subBar != null) {
+                getGameScene().removeUINode(subBarData.subBar);
+            }
+            if (subBarData.goldenLine != null) {
+                getGameScene().removeUINode(subBarData.goldenLine);
+            }
+        }
+        subBars.clear();
+    }
+    
+    /**
      * Add health bar for a newly spawned enemy slot
      * @param slot The enemy slot to add
      * @param index The index in the character array (4 for enemy2, 5 for enemy3)
@@ -1051,12 +1253,12 @@ public class  BattleUI {
                             .append("\n");
                     hasBuffDebuffEffects = true;
                 } else {
-                    if(effect.getName().equals("Taunt")&&effect.getDuration()==1){
+                    if(effect.getName().equals("Taunti")&&effect.getDuration()==1){
 
                     }else {
                         debuffText.append(effectIcon).append(" ").append(effect.getName())
                                 .append(" (")
-                                .append(effect.getName().equals("Taunt") ? effect.getDuration() - 1 : effect.getDuration())
+                                .append(effect.getName().equals("Taunt") ? effect.getDuration() - 0 : effect.getDuration())
                                 .append(" turns)")
                                 .append(" ").append(effectDescription).append("\n");
                         hasBuffDebuffEffects = true;
@@ -1265,6 +1467,28 @@ public class  BattleUI {
         if (slot == battleSystem.getEnemySlot2()) return yellowLine;
         if (slot == battleSystem.getEnemySlot3()) return orangeLine;
         return null;
+    }
+    public ArrayList<Line> getAllLines(){
+        ArrayList<Line> lines = new ArrayList<>();
+        if(blueLine!=null){
+            lines.add(blueLine);
+        }
+        if(greenLine!=null){
+            lines.add(greenLine);
+        }
+        if(purpleLine!=null){
+            lines.add(purpleLine);
+        }
+        if(redLine!=null){
+            lines.add(redLine);
+        }
+        if(yellowLine!=null){
+            lines.add(yellowLine);
+        }
+        if(orangeLine!=null){
+            lines.add(orangeLine);
+        }
+        return lines;
     }
     
     /**
@@ -2466,6 +2690,392 @@ public class  BattleUI {
         updateSkillAffordabilityVisual(skill4Box, hero, s4);
     }
     
+    /**
+     * Show hero selection boxes for CBMark2 skill
+     * Displays 3 options: Select hero 1, Select hero 2, Select hero 3
+     */
+    public void showHeroSelectionForCBMark2() {
+        // Remove existing skill boxes
+        if (skill1Box != null) {
+            Object ud = skill1Box.getUserData();
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
+            getGameScene().removeUINode(skill1Box);
+            skill1Box = null;
+        }
+        if (skill2Box != null) {
+            Object ud = skill2Box.getUserData();
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
+            getGameScene().removeUINode(skill2Box);
+            skill2Box = null;
+        }
+        if (skill3Box != null) {
+            Object ud = skill3Box.getUserData();
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
+            getGameScene().removeUINode(skill3Box);
+            skill3Box = null;
+        }
+        if (skill4Box != null) {
+            Object ud = skill4Box.getUserData();
+            if (ud instanceof Group) {
+                Group textGroup = (Group) ud;
+                for (Node node : textGroup.getChildren()) {
+                    getGameScene().removeUINode(node);
+                }
+            } else if (ud instanceof Text) {
+                getGameScene().removeUINode((Text) ud);
+            }
+            getGameScene().removeUINode(skill4Box);
+            skill4Box = null;
+        }
+        
+        // Remove existing skill display texts
+        if (skill1DisplayText != null) {
+            getGameScene().removeUINode(skill1DisplayText);
+            skill1DisplayText = null;
+        }
+        if (skill2DisplayText != null) {
+            getGameScene().removeUINode(skill2DisplayText);
+            skill2DisplayText = null;
+        }
+        if (skill3DisplayText != null) {
+            getGameScene().removeUINode(skill3DisplayText);
+            skill3DisplayText = null;
+        }
+        if (skill4DisplayText != null) {
+            getGameScene().removeUINode(skill4DisplayText);
+            skill4DisplayText = null;
+        }
+        
+        // Remove existing skill detail texts
+        if (skill1Detail != null) {
+            getGameScene().removeUINode(skill1Detail);
+            skill1Detail = null;
+        }
+        if (skill2Detail != null) {
+            getGameScene().removeUINode(skill2Detail);
+            skill2Detail = null;
+        }
+        if (skill3Detail != null) {
+            getGameScene().removeUINode(skill3Detail);
+            skill3Detail = null;
+        }
+        if (skill4Detail != null) {
+            getGameScene().removeUINode(skill4Detail);
+            skill4Detail = null;
+        }
+        
+        // Get all heroes
+        Observer.characterSlot[] heroes = battleSystem.getAllHeroes();
+        
+        // Check if any hero has a skill with negative atk scale (healing skill)
+        boolean hasHealingSkill = false;
+        for (Observer.characterSlot hero : heroes) {
+            if (hero != null && hero.getCurrentHp() > 0) {
+                for (Ability.skill skill : hero.getSkills()) {
+                    if (skill != null && skill.getAtkScale() < 0) {
+                        hasHealingSkill = true;
+                        break;
+                    }
+                }
+                if (hasHealingSkill) break;
+            }
+        }
+        
+        // Create skill boxes for hero selection
+        double skillY = 550;
+        double skillWidth = 120;
+        double skillSpacing = skillWidth + 1;
+        
+        // Randomly select one of the available trials for the 4th box
+        // Only include "Recovery Trial" if at least one hero has a healing skill
+        java.util.ArrayList<String> availableTrials = new java.util.ArrayList<>();
+        availableTrials.add("Combo Trial");
+        availableTrials.add("Power Trial");
+        if (hasHealingSkill) {
+            availableTrials.add("Recovery Trial");
+        }
+        java.util.Random random = new java.util.Random();
+        selectedTrialName = availableTrials.get(random.nextInt(availableTrials.size()));
+        
+        // Create box for Hero 1
+        if (heroes[0] != null && heroes[0].getCurrentHp() > 0) {
+            skill1Box = createHeroSelectionBox(heroes[0], "Select hero 1", 10, skillY, skillWidth, 1);
+        }
+        
+        // Create box for Hero 2
+        if (heroes[1] != null && heroes[1].getCurrentHp() > 0) {
+            skill2Box = createHeroSelectionBox(heroes[1], "Select hero 2", 10 + skillSpacing, skillY, skillWidth, 2);
+        }
+        
+        // Create box for Hero 3
+        if (heroes[2] != null && heroes[2].getCurrentHp() > 0) {
+            skill3Box = createHeroSelectionBox(heroes[2], "Select hero 3", 10 + skillSpacing * 2, skillY, skillWidth, 3);
+        }
+        
+        // Create 4th box to display trial information (display only, not clickable)
+        skill4Box = createTrialDisplayBox(selectedTrialName, 10 + skillSpacing * 3, skillY, skillWidth);
+    }
+    
+    /**
+     * Create a trial display box (display only, not clickable)
+     */
+    private Rectangle createTrialDisplayBox(String trialName, double x, double y, double width) {
+        double height = 80;
+        Rectangle box = new Rectangle(width, height, Color.LIGHTGRAY);
+        box.setTranslateX(x);
+        box.setTranslateY(y);
+        box.setStroke(Color.BLACK);
+        box.setStrokeWidth(2);
+        box.setMouseTransparent(true); // Not clickable
+        
+        // Create display text
+        Text trialDisplayText = new Text(trialName);
+        trialDisplayText.setFont(new Font(12));
+        trialDisplayText.setFill(Color.BLACK);
+        trialDisplayText.setWrappingWidth(width - 10);
+        trialDisplayText.setTextAlignment(TextAlignment.CENTER);
+        trialDisplayText.setTranslateX(x + 5);
+        trialDisplayText.setTranslateY(y + 40);
+        trialDisplayText.setMouseTransparent(true);
+        
+        // Store display text reference
+        skill4DisplayText = trialDisplayText;
+        
+        // Store text in user data
+        Group textGroup = new Group(trialDisplayText);
+        box.setUserData(textGroup);
+        
+        getGameScene().addUINode(box);
+        getGameScene().addUINode(trialDisplayText);
+        
+        return box;
+    }
+    
+    /**
+     * Create a hero selection box for CBMark2
+     */
+    private Rectangle createHeroSelectionBox(Observer.characterSlot hero, String label, 
+                                             double x, double y, double width, int boxNumber) {
+        double height = 80;
+        Rectangle box = new Rectangle(width, height, Color.LIGHTBLUE);
+        box.setTranslateX(x);
+        box.setTranslateY(y);
+        box.setStroke(Color.BLACK);
+        box.setStrokeWidth(2);
+        
+        // Create display text
+        String displayText = label + "\n" + hero.getCharacter().getName();
+        Text skillDisplayText = new Text(displayText);
+        skillDisplayText.setFont(new Font(12));
+        skillDisplayText.setFill(Color.BLACK);
+        skillDisplayText.setWrappingWidth(width - 10);
+        skillDisplayText.setTextAlignment(TextAlignment.CENTER);
+        skillDisplayText.setTranslateX(x + 5);
+        skillDisplayText.setTranslateY(y + 15);
+        skillDisplayText.setMouseTransparent(true);
+        
+        // Store display text reference
+        switch (boxNumber) {
+            case 1:
+                skill1DisplayText = skillDisplayText;
+                break;
+            case 2:
+                skill2DisplayText = skillDisplayText;
+                break;
+            case 3:
+                skill3DisplayText = skillDisplayText;
+                break;
+        }
+        
+        // Click handler - apply Confront buff and resume battle
+        box.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                // Get all heroes
+                Observer.characterSlot[] allHeroes = battleSystem.getAllHeroes();
+                
+                // Apply Confront buff to selected hero
+                //BuffDebuff confrontBuff = BuffDebuff.getByName("Confront").copy();
+                //SpecialTalents.applyBuffDebuff(hero, confrontBuff);
+                
+                // Apply the trial debuff to selected hero (from the 4th box)
+                if (selectedTrialName != null) {
+                    BuffDebuff trialBuff = BuffDebuff.getByName(selectedTrialName);
+                    if (trialBuff != null) {
+                        SpecialTalents.applyBuffDebuff(hero, trialBuff.copy());
+                    }
+                    
+                    // If Combo Trial, apply Combo Target to EnemySlot
+                    if ("Combo Trial".equals(selectedTrialName)) {
+                        Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
+                        if (enemySlot != null) {
+                            BuffDebuff comboTarget = BuffDebuff.getByName("Combo Target").copy();
+                            SpecialTalents.applyBuffDebuff(enemySlot, comboTarget);
+                            updateBarrierBar(enemySlot);
+                        }
+                    }
+                    // If Power Trial, apply Power Target to EnemySlot
+                    else if ("Power Trial".equals(selectedTrialName)) {
+                        Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
+                        if (enemySlot != null) {
+                            BuffDebuff powerTarget = BuffDebuff.getByName("Power Target").copy();
+                            SpecialTalents.applyBuffDebuff(enemySlot, powerTarget);
+                            updateBarrierBar(enemySlot);
+                        }
+                    }
+                    // If Recovery Trial, set other heroes' HP to max - 300 (min 1)
+                    else if ("Recovery Trial".equals(selectedTrialName)) {
+                        for (Observer.characterSlot otherHero : allHeroes) {
+                            if (otherHero != null && otherHero != hero && otherHero.getCurrentHp() > 0) {
+                                float maxHp = otherHero.getCharacter().getHp();
+                                float newHp = Math.max(1, maxHp - 300);
+                                otherHero.setCurrentHp(newHp);
+                                updateHealthUI(otherHero);
+                            }
+                        }
+                    }
+                }
+                
+                // Apply Banish to all other alive heroes
+                BuffDebuff banishBuff = BuffDebuff.getByName("Banish").copy();
+                for (Observer.characterSlot otherHero : allHeroes) {
+                    if (otherHero != null && otherHero != hero && otherHero.getCurrentHp() > 0) {
+                        SpecialTalents.applyBuffDebuff(otherHero, banishBuff);
+                        // Set line to end of barX (stuck position)
+                        Line heroLine = getLineForCharacter(otherHero);
+                        if (heroLine != null) {
+                            double barX = getBarX();
+                            double barWidth = getBarWidth();
+                            heroLine.setStartX(barX + barWidth);
+                            heroLine.setEndX(barX + barWidth);
+                        }
+                    }
+                }
+                
+                // Apply Taunt to EnemySlot with source as selected hero's name
+                Observer.characterSlot enemySlot = battleSystem.getEnemySlot();
+                if (enemySlot != null) {
+                    BuffDebuff taunt = BuffDebuff.getByName("Taunt").copy().withDuration(999);
+                    taunt.setSource(hero.getCharacter().getName());
+                    SpecialTalents.applyBuffDebuff(enemySlot, taunt);
+                    
+                    // Apply Invulnerable buff to enemySlot when trial starts
+                    BuffDebuff invulnerable = BuffDebuff.getByName("Invulnerable").copy().withDuration(999);
+                    SpecialTalents.applyBuffDebuff(enemySlot, invulnerable);
+                    
+                    updateBarrierBar(enemySlot);
+                }
+                
+                // Update health UI for all heroes to show color changes
+                for (Observer.characterSlot h : allHeroes) {
+                    if (h != null && h.getCurrentHp() > 0) {
+                        updateHealthUI(h);
+                        updateBarrierBar(h);
+                    }
+                }
+                
+                // Resume battle
+                battleSystem.setMoving(true);
+                
+                // Remove hero selection boxes and restore normal skill boxes
+                // The battle system will handle restoring normal UI on next update
+                if (skill1Box != null) {
+                    Object ud = skill1Box.getUserData();
+                    if (ud instanceof Group) {
+                        Group textGroup = (Group) ud;
+                        for (Node node : textGroup.getChildren()) {
+                            getGameScene().removeUINode(node);
+                        }
+                    } else if (ud instanceof Text) {
+                        getGameScene().removeUINode((Text) ud);
+                    }
+                    getGameScene().removeUINode(skill1Box);
+                    skill1Box = null;
+                }
+                if (skill2Box != null) {
+                    Object ud = skill2Box.getUserData();
+                    if (ud instanceof Group) {
+                        Group textGroup = (Group) ud;
+                        for (Node node : textGroup.getChildren()) {
+                            getGameScene().removeUINode(node);
+                        }
+                    } else if (ud instanceof Text) {
+                        getGameScene().removeUINode((Text) ud);
+                    }
+                    getGameScene().removeUINode(skill2Box);
+                    skill2Box = null;
+                }
+                if (skill3Box != null) {
+                    Object ud = skill3Box.getUserData();
+                    if (ud instanceof Group) {
+                        Group textGroup = (Group) ud;
+                        for (Node node : textGroup.getChildren()) {
+                            getGameScene().removeUINode(node);
+                        }
+                    } else if (ud instanceof Text) {
+                        getGameScene().removeUINode((Text) ud);
+                    }
+                    getGameScene().removeUINode(skill3Box);
+                    skill3Box = null;
+                }
+                
+                // Remove display texts
+                if (skill1DisplayText != null) {
+                    getGameScene().removeUINode(skill1DisplayText);
+                    skill1DisplayText = null;
+                }
+                if (skill2DisplayText != null) {
+                    getGameScene().removeUINode(skill2DisplayText);
+                    skill2DisplayText = null;
+                }
+                if (skill3DisplayText != null) {
+                    getGameScene().removeUINode(skill3DisplayText);
+                    skill3DisplayText = null;
+                }
+            }
+        });
+        
+        // Hover effect
+        box.setOnMouseEntered(e -> {
+            box.setStroke(Color.GOLD);
+            box.setStrokeWidth(3);
+        });
+        
+        box.setOnMouseExited(e -> {
+            box.setStroke(Color.BLACK);
+            box.setStrokeWidth(2);
+        });
+        
+        // Store text in user data
+        Group textGroup = new Group(skillDisplayText);
+        box.setUserData(textGroup);
+        
+        getGameScene().addUINode(box);
+        getGameScene().addUINode(skillDisplayText);
+        
+        return box;
+    }
+    
     private Rectangle createSkillBox(Observer.characterSlot attacker, Ability.skill skill,
                                      double x, double y, Color color,
                                      Observer.characterSlot target, double width, int skillNumber) {
@@ -2802,6 +3412,21 @@ public class  BattleUI {
         double ratio = slot.getCurrentHp() / slot.getCharacter().getHp();
         healthBarData.healthBar.setWidth(healthBarWidth * ratio);
         healthBarData.hpText.setText("HP: " + (int) slot.getCurrentHp() + " / " + (int) slot.getCharacter().getHp());
+        
+        // Change health bar color to dark gray if hero has Banish debuff
+        if (isHero(slot) && slot.getBuffDebuffByName("Banish") != null) {
+            healthBarData.healthBar.setFill(Color.DARKGRAY);
+        } else {
+            // Restore original color based on character position
+            Observer.characterSlot[] allSlots = getAllCharacters();
+            Color[] healthColors = {Color.BLUE, Color.LIMEGREEN, Color.PURPLE, Color.RED, Color.YELLOW, Color.ORANGE};
+            for (int i = 0; i < allSlots.length; i++) {
+                if (allSlots[i] == slot) {
+                    healthBarData.healthBar.setFill(healthColors[i]);
+                    break;
+                }
+            }
+        }
     }
     
     /**
@@ -3096,6 +3721,7 @@ public class  BattleUI {
     
     public void clearAllBattleUI() {
         getGameScene().removeUINode(blackBar);
+        removeTimeStopBar();
         // Remove health bar elements from scene
         for (HealthBarData healthBarData : healthBars) {
             if (healthBarData.healthBorder != null) {
@@ -3542,6 +4168,25 @@ public class  BattleUI {
         if (yellowLine != null) getGameScene().addUINode(yellowLine);
         if (orangeLine != null) getGameScene().addUINode(orangeLine);
     }
+
+    public void removeAllHeroesLine(){
+        if(blueLine != null&&battleSystem.getHeroSlot()!=null) {
+            battleSystem.getHeroSlot().setLine(null);
+            getGameScene().removeUINode(blueLine);
+            blueLine = null;
+        }
+        if(greenLine != null&&battleSystem.getHeroSlot2()!=null) {
+            battleSystem.getHeroSlot2().setLine(null);
+            getGameScene().removeUINode(greenLine);
+            greenLine = null;
+        }
+        if(purpleLine != null&&battleSystem.getHeroSlot3()!=null) {
+            battleSystem.getHeroSlot3().setLine(null);
+            getGameScene().removeUINode(purpleLine);
+            purpleLine = null;
+        }
+    }
+
 
     /**
      * Create item buttons for battle consumables
